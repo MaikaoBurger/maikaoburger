@@ -1069,6 +1069,18 @@
         </div>
     </div>
 
+    <!-- Modal: Editar item (admin) -->
+    <div class="confirm-overlay" id="edit-item-overlay">
+        <div class="confirm-card">
+            <div style="font-size:32px;margin-bottom:8px">✏️</div>
+            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:4px">Editar item</div>
+            <div style="font-size:13px;color:#888;margin-bottom:6px" id="edit-item-label"></div>
+            <div style="font-size:12px;color:#aaa;margin-bottom:14px" id="edit-item-current"></div>
+            <div id="edit-item-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:12px"></div>
+            <button onclick="cancelEditItem()" style="width:100%;padding:11px;background:none;border:1.5px solid #ddd;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600">Cancelar</button>
+        </div>
+    </div>
+
     <!-- Modal: Quem fez? -->
     <div class="confirm-overlay" id="quem-fez-overlay">
         <div class="confirm-card">
@@ -1099,8 +1111,8 @@
             </div>
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" onclick="openRanking()">🏆</button>
-            <span class="sync-indicator" id="sync-indicator" onclick="openGhModal()"
-                title="Configurar GitHub Sync">☁️</span>
+            <span class="sync-indicator" id="sync-indicator" onclick="openGhModal()" title="Configurar GitHub Sync">☁️</span>
+            <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
             <button class="header-btn" onclick="voltarParaDia()">← Voltar</button>
         </div>
 
@@ -1565,7 +1577,7 @@
 
         // ── Pontuação ──
         const POINTS_PER_SECTOR = 10;
-        const ADMINS = ['Marcelo', 'Mike'];
+        const ADMINS = ['Mike'];
 
         let adminSession = false;
 
@@ -1739,19 +1751,55 @@
 
             adminSession = true;
             document.getElementById('screen-admin-auth').style.display = 'none';
-            await enterApp();
+            if (adminAuthFromApp) {
+                adminAuthFromApp = false;
+                document.getElementById('adm-btn').textContent = '✅ ADM';
+                document.getElementById('adm-btn').style.background = 'rgba(255,255,255,0.25)';
+                document.getElementById('h-adm-badge').style.display = 'inline-block';
+                document.getElementById('hist-btn').style.display = 'inline-block';
+                renderPanels();
+                switchTab(selectedSetores[0]);
+            } else {
+                await enterApp();
+            }
+        }
+
+        let adminAuthFromApp = false;
+
+        function toggleAdminFromHeader() {
+            if (adminSession) {
+                logoutAdmin();
+            } else {
+                adminAuthFromApp = true;
+                const hasPw = !!getAdminHash();
+                document.getElementById('auth-error').textContent = '';
+                document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
+                document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
+                document.getElementById('auth-sub').textContent = hasPw ? 'Digite sua senha, Mike' : 'Primeiro acesso — defina uma senha';
+                document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
+                if (hasPw) document.getElementById('auth-pw').value = '';
+                else { document.getElementById('auth-new-pw').value = ''; document.getElementById('auth-confirm-pw').value = ''; }
+                document.getElementById('screen-admin-auth').style.display = 'flex';
+                setTimeout(() => {
+                    const f = hasPw ? document.getElementById('auth-pw') : document.getElementById('auth-new-pw');
+                    f.focus();
+                }, 100);
+            }
         }
 
         function cancelAdminAuth() {
-            currentUser = '';
+            adminAuthFromApp = false;
             document.getElementById('screen-admin-auth').style.display = 'none';
-            document.getElementById('screen-nome').style.display = 'flex';
         }
 
         function logoutAdmin() {
             adminSession = false;
-            document.getElementById('nome-admin-badge').style.display = 'none';
-            document.getElementById('nome-sub').textContent = 'Selecione seu nome';
+            document.getElementById('adm-btn').textContent = '🔐';
+            document.getElementById('adm-btn').style.background = '';
+            document.getElementById('h-adm-badge').style.display = 'none';
+            document.getElementById('hist-btn').style.display = 'none';
+            renderPanels();
+            switchTab(selectedSetores[0]);
         }
 
         async function enterApp() {
@@ -2151,6 +2199,9 @@
                         const text = getItemText(item);
                         const dayTag = itemDayTag(item);
                         const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+                        const editBtn = checked && isAdmin()
+                            ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
+                            : '';
                         return `<div class="item ${checked ? 'checked' : ''}" id="item-${id}-${si}-${ii}">
                     <label>
                         <input type="checkbox" ${checked ? 'checked' : ''}
@@ -2165,7 +2216,7 @@
                         ${checked
                             ? `<span class="item-time" style="font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px">${getCheckedTime(id, si, ii)}</span>`
                             : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${pts}pt</span>`}
-                    </label>
+                    </label>${editBtn}
                 </div>`;
                     }).join('');
 
@@ -2276,6 +2327,39 @@
         function cancelQuemFez() {
             pendingItemMeta = null;
             document.getElementById('quem-fez-overlay').classList.remove('open');
+        }
+
+        function openEditItem(setorId, si, ii) {
+            if (!isAdmin()) return;
+            pendingItemMeta = { setorId, si, ii };
+            const list = CHECKLISTS[setorId];
+            const item = list.sections[si].items[ii];
+            const text = typeof item === 'object' ? item.text : item;
+            const meta = getCheckedMeta(setorId, si, ii);
+            document.getElementById('edit-item-label').textContent = text;
+            document.getElementById('edit-item-current').textContent = meta ? `Feito por: ${meta.user}` : '';
+            const grid = document.getElementById('edit-item-grid');
+            grid.innerHTML = NOMES.map(n =>
+                `<button onclick="doReassignItem('${n}')" style="padding:12px 8px;background:${meta && meta.user === n ? '#e8f8ef' : '#f5f5f7'};border:${meta && meta.user === n ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${n}</button>`
+            ).join('');
+            document.getElementById('edit-item-overlay').classList.add('open');
+        }
+
+        function doReassignItem(name) {
+            document.getElementById('edit-item-overlay').classList.remove('open');
+            if (!pendingItemMeta) return;
+            const { setorId, si, ii } = pendingItemMeta;
+            pendingItemMeta = null;
+            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString() });
+            const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
+            const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const timeEl = el.querySelector('.item-time');
+            if (timeEl) timeEl.textContent = `${name} · ${t}`;
+        }
+
+        function cancelEditItem() {
+            pendingItemMeta = null;
+            document.getElementById('edit-item-overlay').classList.remove('open');
         }
 
         function addItemScore(user, pts) {
