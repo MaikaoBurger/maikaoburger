@@ -2364,6 +2364,16 @@
             if (!pendingItemMeta) return;
             const { setorId, si, ii } = pendingItemMeta;
             pendingItemMeta = null;
+
+            const list = CHECKLISTS[setorId];
+            const item = list.sections[si].items[ii];
+            const itemText = typeof item === 'object' ? item.text : item;
+            const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+            const oldMeta = getCheckedMeta(setorId, si, ii);
+
+            if (oldMeta && oldMeta.user) removeItemScore(oldMeta.user, pts, itemText);
+            addItemScore(name, pts, itemText);
+
             setChecked(setorId, si, ii, { user: name, date: new Date().toISOString() });
             const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
             const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -2376,6 +2386,15 @@
             if (!pendingItemMeta) return;
             const { setorId, si, ii } = pendingItemMeta;
             pendingItemMeta = null;
+
+            const list = CHECKLISTS[setorId];
+            const item = list.sections[si].items[ii];
+            const itemText = typeof item === 'object' ? item.text : item;
+            const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+            const oldMeta = getCheckedMeta(setorId, si, ii);
+
+            if (oldMeta && oldMeta.user) removeItemScore(oldMeta.user, pts, itemText);
+
             setChecked(setorId, si, ii, false);
             const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
             el.classList.remove('checked');
@@ -2398,6 +2417,18 @@
 
             const log = getScoreLog();
             log.push({ user, sectorLabel: itemLabel || '', isoDate: new Date().toISOString(), pts });
+            saveScoreLog(log);
+        }
+
+        function removeItemScore(user, pts, itemLabel) {
+            const scores = loadScores();
+            scores[user] = Math.max(0, (scores[user] || 0) - pts);
+            if (scores[user] === 0) delete scores[user];
+            saveScores(scores);
+
+            const log = getScoreLog();
+            const idx = [...log].reverse().findIndex(e => e.user === user && e.sectorLabel === itemLabel && e.pts === pts);
+            if (idx !== -1) log.splice(log.length - 1 - idx, 1);
             saveScoreLog(log);
         }
 
