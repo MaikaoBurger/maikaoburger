@@ -2253,6 +2253,11 @@
                 document.getElementById('quem-fez-item-label').textContent = text;
                 document.getElementById('quem-fez-overlay').classList.add('open');
             } else {
+                if (!isAdmin()) {
+                    const cb = document.getElementById(`item-${setorId}-${si}-${ii}`).querySelector('input');
+                    if (cb) cb.checked = true;
+                    return;
+                }
                 setChecked(setorId, si, ii, false);
                 const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
                 el.classList.remove('checked');
