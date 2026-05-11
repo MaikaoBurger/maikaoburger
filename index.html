@@ -1201,7 +1201,7 @@
             { id: 'montagem', label: '🍔 Montagem' },
         ];
 
-        const NOMES = ['Marcelo', 'Micael', 'Beatriz', 'Israel', 'Gabriel', 'Wil', 'Daniel'];
+        const NOMES = ['Marcelo', 'Mike', 'Micael', 'Beatriz', 'Israel', 'Gabriel', 'Wil', 'Daniel'];
 
         // items podem ser string (todos os dias) ou { text, days: [0-6] } (0=dom,1=seg...6=sab)
         const QUI_DOM = [4, 5, 6, 0]; // quinta a domingo
@@ -1654,7 +1654,7 @@
 
         // ── Pontuação ──
         const POINTS_PER_SECTOR = 10;
-        const ADMIN = 'Marcelo';
+        const ADMINS = ['Marcelo', 'Mike'];
 
         let adminSession = false;
 
@@ -1968,7 +1968,7 @@
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);margin-bottom:10px">⚙️ Reiniciar checklist do dia</div>
             ${NOMES.map(name => `
                 <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f5f5f5">
-                    <span style="flex:1;font-size:14px;font-weight:600">${name}${name === ADMIN ? ' (você)' : ''}</span>
+                    <span style="flex:1;font-size:14px;font-weight:600">${name}${name === currentUser ? ' (você)' : ''}</span>
                     <button onclick="resetUserChecklist('${name}')"
                             style="padding:6px 14px;background:#fdf0f0;border:1px solid #f5c6c6;border-radius:8px;font-size:12px;color:var(--primary);cursor:pointer;font-weight:600">
                         Reiniciar
@@ -2135,13 +2135,13 @@
         async function selectUser(name) {
             currentUser = name;
 
-            if (name === ADMIN) {
+            if (ADMINS.includes(name)) {
                 const hasPw = !!getAdminHash();
                 document.getElementById('auth-error').textContent = '';
                 document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
                 document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
                 document.getElementById('auth-sub').textContent = hasPw
-                    ? 'Digite sua senha, Marcelo'
+                    ? `Digite sua senha, ${name}`
                     : 'Primeiro acesso — defina uma senha';
                 document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
                 if (hasPw) document.getElementById('auth-pw').value = '';
