@@ -2446,13 +2446,11 @@
             pendingConfirmSector = null;
             lockedSectors.add(id);
             lockSector(id);
-            awardPoints(id);
 
             const allLocked = selectedSetores.every(sid => lockedSectors.has(sid));
             if (allLocked) {
-
                 document.getElementById('complete-msg').textContent =
-                    `Tudo concluído, ${currentUser}! 💪`;
+                    'Todos os setores foram concluídos! 💪';
                 document.getElementById('complete-overlay').classList.add('open');
             }
         }
