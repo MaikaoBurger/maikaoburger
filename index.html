@@ -1076,7 +1076,8 @@
             <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:4px">Editar item</div>
             <div style="font-size:13px;color:#888;margin-bottom:6px" id="edit-item-label"></div>
             <div style="font-size:12px;color:#aaa;margin-bottom:14px" id="edit-item-current"></div>
-            <div id="edit-item-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:12px"></div>
+            <div id="edit-item-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:10px"></div>
+            <button onclick="doUncheckItem()" style="width:100%;padding:11px;background:#fff3f3;border:1.5px solid #f5c6c6;border-radius:12px;font-size:14px;color:var(--primary);cursor:pointer;font-weight:700;margin-bottom:8px">🔓 Deixar em aberto</button>
             <button onclick="cancelEditItem()" style="width:100%;padding:11px;background:none;border:1.5px solid #ddd;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600">Cancelar</button>
         </div>
     </div>
@@ -2360,6 +2361,21 @@
             const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const timeEl = el.querySelector('.item-time');
             if (timeEl) timeEl.textContent = `${name} · ${t}`;
+        }
+
+        function doUncheckItem() {
+            document.getElementById('edit-item-overlay').classList.remove('open');
+            if (!pendingItemMeta) return;
+            const { setorId, si, ii } = pendingItemMeta;
+            pendingItemMeta = null;
+            setChecked(setorId, si, ii, false);
+            const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
+            el.classList.remove('checked');
+            const cb = el.querySelector('input');
+            if (cb) cb.checked = false;
+            const timeEl = el.querySelector('.item-time');
+            if (timeEl) timeEl.remove();
+            updateProgress(setorId);
         }
 
         function cancelEditItem() {
