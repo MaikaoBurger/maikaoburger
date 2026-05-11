@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maikão Burger — Checklist</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #C0392B;
+            --primary-dark: #962d22;
+            --green: #27AE60;
+            --bg: #f2f2f7;
+            --white: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #888;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Telas de setup ── */
+        .screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 20px;
+            z-index: 100;
+            background: var(--primary);
+            overflow-y: auto;
+        }
+
+        .screen-logo { font-size: 52px; margin-bottom: 6px; }
+
+        .screen-title {
+            font-size: 26px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+
+        .screen-sub {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .screen-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: rgba(255,255,255,0.65);
+            margin: 20px 0 12px;
+        }
+
+        /* Grid de seleção */
+        .sel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .sel-grid.names { grid-template-columns: 1fr 1fr; }
+
+        .sel-btn {
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.25);
+            border-radius: 14px;
+            padding: 15px 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .sel-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .sel-btn.selected {
+            background: white;
+            color: var(--primary);
+            border-color: white;
+        }
+
+        /* Botão de avançar */
+        .next-btn {
+            margin-top: 20px;
+            background: white;
+            color: var(--primary);
+            border: none;
+            border-radius: 14px;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .next-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ── Header ── */
+        .header {
+            background: var(--primary);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .header-logo { font-size: 24px; }
+        .header-info { flex: 1; }
+
+        .header-name {
+            font-size: 15px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .header-meta {
+            font-size: 11px;
+            color: rgba(255,255,255,0.65);
+        }
+
+        .header-btn {
+            background: rgba(255,255,255,0.18);
+            border: none;
+            border-radius: 20px;
+            padding: 6px 13px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .header-btn:hover { background: rgba(255,255,255,0.3); }
+
+        /* Indicador de sync */
+        .sync-indicator {
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: opacity 0.2s;
+        }
+
+        .sync-indicator:hover { opacity: 0.75; }
+
+        /* ── Tabs ── */
+        .tabs-wrap {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
+            position: sticky;
+            top: 58px;
+            z-index: 9;
+        }
+
+        .tabs-wrap::-webkit-scrollbar { display: none; }
+
+        .tabs { display: flex; padding: 0 10px; min-width: max-content; }
+
+        .tab {
+            padding: 13px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab.done   { color: var(--green); }
+        .tab.done.active { color: var(--green); border-bottom-color: var(--green); }
+
+        .tab-badge {
+            background: var(--bg);
+            color: var(--text-muted);
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-size: 11px;
+        }
+
+        .tab.active .tab-badge { background: var(--primary); color: white; }
+        .tab.done   .tab-badge { background: var(--green); color: white; }
+
+        /* ── Content ── */
+        .content {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Cabeçalho do painel */
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .panel-title { font-size: 19px; font-weight: 800; }
+
+        .reset-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .reset-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* Progresso */
+        .prog-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .prog-wrap {
+            background: var(--border);
+            border-radius: 100px;
+            height: 7px;
+            margin-bottom: 18px;
+            overflow: hidden;
+        }
+
+        .prog-bar {
+            height: 100%;
+            border-radius: 100px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .prog-bar.full { background: var(--green); }
+
+        /* Seção */
+        .sec-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: var(--text-muted);
+            margin: 18px 0 8px;
+        }
+
+        /* Item */
+        .item {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 7px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .item.checked {
+            border-color: #b8e6c8;
+            background: #f0faf4;
+        }
+
+        .item label {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 15px 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .item input { display: none; }
+
+        .box {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid #ccc;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            background: white;
+        }
+
+        .item.checked .box {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .box svg { display: none; width: 13px; height: 13px; }
+        .item.checked .box svg { display: block; }
+
+        .item-text {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.35;
+            color: var(--text);
+            transition: color 0.15s;
+        }
+
+        .item.checked .item-text {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        /* Banner de conclusão */
+        .done-banner {
+            background: var(--green);
+            color: white;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .done-banner.show { display: block; }
+        .done-banner strong { font-size: 17px; display: block; margin-bottom: 3px; }
+        .done-banner span { font-size: 13px; opacity: 0.9; }
+
+        /* ── Modal GitHub ── */
+        .gh-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .gh-overlay.open { display: flex; }
+
+        .gh-modal {
+            background: white;
+            border-radius: 18px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .gh-modal h2 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .gh-modal p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .gh-field-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .gh-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+            font-family: inherit;
+        }
+
+        .gh-input:focus { border-color: var(--primary); }
+
+        .gh-hint {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .gh-hint a { color: #888; }
+
+        .gh-status {
+            font-size: 13px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-top: 14px;
+            display: none;
+        }
+
+        .gh-status.ok  { background: #f0faf4; color: #1e8449; display: block; }
+        .gh-status.err { background: #fdf0f0; color: #c0392b; display: block; }
+        .gh-status.inf { background: #f0f4ff; color: #2471a3; display: block; }
+
+        .gh-connected-info {
+            background: #f0faf4;
+            border: 1.5px solid #b8e6c8;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .gh-connected-info.show { display: block; }
+
+        .gh-connected-info strong {
+            font-size: 13px;
+            color: #1e8449;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .gh-connected-info a {
+            font-size: 12px;
+            color: #2471a3;
+            word-break: break-all;
+        }
+
+        .gh-btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        .gh-btn {
+            flex: 1;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s;
+        }
+
+        .gh-btn:hover { opacity: 0.85; }
+        .gh-btn.cancel { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+        .gh-btn.save   { background: var(--primary); color: white; flex: 2; }
+        .gh-btn.danger { background: #fdf0f0; color: var(--primary); border: 1.5px solid #f5c6c6; flex: 1; font-size: 13px; }
+
+        /* ── Ranking ── */
+        .rank-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rank-item:last-child { border-bottom: none; }
+
+        .rank-medal { font-size: 24px; width: 32px; text-align: center; flex-shrink: 0; }
+
+        .rank-pos {
+            width: 32px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .rank-name { flex: 1; font-size: 15px; font-weight: 700; }
+
+        .rank-pts {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .rank-pts span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+
+        .rank-empty {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px 0;
+            font-size: 14px;
+        }
+
+        /* Toast de pontos */
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes toastOut {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+
+        /* ── Tag de dia da semana ── */
+        .day-tag {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            margin-left: 4px;
+        }
+
+        .day-tag-on  { background: #e8f5e9; color: #27AE60; }
+        .day-tag-off { background: #f5f5f5; color: #bbb; }
+
+        /* ── Histórico ── */
+        .hist-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .hist-overlay.open { display: flex; }
+
+        .hist-modal {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 640px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+        }
+
+        .hist-header {
+            padding: 18px 20px 0;
+            flex-shrink: 0;
+        }
+
+        .hist-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .hist-close {
+            background: none;
+            border: none;
+            font-size: 26px;
+            line-height: 1;
+            cursor: pointer;
+            color: #bbb;
+            padding: 0 4px;
+        }
+
+        .date-pills {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 14px;
+            scrollbar-width: none;
+        }
+
+        .date-pills::-webkit-scrollbar { display: none; }
+
+        .date-pill {
+            flex-shrink: 0;
+            padding: 7px 16px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .date-pill.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .hist-body {
+            overflow-y: auto;
+            padding: 4px 20px 32px;
+            flex: 1;
+        }
+
+        .hist-employee {
+            margin-top: 18px;
+        }
+
+        .hist-employee-name {
+            font-size: 16px;
+            font-weight: 800;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hist-sector-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            color: var(--text-muted);
+            margin: 12px 0 6px;
+        }
+
+        .hist-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid #f5f5f5;
+            gap: 12px;
+        }
+
+        .hist-item-text {
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+            line-height: 1.35;
+        }
+
+        .hist-item-time {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--green);
+            white-space: nowrap;
+        }
+
+        .hist-empty {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px 0;
+            font-size: 14px;
+        }
+
+        /* ── Auth ADM ── */
+        .auth-card {
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 18px;
+            outline: none;
+            text-align: center;
+            letter-spacing: 6px;
+            font-family: inherit;
+            margin-top: 8px;
+        }
+
+        .auth-input::placeholder {
+            color: rgba(255,255,255,0.45);
+            letter-spacing: normal;
+            font-size: 14px;
+        }
+
+        .auth-input:focus { border-color: rgba(255,255,255,0.65); }
+
+        .auth-error {
+            font-size: 13px;
+            color: rgba(255,200,200,0.95);
+            margin-top: 10px;
+            min-height: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Modal Histórico -->
+<div class="hist-overlay" id="hist-overlay" onclick="histOverlayClick(event)">
+    <div class="hist-modal">
+        <div class="hist-header">
+            <h2>📅 Histórico <button class="hist-close" onclick="closeHistorico()">×</button></h2>
+            <div class="date-pills" id="hist-date-pills"></div>
+        </div>
+        <div class="hist-body" id="hist-body"></div>
+    </div>
+</div>
+
+<!-- Tela de autenticação ADM -->
+<div class="screen" id="screen-admin-auth" style="display:none; z-index:150">
+    <div class="auth-card">
+        <div style="font-size:40px;margin-bottom:8px">🔐</div>
+        <div class="screen-title" style="font-size:20px" id="auth-title">Área Administrativa</div>
+        <div class="screen-sub" id="auth-sub">Digite sua senha, Marcelo</div>
+
+        <!-- Primeiro acesso: definir senha -->
+        <div id="auth-set-form" style="display:none">
+            <input class="auth-input" id="auth-new-pw" type="password" placeholder="Nova senha"
+                   onkeydown="if(event.key==='Enter') document.getElementById('auth-confirm-pw').focus()">
+            <input class="auth-input" id="auth-confirm-pw" type="password" placeholder="Confirmar senha"
+                   style="margin-top:8px" onkeydown="if(event.key==='Enter') submitAdminAuth()">
+        </div>
+
+        <!-- Login -->
+        <div id="auth-login-form">
+            <input class="auth-input" id="auth-pw" type="password" placeholder="Senha"
+                   onkeydown="if(event.key==='Enter') submitAdminAuth()">
+        </div>
+
+        <div class="auth-error" id="auth-error"></div>
+
+        <button class="next-btn" id="auth-submit-btn" style="margin-top:16px" onclick="submitAdminAuth()">Entrar</button>
+        <button onclick="cancelAdminAuth()"
+                style="background:none;border:none;color:rgba(255,255,255,0.55);font-size:13px;cursor:pointer;margin-top:14px;display:block;width:100%">
+            ← Voltar
+        </button>
+    </div>
+</div>
+
+<!-- Passo 1: Setor -->
+<div class="screen" id="screen-setor">
+    <div class="screen-logo">🍔</div>
+    <div class="screen-title">Maikão Burger</div>
+    <div class="screen-sub">Checklist do turno</div>
+    <div class="screen-label">Em qual setor você vai trabalhar hoje?<br><small style="font-size:11px;opacity:.7">Pode marcar mais de um</small></div>
+    <div class="sel-grid" id="setor-grid"></div>
+    <button class="next-btn" id="btn-next-setor" disabled onclick="goToName()">Continuar →</button>
+</div>
+
+<!-- Passo 2: Nome -->
+<div class="screen" id="screen-nome" style="display:none">
+    <button onclick="voltarParaSetor()" style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.15);border:none;border-radius:10px;padding:8px 14px;color:white;font-size:14px;font-weight:600;cursor:pointer;">← Voltar</button>
+    <div id="nome-admin-badge" style="display:none;position:absolute;top:18px;right:16px;display:none;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 12px">
+        <span style="font-size:12px;font-weight:700;color:white">🔐 Sessão ADM</span>
+        <button onclick="logoutAdmin()" style="background:rgba(255,255,255,0.2);border:none;border-radius:10px;padding:3px 9px;color:white;font-size:11px;font-weight:700;cursor:pointer">Sair</button>
+    </div>
+    <div class="screen-logo">👤</div>
+    <div class="screen-title">Quem é você?</div>
+    <div class="screen-sub" id="nome-sub">Selecione seu nome</div>
+    <div class="sel-grid names" id="nome-grid"></div>
+</div>
+
+<!-- App principal -->
+<div id="app" style="display:none">
+    <div class="header">
+        <div class="header-logo">🍔</div>
+        <div class="header-info">
+            <div style="display:flex;align-items:center;gap:6px">
+                <div class="header-name" id="h-name"></div>
+                <span id="h-adm-badge" style="display:none;font-size:10px;font-weight:800;background:rgba(255,255,255,0.25);color:white;padding:2px 7px;border-radius:8px;letter-spacing:.5px">ADM</span>
+            </div>
+            <div class="header-meta" id="h-meta"></div>
+            <div class="header-meta" id="h-clock" style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);min-width:44px;text-align:right"></div>
+        </div>
+        <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
+        <button class="header-btn" onclick="openRanking()">🏆</button>
+        <span class="sync-indicator" id="sync-indicator" onclick="openGhModal()" title="Configurar GitHub Sync">☁️</span>
+        <button class="header-btn" onclick="restart()">Trocar funcionário</button>
+    </div>
+
+    <div class="tabs-wrap"><div class="tabs" id="tabs"></div></div>
+    <div class="content" id="panels"></div>
+</div>
+
+<!-- Modal Ranking -->
+<div class="gh-overlay" id="rank-overlay" onclick="rankOverlayClick(event)">
+    <div class="gh-modal" style="max-width:380px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <h2>🏆 Ranking</h2>
+            <button onclick="closeRanking()" style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#bbb;padding:0 4px">×</button>
+        </div>
+        <div id="rank-list"></div>
+        <button id="rank-reset-btn" onclick="confirmResetScores()" style="margin-top:18px;width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text-muted);cursor:pointer;display:none">Zerar pontuação</button>
+    </div>
+</div>
+
+<!-- Modal GitHub Sync -->
+<div class="gh-overlay" id="gh-overlay" onclick="overlayClick(event)">
+    <div class="gh-modal">
+        <h2>☁️ GitHub Sync</h2>
+        <p>Salve seu progresso em um Gist privado e acesse de qualquer dispositivo.</p>
+
+        <div class="gh-connected-info" id="gh-connected-info">
+            <strong>✅ Conectado ao GitHub</strong>
+            <a id="gh-gist-link" href="#" target="_blank" rel="noopener">Ver Gist →</a>
+        </div>
+
+        <label class="gh-field-label">Token GitHub</label>
+        <input class="gh-input" id="gh-token-input" type="password" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+        <p class="gh-hint">
+            Crie em: GitHub → Settings → Developer settings →
+            Personal access tokens → Tokens (classic) → New token<br>
+            Escopo necessário: <strong>gist</strong>
+        </p>
+
+        <div class="gh-status" id="gh-status"></div>
+
+        <div class="gh-btn-row">
+            <button class="gh-btn cancel" onclick="closeGhModal()">Cancelar</button>
+            <button class="gh-btn save" onclick="saveGhConfig()">Salvar e Sincronizar</button>
+        </div>
+        <div class="gh-btn-row" id="gh-disconnect-row" style="display:none">
+            <button class="gh-btn danger" onclick="disconnectGh()">Desconectar GitHub</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const SETORES = [
+    { id: 'climatizado', label: '❄️ Climatizado' },
+    { id: 'aberto',      label: '🌤️ Aberto' },
+    { id: 'caixa',       label: '💰 Caixa' },
+    { id: 'bebidas',     label: '🥤 Bebidas' },
+    { id: 'fritura',     label: '🍟 Fritura' },
+    { id: 'chapa',       label: '🔥 Chapa' },
+    { id: 'montagem',    label: '🍔 Montagem' },
+];
+
+const NOMES = ['Marcelo', 'Micael', 'Beatriz', 'Israel', 'Gabriel', 'Wil', 'Daniel'];
+
+// items podem ser string (todos os dias) ou { text, days: [0-6] } (0=dom,1=seg...6=sab)
+const QUI_DOM = [4, 5, 6, 0]; // quinta a domingo
+
+const CHECKLISTS = {
+    climatizado: {
+        label: '❄️ Climatizado',
+        sections: [
+            { title: 'Abertura', items: [
+                'Guardar bolsas e capacetes no armário',
+                'Ligar TV',
+                'Abrir janelinha',
+                { text: 'Organizar sachê, canudo e guardanapo', days: QUI_DOM },
+                'Conferir materiais do banheiro',
+                'Conferir freezer da área nova',
+                'Montar a mesa de abertura',
+                'Abastecer sachês/itens da mesa',
+                'Verificar itens do setor',
+                'Trocar o saco de lixo',
+            ]},
+            { title: 'Fechamento', items: [
+                'Desligar TV',
+                'Fechar janelinha',
+                { text: 'Guardar porta sachê', days: QUI_DOM },
+                'Varrer área',
+                'Conferir escritório',
+                'Conferir freezers',
+                'Fechar portão de cima',
+                'Desligar o ar condicionado',
+                'Guardar os insumos corretamente',
+                'Jogar fora o lixo e repor os sacos',
+                'Verificar se ficou algum vestígio de comida',
+                'Tirar os refrigerantes do freezer',
+                'Passar pano',
+                'Limpar sua área de serviço',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+    aberto: {
+        label: '🌤️ Aberto',
+        sections: [
+            { title: 'Abertura', items: [
+                'Ligar interruptor ônibus novo',
+                { text: 'Abrir portão menor', days: QUI_DOM },
+                { text: 'Abrir portão maior', days: QUI_DOM },
+                { text: 'Passar pano nos bancos e mesas', days: QUI_DOM },
+                'Ligar disjuntor cinza faltando 10 min. p/ abrir',
+                'Ligar os leds 10 minutos antes de abrir',
+                'Ligar a música do ônibus 10 minutos antes de abrir',
+                'Ligar o ar condicionado do ônibus 10 minutos antes de abrir',
+            ]},
+            { title: 'Fechamento', items: [
+                'Desligar disjuntor cinza',
+                'Desligar interruptor ônibus',
+                'Fechar portão menor',
+                'Fechar portão maior',
+                'Fechar todas as grades',
+                'Desligar todos os leds',
+                'Varrer o ônibus, a loja e a frente da loja',
+                'Juntar as chaves de todos os setores',
+                'Fechar lixeira do QG',
+                'Acionar o alarme',
+                'Desligar máquina de gelo',
+                'Apertar o cadeado do controle',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+    caixa: {
+        label: '💰 Caixa',
+        sections: [
+            { title: 'Abertura', items: [
+                'Colocar as maquinetas para carregar',
+                'Colocar os celulares para carregar',
+                { text: 'Abrir consumer no PC', days: QUI_DOM },
+                'Abrir caixa',
+                'Abrir os 3 app\'s',
+                'Conferir cardápio digital',
+            ]},
+            { title: 'Fechamento', items: [
+                'Desligar PC',
+                'Proteger PC',
+                'Desligar as maquinetas, celulares e computador',
+                'Desligar os dois filtros de linha',
+                'Desligar o LED do balcão',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+    bebidas: {
+        label: '🥤 Bebidas',
+        sections: [
+            { title: 'Abertura', items: [
+                'Verificar temperatura da geladeira de bebidas (abaixo de 4°C)',
+                'Organizar e repor bebidas na geladeira',
+                'Verificar estoque de copos, tampas e canudos',
+                'Organizar estação de finalização e embalagens',
+            ]},
+            { title: 'Fechamento', items: [
+                'Guardar bebidas abertas com identificação e data',
+                'Limpar a geladeira de bebidas por fora',
+                'Limpar e organizar estação de finalização',
+                'Tirar o lixo da estação',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+    fritura: {
+        label: '🍟 Fritura',
+        sections: [
+            { title: 'Abertura', items: [
+                'Ligar a fritadeira meia hora antes de abrir',
+                'Verificar nível e qualidade do óleo',
+                'Verificar estoque de batata e itens a fritar',
+                'Organizar a estação de fritura',
+            ]},
+            { title: 'Fechamento', items: [
+                'Desligar a fritadeira',
+                'Desligar o disjuntor da fritadeira menor',
+                'Desligar conservador da batata',
+                'Conferir freezers do QG',
+                'Limpar a fritadeira por dentro e por fora',
+                'Guardar ingredientes restantes',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+    chapa: {
+        label: '🔥 Chapa',
+        sections: [
+            { title: 'Abertura', items: [
+                'Ligar a chapa e o toaster meia hora antes de abrir',
+                'Conferir os bacons',
+                'Organizar a estação da chapa',
+                'Separar temperos e condimentos',
+            ]},
+            { title: 'Fechamento', items: [
+                'Desligar o registro da chapa',
+                'Conferir o registro do fogão',
+                'Desligar o toaster',
+                'Desligar o microondas',
+                'Desligar o forno',
+                'Desligar o registro geral do gás do QG',
+                'Desligar o registro geral do gás da loja',
+                'Limpar a chapa',
+                'Limpar sua área de serviço',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+    montagem: {
+        label: '🍔 Montagem',
+        sections: [
+            { title: 'Abertura', items: [
+                'Guardar bolsas e capacetes no armário',
+                'Conferir todos os molhos',
+                'Cortar tomates e cebolas',
+                'Cortar papel recife',
+                'Limpar os morangos',
+                'Produzir milk shake',
+                'Conferir a coxinha',
+                'Verificar itens do setor',
+                'Trocar o saco de lixo',
+                'Lavar os pratos até as 17:00hs',
+            ]},
+            { title: 'Fechamento', items: [
+                'Desligar a impressora da cozinha',
+                'Desligar o conservador de proteína',
+                'Conferir todas as freezeres e geladeiras',
+                'Guardar os insumos corretamente',
+                'Lavar os teflons',
+                'Jogar fora o lixo e repor os sacos',
+                'Verificar se ficou algum vestígio de comida',
+                'Tirar os refrigerantes do freezer',
+                'Passar pano',
+                'Ligar a sirene do rato',
+                'Conferir ar condicionado do QG',
+            ]},
+            { title: 'Pré Produção', items: [] },
+        ]
+    },
+};
+
+let selectedSetores = [];
+let currentUser = '';
+let state = {};
+
+// ── GitHub Gist Sync ──
+const GIST_FILENAME = 'maikao-burger-checklist.json';
+let syncTimeout = null;
+
+function ghToken()  { return localStorage.getItem('gh_token')   || ''; }
+function ghGistId() { return localStorage.getItem('gh_gist_id') || ''; }
+
+function setSyncUI(status, msg) {
+    const el = document.getElementById('sync-indicator');
+    if (!el) return;
+    const icons = { idle: '☁️', syncing: '🔄', synced: '✅', error: '⚠️' };
+    el.textContent = icons[status] || '☁️';
+    el.title = msg || 'Configurar GitHub Sync';
+}
+
+function getAllMbKeys() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('mb_')) data[k] = localStorage.getItem(k);
+    }
+    return data;
+}
+
+async function pushToGist() {
+    const token = ghToken();
+    if (!token) return;
+
+    setSyncUI('syncing', 'Sincronizando...');
+
+    const gistId = ghGistId();
+
+    // Fetch remote first so we don't overwrite other users working simultaneously
+    let remote = {};
+    if (gistId) {
+        try {
+            const r = await fetch(`https://api.github.com/gists/${gistId}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (r.ok) {
+                const j = await r.json();
+                const c = j.files[GIST_FILENAME]?.content;
+                if (c) remote = JSON.parse(c);
+            }
+        } catch { /* merge with empty if fetch fails */ }
+    }
+
+    // Remote base + all local keys (local wins for current user's keys)
+    const payload = { ...remote, _v: 1, _at: new Date().toISOString(), ...getAllMbKeys() };
+
+    // Smart merge: scores → take max per user; completions → union
+    if (remote.mb_scores && payload.mb_scores) {
+        const rs = JSON.parse(remote.mb_scores);
+        const ls = JSON.parse(payload.mb_scores);
+        const merged = { ...rs };
+        Object.keys(ls).forEach(k => { merged[k] = Math.max(merged[k] || 0, ls[k]); });
+        payload.mb_scores = JSON.stringify(merged);
+    }
+    if (remote.mb_completions && payload.mb_completions) {
+        const rc = JSON.parse(remote.mb_completions);
+        const lc = JSON.parse(payload.mb_completions);
+        payload.mb_completions = JSON.stringify([...new Set([...rc, ...lc])]);
+    }
+    if (remote.mb_score_log && payload.mb_score_log) {
+        const rl = JSON.parse(remote.mb_score_log);
+        const ll = JSON.parse(payload.mb_score_log);
+        const seen = new Set();
+        const merged = [...rl, ...ll].filter(e => {
+            const k = `${e.user}|${e.sectorLabel}|${e.isoDate}`;
+            return seen.has(k) ? false : seen.add(k);
+        });
+        payload.mb_score_log = JSON.stringify(merged);
+    }
+
+    const body = {
+        description: 'Maikão Burger — Checklist',
+        public: false,
+        files: { [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) } }
+    };
+
+    try {
+        const res = await fetch(
+            gistId ? `https://api.github.com/gists/${gistId}` : 'https://api.github.com/gists',
+            {
+                method: gistId ? 'PATCH' : 'POST',
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }
+        );
+        if (res.ok) {
+            const json = await res.json();
+            if (!gistId) localStorage.setItem('gh_gist_id', json.id);
+            const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            setSyncUI('synced', `Sincronizado às ${time}`);
+        } else {
+            setSyncUI('error', `Erro ${res.status} — clique para configurar`);
+        }
+    } catch {
+        setSyncUI('error', 'Sem conexão — clique para configurar');
+    }
+}
+
+async function pullFromGist() {
+    const token = ghToken();
+    const gistId = ghGistId();
+    if (!token || !gistId) return;
+
+    setSyncUI('syncing', 'Carregando dados...');
+    try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (res.ok) {
+            const json = await res.json();
+            const content = json.files[GIST_FILENAME]?.content;
+            if (content) {
+                const data = JSON.parse(content);
+                Object.keys(data).forEach(k => {
+                    if (k.startsWith('mb_')) localStorage.setItem(k, data[k]);
+                });
+                setSyncUI('synced', 'Dados carregados do GitHub');
+            }
+        }
+    } catch { /* silently fail — localStorage still works */ }
+}
+
+function schedulePush() {
+    if (!ghToken()) return;
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(pushToGist, 1500);
+}
+
+// ── Modal GitHub ──
+function openGhModal() {
+    const token = ghToken();
+    const gistId = ghGistId();
+
+    document.getElementById('gh-token-input').value = token ? '••••••••••••••••' : '';
+    document.getElementById('gh-status').className = 'gh-status';
+    document.getElementById('gh-status').textContent = '';
+
+    const connInfo = document.getElementById('gh-connected-info');
+    const disconnRow = document.getElementById('gh-disconnect-row');
+
+    if (token && gistId) {
+        connInfo.classList.add('show');
+        document.getElementById('gh-gist-link').href = `https://gist.github.com/${gistId}`;
+        disconnRow.style.display = 'flex';
+    } else {
+        connInfo.classList.remove('show');
+        disconnRow.style.display = 'none';
+    }
+
+    document.getElementById('gh-overlay').classList.add('open');
+}
+
+function closeGhModal() {
+    document.getElementById('gh-overlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+    if (e.target === document.getElementById('gh-overlay')) closeGhModal();
+}
+
+function showModalStatus(type, msg) {
+    const el = document.getElementById('gh-status');
+    el.className = `gh-status ${type}`;
+    el.textContent = msg;
+}
+
+async function saveGhConfig() {
+    const inputVal = document.getElementById('gh-token-input').value.trim();
+
+    if (!inputVal || inputVal.startsWith('•')) {
+        if (!ghToken()) { showModalStatus('err', 'Informe o token GitHub.'); return; }
+        closeGhModal();
+        await pushToGist();
+        return;
+    }
+
+    showModalStatus('inf', 'Verificando token...');
+
+    try {
+        const res = await fetch('https://api.github.com/gists?per_page=1', {
+            headers: { 'Authorization': `token ${inputVal}` }
+        });
+
+        if (!res.ok) {
+            showModalStatus('err', `Token inválido (${res.status}). Verifique o escopo "gist".`);
+            return;
+        }
+
+        localStorage.setItem('gh_token', inputVal);
+        showModalStatus('ok', 'Token válido! Sincronizando...');
+
+        setTimeout(async () => {
+            closeGhModal();
+            await pushToGist();
+            const gistId = ghGistId();
+            if (gistId) {
+                document.getElementById('gh-gist-link').href = `https://gist.github.com/${gistId}`;
+            }
+        }, 800);
+
+    } catch {
+        showModalStatus('err', 'Erro de rede. Verifique sua conexão.');
+    }
+}
+
+function disconnectGh() {
+    if (!confirm('Desconectar do GitHub? O progresso local será mantido.')) return;
+    localStorage.removeItem('gh_token');
+    localStorage.removeItem('gh_gist_id');
+    setSyncUI('idle', 'Configurar GitHub Sync');
+    closeGhModal();
+}
+
+// ── Helpers de item (suporte a dia da semana) ──
+const DAY_ABBR = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+function getItemText(item) {
+    return typeof item === 'string' ? item : item.text;
+}
+
+function isItemActiveToday(item) {
+    if (typeof item === 'string' || !item.days) return true;
+    return item.days.includes(new Date().getDay());
+}
+
+function itemDayTag(item) {
+    if (typeof item === 'string' || !item.days) return '';
+    const label = item.days.map(d => DAY_ABBR[d]).join('/');
+    const cls   = isItemActiveToday(item) ? 'day-tag-on' : 'day-tag-off';
+    return `<span class="day-tag ${cls}">${label}</span>`;
+}
+
+// ── Pontuação ──
+const POINTS_PER_SECTOR = 10;
+const ADMIN = 'Marcelo';
+
+let adminSession = false;
+
+function isAdmin() { return adminSession; }
+
+// ── Histórico ──
+function scanHistoryData() {
+    const preserved = new Set(['mb_scores', 'mb_completions', 'mb_score_log', 'mb_admin_pw']);
+    const entries = {}; // { "dd/mm/yyyy": { userName: { sectorId: [{text, time, isoDate}] } } }
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('mb_') || preserved.has(k) || k.startsWith('mb_score')) continue;
+
+        // Key: mb_USER_dd/mm/yyyy_sector1,sector2
+        const body = k.slice(3);
+        const f = body.indexOf('_');
+        const s = body.indexOf('_', f + 1);
+        if (f === -1 || s === -1) continue;
+
+        const user    = body.slice(0, f);
+        const date    = body.slice(f + 1, s);
+        const sectors = body.slice(s + 1).split(',').filter(id => CHECKLISTS[id]);
+
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date) || !sectors.length) continue;
+
+        const stateData = JSON.parse(localStorage.getItem(k) || '{}');
+
+        if (!entries[date]) entries[date] = {};
+        if (!entries[date][user]) entries[date][user] = {};
+
+        sectors.forEach(sectorId => {
+            if (!entries[date][user][sectorId]) entries[date][user][sectorId] = [];
+            const list = CHECKLISTS[sectorId];
+            list.sections.forEach((sec, si) => {
+                sec.items.forEach((text, ii) => {
+                    const val = stateData[`${sectorId}_${si}_${ii}`];
+                    if (!val || val === true) return;
+                    entries[date][user][sectorId].push({
+                        text,
+                        isoDate: val,
+                        time: new Date(val).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                    });
+                });
+            });
+
+            // Keep items sorted by time
+            entries[date][user][sectorId].sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+
+            // Remove empty sectors
+            if (!entries[date][user][sectorId].length) delete entries[date][user][sectorId];
+        });
+
+        if (!Object.keys(entries[date][user]).length) delete entries[date][user];
+        if (!Object.keys(entries[date]).length)       delete entries[date];
+    }
+
+    return entries;
+}
+
+function sortDatesDesc(dates) {
+    return dates.sort((a, b) => {
+        const [da, ma, ya] = a.split('/');
+        const [db, mb, yb] = b.split('/');
+        return new Date(yb, mb - 1, db) - new Date(ya, ma - 1, da);
+    });
+}
+
+let histData  = {};
+let histDates = [];
+
+function openHistorico() {
+    histData  = scanHistoryData();
+    histDates = sortDatesDesc(Object.keys(histData));
+
+    const pills = document.getElementById('hist-date-pills');
+    if (!histDates.length) {
+        pills.innerHTML = '';
+        document.getElementById('hist-body').innerHTML =
+            '<div class="hist-empty">Nenhum registro encontrado.</div>';
+    } else {
+        pills.innerHTML = histDates.map((d, i) =>
+            `<button class="date-pill ${i === 0 ? 'active' : ''}" id="pill-${d.replace(/\//g,'')}" onclick="selectHistDate('${d}')">${d.slice(0,5)}</button>`
+        ).join('');
+        renderHistDate(histDates[0]);
+    }
+
+    document.getElementById('hist-overlay').classList.add('open');
+}
+
+function selectHistDate(date) {
+    document.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active'));
+    const pill = document.getElementById(`pill-${date.replace(/\//g,'')}`);
+    if (pill) pill.classList.add('active');
+    renderHistDate(date);
+}
+
+function renderHistDate(date) {
+    const users = histData[date] || {};
+    const userNames = Object.keys(users).sort();
+
+    if (!userNames.length) {
+        document.getElementById('hist-body').innerHTML =
+            '<div class="hist-empty">Nenhuma atividade nesta data.</div>';
+        return;
+    }
+
+    const html = userNames.map(user => {
+        const sectors = users[user];
+        const sectorsHtml = Object.keys(sectors).map(sectorId => {
+            const items = sectors[sectorId];
+            const list  = CHECKLISTS[sectorId];
+            const itemsHtml = items.map(it =>
+                `<div class="hist-item">
+                    <span class="hist-item-text">✅ ${it.text}</span>
+                    <span class="hist-item-time">${it.time}</span>
+                </div>`
+            ).join('');
+            const done  = items.length;
+            const total = list.sections.reduce((n, s) => n + s.items.length, 0);
+            return `<div class="hist-sector-label">${list.label} <span style="font-weight:400;color:#bbb">${done}/${total}</span></div>${itemsHtml}`;
+        }).join('');
+
+        return `<div class="hist-employee">
+            <div class="hist-employee-name">👤 ${user}</div>
+            ${sectorsHtml}
+        </div>`;
+    }).join('');
+
+    document.getElementById('hist-body').innerHTML = html;
+}
+
+function closeHistorico() {
+    document.getElementById('hist-overlay').classList.remove('open');
+}
+
+function histOverlayClick(e) {
+    if (e.target === document.getElementById('hist-overlay')) closeHistorico();
+}
+
+// ── Admin Auth ──
+async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function getAdminHash() { return localStorage.getItem('mb_admin_pw') || ''; }
+
+function showAuthError(msg) {
+    const el = document.getElementById('auth-error');
+    el.textContent = msg;
+}
+
+async function submitAdminAuth() {
+    showAuthError('');
+    const hasPin = !!getAdminHash();
+
+    if (!hasPin) {
+        const pw1 = document.getElementById('auth-new-pw').value;
+        const pw2 = document.getElementById('auth-confirm-pw').value;
+        if (!pw1) { showAuthError('Defina uma senha.'); return; }
+        if (pw1.length < 4) { showAuthError('Mínimo 4 caracteres.'); return; }
+        if (pw1 !== pw2) { showAuthError('Senhas não coincidem.'); return; }
+        localStorage.setItem('mb_admin_pw', await sha256(pw1));
+    } else {
+        const pw = document.getElementById('auth-pw').value;
+        if (!pw) { showAuthError('Digite a senha.'); return; }
+        if (await sha256(pw) !== getAdminHash()) {
+            showAuthError('Senha incorreta.');
+            document.getElementById('auth-pw').value = '';
+            return;
+        }
+    }
+
+    adminSession = true;
+    document.getElementById('screen-admin-auth').style.display = 'none';
+    await enterApp();
+}
+
+function cancelAdminAuth() {
+    currentUser = '';
+    document.getElementById('screen-admin-auth').style.display = 'none';
+    document.getElementById('screen-nome').style.display = 'flex';
+}
+
+function logoutAdmin() {
+    adminSession = false;
+    document.getElementById('nome-admin-badge').style.display = 'none';
+    document.getElementById('nome-sub').textContent = 'Selecione seu nome';
+}
+
+async function enterApp() {
+    if (ghToken() && ghGistId()) {
+        await pullFromGist();
+    } else {
+        setSyncUI('idle', 'Configurar GitHub Sync');
+    }
+    loadState();
+    buildApp();
+    document.getElementById('app').style.display = 'block';
+}
+
+function loadScores() {
+    const s = localStorage.getItem('mb_scores');
+    return s ? JSON.parse(s) : {};
+}
+
+function saveScores(scores) {
+    localStorage.setItem('mb_scores', JSON.stringify(scores));
+    schedulePush();
+}
+
+function getCompletions() {
+    const c = localStorage.getItem('mb_completions');
+    return c ? JSON.parse(c) : [];
+}
+
+function saveCompletions(arr) {
+    localStorage.setItem('mb_completions', JSON.stringify(arr));
+}
+
+function getScoreLog() {
+    const s = localStorage.getItem('mb_score_log');
+    return s ? JSON.parse(s) : [];
+}
+
+function saveScoreLog(log) {
+    localStorage.setItem('mb_score_log', JSON.stringify(log));
+}
+
+function formatLogDate(isoDate) {
+    const d = new Date(isoDate);
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('pt-BR');
+    const dStr = d.toLocaleDateString('pt-BR');
+    const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (dStr === todayStr) return `hoje ${time}`;
+    const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+    if (dStr === yest.toLocaleDateString('pt-BR')) return `ontem ${time}`;
+    return `${dStr.slice(0,5)} ${time}`;
+}
+
+function awardPoints(setorId) {
+    const key = `${currentUser}|${today()}|${setorId}`;
+    const completions = getCompletions();
+    if (completions.includes(key)) return;
+
+    completions.push(key);
+    saveCompletions(completions);
+
+    const scores = loadScores();
+    scores[currentUser] = (scores[currentUser] || 0) + POINTS_PER_SECTOR;
+    saveScores(scores);
+
+    const log = getScoreLog();
+    log.push({ user: currentUser, sectorLabel: CHECKLISTS[setorId].label, isoDate: new Date().toISOString() });
+    saveScoreLog(log);
+
+    showPointsToast(POINTS_PER_SECTOR);
+}
+
+function showPointsToast(pts) {
+    const el = document.createElement('div');
+    el.textContent = `+${pts} pontos! 🎉`;
+    Object.assign(el.style, {
+        position: 'fixed', bottom: '80px', left: '50%',
+        transform: 'translateX(-50%)',
+        background: '#f39c12', color: 'white',
+        padding: '12px 28px', borderRadius: '100px',
+        fontWeight: '800', fontSize: '15px', zIndex: '300',
+        boxShadow: '0 4px 20px rgba(243,156,18,0.4)',
+        animation: 'toastIn 0.3s ease', whiteSpace: 'nowrap',
+        fontFamily: 'inherit',
+    });
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.animation = 'toastOut 0.3s ease forwards'; }, 2000);
+    setTimeout(() => el.remove(), 2400);
+}
+
+function openRanking() {
+    const scores = loadScores();
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    const medals = ['🥇', '🥈', '🥉'];
+
+    const html = sorted.length === 0
+        ? `<div class="rank-empty">Nenhuma pontuação ainda.<br>Complete um setor para pontuar!</div>`
+        : sorted.map(([name, pts], i) => `
+            <div class="rank-item">
+                ${i < 3
+                    ? `<span class="rank-medal">${medals[i]}</span>`
+                    : `<span class="rank-pos">${i + 1}º</span>`}
+                <span class="rank-name">${name}</span>
+                <span class="rank-pts">${pts}<span>pts</span></span>
+            </div>`
+        ).join('');
+
+    const log = getScoreLog();
+    const logHtml = log.length === 0 ? '' : `
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);margin-bottom:10px">Histórico</div>
+            ${log.slice().reverse().slice(0, 30).map(e => `
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5">
+                    <span style="font-size:13px;font-weight:700;min-width:68px">${e.user}</span>
+                    <span style="flex:1;font-size:13px;color:var(--text-muted)">${e.sectorLabel}</span>
+                    <span style="font-size:11px;color:#aaa;white-space:nowrap">${formatLogDate(e.isoDate)}</span>
+                </div>`
+            ).join('')}
+        </div>`;
+
+    const adminHtml = isAdmin() ? `
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);margin-bottom:10px">⚙️ Reiniciar checklist do dia</div>
+            ${NOMES.map(name => `
+                <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f5f5f5">
+                    <span style="flex:1;font-size:14px;font-weight:600">${name}${name === ADMIN ? ' (você)' : ''}</span>
+                    <button onclick="resetUserChecklist('${name}')"
+                            style="padding:6px 14px;background:#fdf0f0;border:1px solid #f5c6c6;border-radius:8px;font-size:12px;color:var(--primary);cursor:pointer;font-weight:600">
+                        Reiniciar
+                    </button>
+                </div>`).join('')}
+        </div>` : '';
+
+    document.getElementById('rank-list').innerHTML = html + logHtml + adminHtml;
+    document.getElementById('rank-reset-btn').style.display = isAdmin() ? 'block' : 'none';
+    document.getElementById('rank-overlay').classList.add('open');
+}
+
+function closeRanking() {
+    document.getElementById('rank-overlay').classList.remove('open');
+}
+
+function rankOverlayClick(e) {
+    if (e.target === document.getElementById('rank-overlay')) closeRanking();
+}
+
+function confirmResetScores() {
+    if (!isAdmin()) return;
+    if (!confirm('Zerar toda a pontuação acumulada?')) return;
+    localStorage.removeItem('mb_scores');
+    localStorage.removeItem('mb_completions');
+    localStorage.removeItem('mb_score_log');
+    schedulePush();
+    openRanking();
+}
+
+function resetUserChecklist(name) {
+    if (!isAdmin()) return;
+    if (!confirm(`Reiniciar checklist de ${name} hoje?`)) return;
+
+    const prefix = `mb_${name}_${today()}`;
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+
+    // Remove today's completions for this user so they can earn points again
+    const comp = getCompletions().filter(c => !c.startsWith(`${name}|${today()}|`));
+    saveCompletions(comp);
+
+    schedulePush();
+    openRanking();
+}
+
+// ── Estado ──
+function today() {
+    return new Date().toLocaleDateString('pt-BR');
+}
+
+function stateKey() {
+    return `mb_${currentUser}_${today()}_${selectedSetores.sort().join(',')}`;
+}
+
+function loadState() {
+    const s = localStorage.getItem(stateKey());
+    state = s ? JSON.parse(s) : {};
+}
+
+function saveState() {
+    localStorage.setItem(stateKey(), JSON.stringify(state));
+    schedulePush();
+}
+
+function getChecked(setorId, si, ii) {
+    return !!state[`${setorId}_${si}_${ii}`];
+}
+
+function getCheckedTime(setorId, si, ii) {
+    const v = state[`${setorId}_${si}_${ii}`];
+    if (!v || v === true) return '';
+    const d = new Date(v);
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function setChecked(setorId, si, ii, val) {
+    state[`${setorId}_${si}_${ii}`] = val ? new Date().toISOString() : false;
+    saveState();
+}
+
+function listProgress(setorId) {
+    const list = CHECKLISTS[setorId];
+    let total = 0, done = 0;
+    list.sections.forEach((s, si) => {
+        s.items.forEach((item, ii) => {
+            if (!isItemActiveToday(item)) return;
+            total++;
+            if (getChecked(setorId, si, ii)) done++;
+        });
+    });
+    return { total, done };
+}
+
+// ── Passo 1: Setores ──
+function buildSetorScreen() {
+    const grid = document.getElementById('setor-grid');
+    grid.innerHTML = SETORES.map(s =>
+        `<button class="sel-btn" id="s-${s.id}" onclick="toggleSetor('${s.id}')">${s.label}</button>`
+    ).join('');
+}
+
+function toggleSetor(id) {
+    const btn = document.getElementById(`s-${id}`);
+    if (selectedSetores.includes(id)) {
+        selectedSetores = selectedSetores.filter(x => x !== id);
+        btn.classList.remove('selected');
+    } else {
+        selectedSetores.push(id);
+        btn.classList.add('selected');
+    }
+    document.getElementById('btn-next-setor').disabled = selectedSetores.length === 0;
+}
+
+function goToName() {
+    document.getElementById('screen-setor').style.display = 'none';
+    document.getElementById('screen-nome').style.display = 'flex';
+    const badge = document.getElementById('nome-admin-badge');
+    badge.style.display = adminSession ? 'flex' : 'none';
+    document.getElementById('nome-sub').textContent = adminSession
+        ? 'Selecione o funcionário a gerenciar'
+        : 'Selecione seu nome';
+}
+
+function voltarParaSetor() {
+    document.getElementById('screen-nome').style.display = 'none';
+    document.getElementById('screen-setor').style.display = 'flex';
+}
+
+// ── Passo 2: Nome ──
+function buildNomeScreen() {
+    const grid = document.getElementById('nome-grid');
+    const btns = NOMES.map((n, i) => {
+        const isLast = i === NOMES.length - 1;
+        const span = isLast && NOMES.length % 2 !== 0 ? ' style="grid-column:span 2"' : '';
+        return `<button class="sel-btn"${span} onclick="selectUser('${n}')">${n}</button>`;
+    }).join('');
+    grid.innerHTML = btns;
+}
+
+async function selectUser(name) {
+    currentUser = name;
+
+    if (name === ADMIN) {
+        const hasPw = !!getAdminHash();
+        document.getElementById('auth-error').textContent = '';
+        document.getElementById('auth-set-form').style.display  = hasPw ? 'none'  : 'block';
+        document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
+        document.getElementById('auth-sub').textContent = hasPw
+            ? 'Digite sua senha, Marcelo'
+            : 'Primeiro acesso — defina uma senha';
+        document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
+        if (hasPw) document.getElementById('auth-pw').value = '';
+        else { document.getElementById('auth-new-pw').value = ''; document.getElementById('auth-confirm-pw').value = ''; }
+
+        document.getElementById('screen-nome').style.display = 'none';
+        document.getElementById('screen-admin-auth').style.display = 'flex';
+        setTimeout(() => {
+            const f = hasPw ? document.getElementById('auth-pw') : document.getElementById('auth-new-pw');
+            f.focus();
+        }, 100);
+        return;
+    }
+
+    document.getElementById('screen-nome').style.display = 'none';
+    await enterApp();
+}
+
+// ── App ──
+let clockInterval = null;
+
+function tickClock() {
+    const el = document.getElementById('h-clock');
+    if (el) el.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function buildApp() {
+    const setorLabels = selectedSetores.map(id => CHECKLISTS[id].label).join(', ');
+    document.getElementById('h-name').textContent = currentUser;
+    document.getElementById('h-meta').textContent = `${today()} · ${setorLabels}`;
+    document.getElementById('h-adm-badge').style.display = adminSession ? 'inline-block' : 'none';
+    document.getElementById('hist-btn').style.display    = adminSession ? 'inline-block' : 'none';
+    tickClock();
+    clearInterval(clockInterval);
+    clockInterval = setInterval(tickClock, 10000);
+    renderTabs();
+    renderPanels();
+}
+
+function renderTabs() {
+    document.getElementById('tabs').innerHTML = selectedSetores.map((id, i) => {
+        const { total, done } = listProgress(id);
+        const isDone = done === total;
+        return `<div class="tab ${isDone ? 'done' : ''} ${i === 0 ? 'active' : ''}"
+                     id="tab-${id}" onclick="switchTab('${id}')">
+            ${CHECKLISTS[id].label}
+            <span class="tab-badge">${done}/${total}</span>
+        </div>`;
+    }).join('');
+}
+
+function renderPanels() {
+    document.getElementById('panels').innerHTML = selectedSetores.map((id, i) => {
+        const list = CHECKLISTS[id];
+        const { total, done } = listProgress(id);
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        const isDone = done === total;
+
+        const sectionsHtml = list.sections.map((sec, si) => {
+            const activeItems = sec.items
+                .map((item, ii) => ({ item, ii }))
+                .filter(({ item }) => isItemActiveToday(item));
+
+            if (!activeItems.length) return ''; // hide empty sections (e.g. Pré Produção not yet filled)
+
+            const itemsHtml = activeItems.map(({ item, ii }) => {
+                const checked  = getChecked(id, si, ii);
+                const text     = getItemText(item);
+                const dayTag   = itemDayTag(item);
+                return `<div class="item ${checked ? 'checked' : ''}" id="item-${id}-${si}-${ii}">
+                    <label>
+                        <input type="checkbox" ${checked ? 'checked' : ''}
+                               onchange="toggle('${id}',${si},${ii},this.checked)">
+                        <div class="box">
+                            <svg viewBox="0 0 12 10" fill="none">
+                                <path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2.2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span class="item-text">${text}</span>${dayTag}
+                        ${checked ? `<span class="item-time" style="font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px">${getCheckedTime(id, si, ii)}</span>` : ''}
+                    </label>
+                </div>`;
+            }).join('');
+
+            return `<div class="sec-label">${sec.title}</div>${itemsHtml}`;
+        }).join('');
+
+        return `<div class="panel ${i === 0 ? 'active' : ''}" id="panel-${id}">
+            <div class="panel-header">
+                <div class="panel-title">${list.label}</div>
+                ${isAdmin() ? `<button class="reset-btn" onclick="resetList('${id}')">Reiniciar</button>` : ''}
+            </div>
+            <div class="prog-row" id="prog-txt-${id}">
+                <span>${done} de ${total} concluídos</span><span>${pct}%</span>
+            </div>
+            <div class="prog-wrap">
+                <div class="prog-bar ${isDone ? 'full' : ''}" id="bar-${id}" style="width:${pct}%"></div>
+            </div>
+            ${sectionsHtml}
+            <div class="done-banner ${isDone ? 'show' : ''}" id="done-${id}">
+                <strong>✅ Setor concluído!</strong>
+                <span>Ótimo trabalho, ${currentUser}! 💪</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggle(setorId, si, ii, checked) {
+    setChecked(setorId, si, ii, checked);
+    const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
+    el.classList.toggle('checked', checked);
+
+    // Update time tag
+    const timeEl = el.querySelector('.item-time');
+    if (checked) {
+        const time = getCheckedTime(setorId, si, ii);
+        if (timeEl) {
+            timeEl.textContent = time;
+        } else {
+            const tag = document.createElement('span');
+            tag.className = 'item-time';
+            tag.style.cssText = 'font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px';
+            tag.textContent = time;
+            el.querySelector('label').appendChild(tag);
+        }
+    } else if (timeEl) {
+        timeEl.remove();
+    }
+
+    updateProgress(setorId);
+}
+
+function updateProgress(id) {
+    const { total, done } = listProgress(id);
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    const isDone = done === total;
+
+    document.getElementById(`bar-${id}`).style.width = pct + '%';
+    document.getElementById(`bar-${id}`).className = `prog-bar ${isDone ? 'full' : ''}`;
+    document.getElementById(`prog-txt-${id}`).innerHTML =
+        `<span>${done} de ${total} concluídos</span><span>${pct}%</span>`;
+    document.getElementById(`done-${id}`).className = `done-banner ${isDone ? 'show' : ''}`;
+
+    if (isDone) awardPoints(id);
+
+    const tab = document.getElementById(`tab-${id}`);
+    tab.querySelector('.tab-badge').textContent = `${done}/${total}`;
+    tab.classList.toggle('done', isDone);
+}
+
+function resetList(id) {
+    if (!isAdmin()) return;
+    if (!confirm('Reiniciar este checklist?')) return;
+    const list = CHECKLISTS[id];
+    list.sections.forEach((s, si) => s.items.forEach((_, ii) => setChecked(id, si, ii, false)));
+    const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || id;
+    renderPanels();
+    switchTab(activeId);
+}
+
+function switchTab(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`panel-${id}`)?.classList.add('active');
+    document.getElementById(`tab-${id}`)?.classList.add('active');
+}
+
+function restart() {
+    clearInterval(clockInterval);
+    clockInterval = null;
+    selectedSetores = [];
+    currentUser = '';
+    state = {};
+    document.getElementById('app').style.display = 'none';
+    document.querySelectorAll('.sel-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('btn-next-setor').disabled = true;
+    document.getElementById('screen-setor').style.display = 'flex';
+}
+
+function parsePtDate(str) {
+    const [d, m, y] = str.split('/');
+    return new Date(+y, +m - 1, +d);
+}
+
+function cleanupOldData() {
+    const preserved = new Set(['mb_scores', 'mb_completions', 'mb_score_log', 'mb_admin_pw']);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 30);
+    const toRemove = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || preserved.has(k) || k.startsWith('gh_') || !k.startsWith('mb_')) continue;
+        if (k.startsWith('mb_score')) continue;
+
+        // Extract date from key: mb_USER_dd/mm/yyyy_SECTORS
+        const body = k.slice(3);
+        const f = body.indexOf('_');
+        const s = body.indexOf('_', f + 1);
+        if (f === -1 || s === -1) continue;
+        const dateStr = body.slice(f + 1, s);
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) continue;
+
+        if (parsePtDate(dateStr) < cutoff) toRemove.push(k);
+    }
+
+    toRemove.forEach(k => localStorage.removeItem(k));
+
+    // Keep completions from last 30 days
+    const comp = getCompletions().filter(c => {
+        const dateStr = c.split('|')[1];
+        return dateStr && !/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr) === false
+            && parsePtDate(dateStr) >= cutoff;
+    });
+    localStorage.setItem('mb_completions', JSON.stringify(comp));
+}
+
+buildSetorScreen();
+buildNomeScreen();
+cleanupOldData();
+</script>
+</body>
+</html>
