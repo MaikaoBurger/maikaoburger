@@ -1991,24 +1991,10 @@
             badge.style.display = adminSession ? 'flex' : 'none';
             document.getElementById('nome-sub').textContent = adminSession ? 'Selecione o funcionário a gerenciar' : 'Selecione seu nome';
         }
-            document.getElementById('screen-turno').style.display = 'none';
-            document.getElementById('screen-nome').style.display = 'flex';
-            const badge = document.getElementById('nome-admin-badge');
-            badge.style.display = adminSession ? 'flex' : 'none';
-            document.getElementById('nome-sub').textContent = adminSession
-                ? 'Selecione o funcionário a gerenciar'
-                : 'Selecione seu nome';
-        }
 
         function voltarParaSetor() {
-            document.getElementById('screen-turno').style.display = 'none';
             document.getElementById('screen-nome').style.display = 'none';
             document.getElementById('screen-setor').style.display = 'flex';
-        }
-
-        function voltarParaTurno() {
-            document.getElementById('screen-nome').style.display = 'none';
-            document.getElementById('screen-turno').style.display = 'flex';
         }
 
         // ── Passo 2: Nome ──
