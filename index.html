@@ -1811,6 +1811,13 @@
             } else {
                 setSyncUI('idle', 'Configurar GitHub Sync');
             }
+            // remove ghost entries left by old awardPoints bug (empty-string user)
+            const scores = loadScores();
+            if ('' in scores) { delete scores['']; saveScores(scores); }
+            const log = getScoreLog();
+            const cleanLog = log.filter(e => e.user && e.user.trim() !== '');
+            if (cleanLog.length !== log.length) saveScoreLog(cleanLog);
+
             loadState();
             buildApp();
             document.getElementById('app').style.display = 'block';
