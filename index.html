@@ -535,6 +535,24 @@
             to   { opacity: 0; }
         }
 
+        /* ── Seleção de turno ── */
+        .turno-btn {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: rgba(255,255,255,0.12);
+            border: 2px solid rgba(255,255,255,0.25);
+            border-radius: 18px;
+            padding: 20px 22px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+            width: 100%;
+        }
+
+        .turno-btn:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
+
         /* ── Tag de dia da semana ── */
         .day-tag {
             font-size: 10px;
@@ -781,9 +799,33 @@
     <button class="next-btn" id="btn-next-setor" disabled onclick="goToName()">Continuar →</button>
 </div>
 
-<!-- Passo 2: Nome -->
-<div class="screen" id="screen-nome" style="display:none">
+<!-- Passo 2: Turno -->
+<div class="screen" id="screen-turno" style="display:none">
     <button onclick="voltarParaSetor()" style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.15);border:none;border-radius:10px;padding:8px 14px;color:white;font-size:14px;font-weight:600;cursor:pointer;">← Voltar</button>
+    <div class="screen-logo">🕐</div>
+    <div class="screen-title">Qual é o seu turno?</div>
+    <div class="screen-sub">Selecione o que você vai fazer agora</div>
+    <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:320px;margin-top:24px">
+        <button class="turno-btn" onclick="selectTurno('abertura')">
+            <span style="font-size:32px">🌅</span>
+            <div>
+                <div style="font-size:18px;font-weight:800">Abertura</div>
+                <div style="font-size:13px;opacity:.75;margin-top:2px">Preparar para abrir + Pré Produção</div>
+            </div>
+        </button>
+        <button class="turno-btn" onclick="selectTurno('fechamento')">
+            <span style="font-size:32px">🌙</span>
+            <div>
+                <div style="font-size:18px;font-weight:800">Fechamento</div>
+                <div style="font-size:13px;opacity:.75;margin-top:2px">Encerrar e organizar o setor</div>
+            </div>
+        </button>
+    </div>
+</div>
+
+<!-- Passo 3: Nome -->
+<div class="screen" id="screen-nome" style="display:none">
+    <button onclick="voltarParaTurno()" style="position:absolute;top:20px;left:20px;background:rgba(255,255,255,0.15);border:none;border-radius:10px;padding:8px 14px;color:white;font-size:14px;font-weight:600;cursor:pointer;">← Voltar</button>
     <div id="nome-admin-badge" style="display:none;position:absolute;top:18px;right:16px;display:none;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 12px">
         <span style="font-size:12px;font-weight:700;color:white">🔐 Sessão ADM</span>
         <button onclick="logoutAdmin()" style="background:rgba(255,255,255,0.2);border:none;border-radius:10px;padding:3px 9px;color:white;font-size:11px;font-weight:700;cursor:pointer">Sair</button>
@@ -1057,6 +1099,7 @@ const CHECKLISTS = {
 
 let selectedSetores = [];
 let currentUser = '';
+let currentTurno = ''; // 'abertura' | 'fechamento'
 let state = {};
 
 // ── GitHub Gist Sync ──
@@ -1698,10 +1741,18 @@ function setChecked(setorId, si, ii, val) {
     saveState();
 }
 
+function isSectionVisible(secTitle) {
+    const t = secTitle.toLowerCase();
+    if (currentTurno === 'abertura')  return t === 'abertura'  || t === 'pré produção';
+    if (currentTurno === 'fechamento') return t === 'fechamento';
+    return true;
+}
+
 function listProgress(setorId) {
     const list = CHECKLISTS[setorId];
     let total = 0, done = 0;
     list.sections.forEach((s, si) => {
+        if (!isSectionVisible(s.title)) return;
         s.items.forEach((item, ii) => {
             if (!isItemActiveToday(item)) return;
             total++;
@@ -1733,6 +1784,12 @@ function toggleSetor(id) {
 
 function goToName() {
     document.getElementById('screen-setor').style.display = 'none';
+    document.getElementById('screen-turno').style.display = 'flex';
+}
+
+function selectTurno(turno) {
+    currentTurno = turno;
+    document.getElementById('screen-turno').style.display = 'none';
     document.getElementById('screen-nome').style.display = 'flex';
     const badge = document.getElementById('nome-admin-badge');
     badge.style.display = adminSession ? 'flex' : 'none';
@@ -1742,8 +1799,14 @@ function goToName() {
 }
 
 function voltarParaSetor() {
+    document.getElementById('screen-turno').style.display = 'none';
     document.getElementById('screen-nome').style.display = 'none';
     document.getElementById('screen-setor').style.display = 'flex';
+}
+
+function voltarParaTurno() {
+    document.getElementById('screen-nome').style.display = 'none';
+    document.getElementById('screen-turno').style.display = 'flex';
 }
 
 // ── Passo 2: Nome ──
@@ -1796,7 +1859,8 @@ function tickClock() {
 function buildApp() {
     const setorLabels = selectedSetores.map(id => CHECKLISTS[id].label).join(', ');
     document.getElementById('h-name').textContent = currentUser;
-    document.getElementById('h-meta').textContent = `${today()} · ${setorLabels}`;
+    const turnoLabel = currentTurno === 'abertura' ? '🌅 Abertura' : '🌙 Fechamento';
+    document.getElementById('h-meta').textContent = `${today()} · ${turnoLabel} · ${setorLabels}`;
     document.getElementById('h-adm-badge').style.display = adminSession ? 'inline-block' : 'none';
     document.getElementById('hist-btn').style.display    = adminSession ? 'inline-block' : 'none';
     tickClock();
@@ -1826,6 +1890,8 @@ function renderPanels() {
         const isDone = done === total;
 
         const sectionsHtml = list.sections.map((sec, si) => {
+            if (!isSectionVisible(sec.title)) return '';
+
             const activeItems = sec.items
                 .map((item, ii) => ({ item, ii }))
                 .filter(({ item }) => isItemActiveToday(item));
@@ -1940,6 +2006,7 @@ function restart() {
     clockInterval = null;
     selectedSetores = [];
     currentUser = '';
+    currentTurno = '';
     state = {};
     document.getElementById('app').style.display = 'none';
     document.querySelectorAll('.sel-btn').forEach(b => b.classList.remove('selected'));
