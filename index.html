@@ -2296,6 +2296,7 @@
             const list = CHECKLISTS[setorId];
             const item = list.sections[si].items[ii];
             const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+            const itemText = typeof item === 'object' ? item.text : item;
 
             setChecked(setorId, si, ii, { user: name, date: new Date().toISOString() });
 
@@ -2319,7 +2320,7 @@
                 label.appendChild(tag);
             }
 
-            addItemScore(name, pts);
+            addItemScore(name, pts, itemText);
             showPtsToast(name, pts);
             updateProgress(setorId);
         }
@@ -2383,10 +2384,14 @@
             document.getElementById('edit-item-overlay').classList.remove('open');
         }
 
-        function addItemScore(user, pts) {
+        function addItemScore(user, pts, itemLabel) {
             const scores = loadScores();
             scores[user] = (scores[user] || 0) + pts;
             saveScores(scores);
+
+            const log = getScoreLog();
+            log.push({ user, sectorLabel: itemLabel || '', isoDate: new Date().toISOString(), pts });
+            saveScoreLog(log);
         }
 
         let toastTimer = null;
