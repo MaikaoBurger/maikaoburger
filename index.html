@@ -110,6 +110,81 @@
             border-color: white;
         }
 
+        /* ── Tela de seleção de checklist ── */
+        #setor-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .setor-section { width: 100%; }
+
+        .setor-section-header {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            margin-bottom: 10px;
+            padding-left: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .setor-section-header.abertura { color: #FBBF24; }
+        .setor-section-header.fechamento { color: #93C5FD; }
+
+        .setor-btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .sel-btn-abertura {
+            background: linear-gradient(135deg, #F97316 0%, #FBBF24 100%);
+            border: none;
+            border-radius: 16px;
+            padding: 22px 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+            line-height: 1.35;
+            letter-spacing: 0.1px;
+            box-shadow: 0 5px 16px rgba(249,115,22,0.45);
+            transition: transform 0.15s, box-shadow 0.15s;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.18);
+        }
+
+        .sel-btn-abertura:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(249,115,22,0.55);
+        }
+
+        .sel-btn-fechamento {
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            border: none;
+            border-radius: 16px;
+            padding: 22px 10px;
+            color: rgba(255,255,255,0.92);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            line-height: 1.35;
+            letter-spacing: 0.4px;
+            box-shadow: 0 5px 16px rgba(37,99,235,0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .sel-btn-fechamento:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37,99,235,0.55);
+        }
+
         /* Botão de avançar */
         .next-btn {
             margin-top: 20px;
@@ -1048,7 +1123,7 @@
              style="width:190px;height:190px;object-fit:cover;border-radius:50%;margin-bottom:12px;box-shadow:0 4px 24px rgba(0,0,0,0.3)">
         <div class="screen-sub">Checklist do turno</div>
         <div class="screen-label">O que você vai fazer hoje?</div>
-        <div class="sel-grid" id="setor-grid"></div>
+        <div id="setor-grid"></div>
     </div>
 
     <!-- Toast de pontos -->
@@ -2050,9 +2125,22 @@
 
         function buildSetorScreen() {
             const grid = document.getElementById('setor-grid');
-            grid.innerHTML = SETORES.map(s =>
-                `<button class="sel-btn" onclick="selectChecklist('${s.id}')">${s.label.replace('\n', '<br>')}</button>`
+            const abertura = SETORES.filter(s => s.id.startsWith('abertura'));
+            const fechamento = SETORES.filter(s => s.id.startsWith('fechamento'));
+            const shortLabel = s => s.label.replace('Abertura\n', '').replace('Fechamento\n', '');
+            const renderBtns = (list, cls) => list.map(s =>
+                `<button class="${cls}" onclick="selectChecklist('${s.id}')">${shortLabel(s)}</button>`
             ).join('');
+            grid.innerHTML = `
+                <div class="setor-section">
+                    <div class="setor-section-header abertura">☀️ Abertura</div>
+                    <div class="setor-btn-row">${renderBtns(abertura, 'sel-btn-abertura')}</div>
+                </div>
+                <div class="setor-section">
+                    <div class="setor-section-header fechamento">🌙 Fechamento</div>
+                    <div class="setor-btn-row">${renderBtns(fechamento, 'sel-btn-fechamento')}</div>
+                </div>
+            `;
 
             const quemGrid = document.getElementById('quem-fez-grid');
             quemGrid.innerHTML = NOMES.map(n =>
