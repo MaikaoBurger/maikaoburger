@@ -1421,7 +1421,10 @@
                         localStorage.setItem(localK, JSON.stringify(v));
                     });
                 }
-                if (data.scores !== undefined) localStorage.setItem('mb_scores', JSON.stringify(data.scores || {}));
+                if (data.scores !== undefined) {
+                    const s = (data.scores && data.scores._reset) ? {} : (data.scores || {});
+                    localStorage.setItem('mb_scores', JSON.stringify(s));
+                }
                 if (data.score_log !== undefined) localStorage.setItem('mb_score_log', data.score_log || '[]');
                 if (data.completions !== undefined) localStorage.setItem('mb_completions', data.completions || '[]');
                 if (data.scores_reset_at !== undefined) localStorage.setItem('mb_scores_reset_at', data.scores_reset_at || '');
@@ -1761,7 +1764,9 @@
 
         function loadScores() {
             const s = localStorage.getItem('mb_scores');
-            return s ? JSON.parse(s) : {};
+            if (!s) return {};
+            const parsed = JSON.parse(s);
+            return parsed._reset ? {} : parsed;
         }
 
         function saveScores(scores) {
@@ -1923,7 +1928,7 @@
             localStorage.setItem('mb_scores', JSON.stringify({}));
             localStorage.setItem('mb_completions', JSON.stringify([]));
             localStorage.setItem('mb_score_log', JSON.stringify([]));
-            await db.ref().update({ scores: {}, completions: '[]', score_log: '[]' });
+            await db.ref().update({ scores: { _reset: true }, completions: '[]', score_log: '[]' });
             openRanking();
         }
 
