@@ -1435,6 +1435,9 @@
                     renderPanels();
                     if (activeId) switchTab(activeId);
                 }
+                if (document.getElementById('rank-overlay')?.classList.contains('open')) {
+                    openRanking();
+                }
                 setSyncUI('online');
             });
             db.ref('.info/connected').on('value', snap => {
