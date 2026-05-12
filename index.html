@@ -1446,7 +1446,7 @@
             if (gistId) {
                 try {
                     const r = await fetch(`https://api.github.com/gists/${gistId}`, {
-                        headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' },
+                        headers: { 'Authorization': `token ${token}` },
                         cache: 'no-store'
                     });
                     if (r.ok) {
@@ -1520,7 +1520,7 @@
                 const ctrl = new AbortController();
                 const tid = setTimeout(() => ctrl.abort(), 8000);
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-                    headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' },
+                    headers: { 'Authorization': `token ${token}` },
                     cache: 'no-store',
                     signal: ctrl.signal
                 });
