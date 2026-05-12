@@ -2471,6 +2471,20 @@
                 label.appendChild(tag);
             }
             updateProgress(setorId);
+
+            if (ghToken() && ghGistId()) {
+                clearTimeout(syncTimeout);
+                await pushToGist();
+                setTimeout(async () => {
+                    await pullFromGist();
+                    loadState();
+                    const vm = getCheckedMeta(setorId, si, ii);
+                    if (vm && vm.user !== name) {
+                        alert(`⚠️ Conflito! "${vm.user}" também iniciou este item ao mesmo tempo.\nConfira com a equipe quem vai ficar com a tarefa.`);
+                        buildApp();
+                    }
+                }, 2000);
+            }
         }
 
         function cancelQuemFez() {
@@ -2530,6 +2544,20 @@
             addItemScore(name, pts, itemText);
             showPtsToast(name, pts);
             updateProgress(setorId);
+
+            if (ghToken() && ghGistId()) {
+                clearTimeout(syncTimeout);
+                await pushToGist();
+                setTimeout(async () => {
+                    await pullFromGist();
+                    loadState();
+                    const vm = getCheckedMeta(setorId, si, ii);
+                    if (vm && vm.user !== name) {
+                        alert(`⚠️ Conflito! "${vm.user}" também concluiu este item ao mesmo tempo.\nConfira com a equipe quem vai receber os pontos.`);
+                        buildApp();
+                    }
+                }, 2000);
+            }
         }
 
         function cancelConclude() {
