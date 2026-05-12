@@ -1665,7 +1665,7 @@
             showModalStatus('inf', 'Verificando token...');
 
             try {
-                const res = await fetch('https://api.github.com/gists?per_page=1', {
+                const res = await fetch('https://api.github.com/gists?per_page=100', {
                     headers: { 'Authorization': `token ${inputVal}` }
                 });
 
@@ -1675,7 +1675,15 @@
                 }
 
                 localStorage.setItem('gh_token', inputVal);
-                showModalStatus('ok', 'Token válido! Sincronizando...');
+
+                const gists = await res.json();
+                const existing = gists.find(g => g.description === 'Maikão Burger — Checklist' && g.files && g.files[GIST_FILENAME]);
+                if (existing) {
+                    localStorage.setItem('gh_gist_id', existing.id);
+                    showModalStatus('ok', 'Gist encontrado! Sincronizando...');
+                } else {
+                    showModalStatus('ok', 'Token válido! Sincronizando...');
+                }
 
                 setTimeout(async () => {
                     closeGhModal();
