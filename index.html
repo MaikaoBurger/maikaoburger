@@ -1541,14 +1541,20 @@
             try {
                 const ctrl = new AbortController();
                 const tid = setTimeout(() => ctrl.abort(), 8000);
-                const res = await fetch(`https://api.github.com/gists/${gistId}?t=${Date.now()}`, {
-                    headers: { 'Authorization': `token ${token}` },
-                    signal: ctrl.signal
-                });
+                const ghUser = localStorage.getItem('gh_user') || '';
+                const useRaw = !!ghUser;
+                const url = useRaw
+                    ? `https://gist.githubusercontent.com/${ghUser}/${gistId}/raw/${GIST_FILENAME}?t=${Date.now()}`
+                    : `https://api.github.com/gists/${gistId}?t=${Date.now()}`;
+                const fetchOpts = useRaw
+                    ? { signal: ctrl.signal }
+                    : { headers: { 'Authorization': `token ${token}` }, signal: ctrl.signal };
+                const res = await fetch(url, fetchOpts);
                 clearTimeout(tid);
                 if (res.ok) {
-                    const json = await res.json();
-                    const content = json.files[GIST_FILENAME]?.content;
+                    const content = useRaw
+                        ? await res.text()
+                        : (await res.json()).files[GIST_FILENAME]?.content;
                     if (content) {
                         const data = JSON.parse(content);
                         const localKey = stateKey();
@@ -1716,9 +1722,11 @@
                     showModalStatus('ok', 'Gist configurado! Sincronizando...');
                 } else {
                     const gists = await res.json();
+                    if (gists[0]?.owner?.login) localStorage.setItem('gh_user', gists[0].owner.login);
                     const existing = gists.find(g => g.description === 'Maikão Burger — Checklist' && g.files && g.files[GIST_FILENAME]);
                     if (existing) {
                         localStorage.setItem('gh_gist_id', existing.id);
+                        localStorage.setItem('gh_user', existing.owner.login);
                         showModalStatus('ok', 'Gist encontrado! Sincronizando...');
                     } else {
                         showModalStatus('ok', 'Token válido! Sincronizando...');
