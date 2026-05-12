@@ -1532,8 +1532,11 @@
                     const content = json.files[GIST_FILENAME]?.content;
                     if (content) {
                         const data = JSON.parse(content);
+                        const localKey = stateKey();
                         Object.keys(data).forEach(k => {
-                            if (k.startsWith('mb_')) localStorage.setItem(k, data[k]);
+                            if (!k.startsWith('mb_')) return;
+                            if (syncTimeout !== null && k === localKey) return;
+                            localStorage.setItem(k, data[k]);
                         });
                     }
                     const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
