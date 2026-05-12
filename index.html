@@ -1573,7 +1573,7 @@
                         let timeEl = el.querySelector('.item-time');
                         el.classList.remove('iniciado', 'checked');
                         const label = el.querySelector('label');
-                        const ptsBadge = label ? label.querySelector('span:not(.item-time):not(.day-tag)') : null;
+                        const ptsBadge = label ? label.querySelector('span:not(.item-time):not(.day-tag):not(.item-text)') : null;
                         if (status === 'iniciado') {
                             el.classList.add('iniciado');
                             if (cb) cb.checked = true;
