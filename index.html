@@ -2078,6 +2078,12 @@
             return state[`${setorId}_${si}_${ii}`] || null;
         }
 
+
+        function getItemStatus(setorId, si, ii) {
+            const v = state[`${setorId}_${si}_${ii}`];
+            if (!v) return null;
+            return v.status || 'concluido';
+        }
         function getCheckedTime(setorId, si, ii) {
             const v = state[`${setorId}_${si}_${ii}`];
             if (!v) return '';
