@@ -1577,7 +1577,7 @@
         function schedulePush() {
             if (!ghToken()) return;
             clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(pushToGist, 1500);
+            syncTimeout = setTimeout(() => { syncTimeout = null; pushToGist(); }, 1500);
         }
 
         function syncRefresh() {
@@ -2610,6 +2610,7 @@
 
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
+                syncTimeout = null;
                 await pushToGist();
             }
         }
@@ -2674,6 +2675,7 @@
 
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
+                syncTimeout = null;
                 await pushToGist();
             }
         }
