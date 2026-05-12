@@ -1617,7 +1617,10 @@
             autoSyncInterval = setInterval(async () => {
                 await pullFromGist();
                 loadState();
-                syncRefresh();
+                const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || selectedSetores[0];
+                renderTabs();
+                renderPanels();
+                if (activeId) switchTab(activeId);
             }, 10000);
         }
 
