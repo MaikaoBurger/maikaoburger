@@ -1224,6 +1224,10 @@
                 Escopo necessário: <strong>gist</strong>
             </p>
 
+            <label class="gh-field-label">ID do Gist <span style="font-weight:400;opacity:.6">(opcional — cole o mesmo nos outros dispositivos)</span></label>
+            <input class="gh-input" id="gh-gist-id-input" type="text" placeholder="Cole aqui o ID do Gist para sincronizar dispositivos"
+                autocomplete="off" style="font-size:12px">
+
             <div class="gh-status" id="gh-status"></div>
 
             <div class="gh-btn-row">
@@ -1620,6 +1624,7 @@
             const gistId = ghGistId();
 
             document.getElementById('gh-token-input').value = token ? '••••••••••••••••' : '';
+            document.getElementById('gh-gist-id-input').value = gistId || '';
             document.getElementById('gh-status').className = 'gh-status';
             document.getElementById('gh-status').textContent = '';
 
@@ -1676,13 +1681,19 @@
 
                 localStorage.setItem('gh_token', inputVal);
 
-                const gists = await res.json();
-                const existing = gists.find(g => g.description === 'Maikão Burger — Checklist' && g.files && g.files[GIST_FILENAME]);
-                if (existing) {
-                    localStorage.setItem('gh_gist_id', existing.id);
-                    showModalStatus('ok', 'Gist encontrado! Sincronizando...');
+                const manualId = document.getElementById('gh-gist-id-input').value.trim();
+                if (manualId) {
+                    localStorage.setItem('gh_gist_id', manualId);
+                    showModalStatus('ok', 'Gist configurado! Sincronizando...');
                 } else {
-                    showModalStatus('ok', 'Token válido! Sincronizando...');
+                    const gists = await res.json();
+                    const existing = gists.find(g => g.description === 'Maikão Burger — Checklist' && g.files && g.files[GIST_FILENAME]);
+                    if (existing) {
+                        localStorage.setItem('gh_gist_id', existing.id);
+                        showModalStatus('ok', 'Gist encontrado! Sincronizando...');
+                    } else {
+                        showModalStatus('ok', 'Token válido! Sincronizando...');
+                    }
                 }
 
                 setTimeout(async () => {
