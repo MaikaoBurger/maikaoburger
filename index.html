@@ -2175,17 +2175,21 @@
             if (e.target === document.getElementById('rank-overlay')) closeRanking();
         }
 
-        function confirmResetScores() {
+        async function confirmResetScores() {
             if (!isAdmin()) return;
             if (!confirm('Zerar toda a pontuação acumulada?')) return;
             localStorage.removeItem('mb_scores');
             localStorage.removeItem('mb_completions');
             localStorage.removeItem('mb_score_log');
-            schedulePush();
+            if (ghToken() && ghGistId()) {
+                clearTimeout(syncTimeout);
+                syncTimeout = null;
+                await pushToGist();
+            }
             openRanking();
         }
 
-        function resetUserChecklist(name) {
+        async function resetUserChecklist(name) {
             if (!isAdmin()) return;
             if (!confirm(`Reiniciar checklist de ${name} hoje?`)) return;
 
@@ -2200,7 +2204,11 @@
             const comp = getCompletions().filter(c => !c.startsWith(`${name}|${today()}|`));
             saveCompletions(comp);
 
-            schedulePush();
+            if (ghToken() && ghGistId()) {
+                clearTimeout(syncTimeout);
+                syncTimeout = null;
+                await pushToGist();
+            }
             openRanking();
         }
         function resetUserScore(name) {
@@ -2904,7 +2912,7 @@
             document.getElementById('complete-overlay').classList.remove('open');
         }
 
-        function resetList(id) {
+        async function resetList(id) {
             if (!isAdmin()) return;
             if (!confirm('Reiniciar este checklist?')) return;
             const list = CHECKLISTS[id];
@@ -2912,6 +2920,11 @@
             const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || id;
             renderPanels();
             switchTab(activeId);
+            if (ghToken() && ghGistId()) {
+                clearTimeout(syncTimeout);
+                syncTimeout = null;
+                await pushToGist();
+            }
         }
 
         function switchTab(id) {
