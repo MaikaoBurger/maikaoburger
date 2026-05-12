@@ -2050,6 +2050,7 @@
 
             schedulePush();
             openRanking();
+        }
         function resetUserScore(name) {
             if (!isAdmin()) return;
             if (!confirm('Zerar pontuação de ' + name + '?')) return;
@@ -2059,7 +2060,6 @@
             const log = getScoreLog().filter(e => e.user !== name);
             saveScoreLog(log);
             openRanking();
-        }
         }
 
         // ── Estado ──
