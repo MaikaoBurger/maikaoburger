@@ -1932,7 +1932,9 @@
             // Increment score_generation so all score writes from the current (old) gen
             // are ignored even if they arrive late from offline devices.
             const newGen = scoreGen + 1;
-            await db.ref().update({ score_generation: newGen, completions: '[]', score_log: '[]' });
+            // scores: null deletes the legacy 'scores' node so backward-compat code
+            // never reads stale data from the old Gist-era structure again.
+            await db.ref().update({ score_generation: newGen, completions: '[]', score_log: '[]', scores: null });
             openRanking();
         }
 
