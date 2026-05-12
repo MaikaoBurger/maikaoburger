@@ -1489,11 +1489,19 @@
             });
 
             if (remote.mb_scores && payload.mb_scores && !forceOverwriteKeys.has('mb_scores')) {
-                const rs = JSON.parse(remote.mb_scores);
-                const ls = JSON.parse(payload.mb_scores);
-                const merged = { ...rs };
-                Object.keys(ls).forEach(k => { merged[k] = Math.max(merged[k] || 0, ls[k]); });
-                payload.mb_scores = JSON.stringify(merged);
+                const remResetAt = remote.mb_scores_reset_at || '';
+                const locResetAt = payload.mb_scores_reset_at || localStorage.getItem('mb_scores_reset_at') || '';
+                if (remResetAt && remResetAt > locResetAt) {
+                    payload.mb_scores = remote.mb_scores;
+                    payload.mb_completions = remote.mb_completions || payload.mb_completions;
+                    payload.mb_score_log = remote.mb_score_log || payload.mb_score_log;
+                } else {
+                    const rs = JSON.parse(remote.mb_scores);
+                    const ls = JSON.parse(payload.mb_scores);
+                    const merged = { ...rs };
+                    Object.keys(ls).forEach(k => { merged[k] = Math.max(merged[k] || 0, ls[k]); });
+                    payload.mb_scores = JSON.stringify(merged);
+                }
             }
             if (remote.mb_completions && payload.mb_completions && !forceOverwriteKeys.has('mb_completions')) {
                 const rc = JSON.parse(remote.mb_completions);
@@ -2190,13 +2198,15 @@
         async function confirmResetScores() {
             if (!isAdmin()) return;
             if (!confirm('Zerar toda a pontuação acumulada?')) return;
+            const now = new Date().toISOString();
             localStorage.setItem('mb_scores', JSON.stringify({}));
             localStorage.setItem('mb_completions', JSON.stringify([]));
             localStorage.setItem('mb_score_log', JSON.stringify([]));
+            localStorage.setItem('mb_scores_reset_at', now);
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
                 syncTimeout = null;
-                await pushToGist(new Set(['mb_scores', 'mb_completions', 'mb_score_log']));
+                await pushToGist(new Set(['mb_scores', 'mb_completions', 'mb_score_log', 'mb_scores_reset_at']));
             }
             openRanking();
         }
