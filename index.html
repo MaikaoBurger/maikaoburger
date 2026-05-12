@@ -2106,7 +2106,7 @@
             const emoji = id => id.includes('cozinha') ? '👨‍🍳' : '🛎️';
             const shortLabel = s => s.label.replace('Abertura\n', '').replace('Fechamento\n', '');
             const renderBtns = (list, cls) => list.map(s =>
-                `<button class="${cls}" onclick="selectChecklist('${s.id}')"><div style="font-size:36px;margin-bottom:6px">${emoji(s.id)}</div>${shortLabel(s)}</button>`
+                `<button class="${cls}" onclick="selectChecklist('${s.id}')">${shortLabel(s)}</button>`
             ).join('');
             grid.innerHTML = `
                 <div class="setor-section">
