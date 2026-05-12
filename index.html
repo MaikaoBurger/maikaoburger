@@ -1412,6 +1412,7 @@
         // ── GitHub Gist Sync ──
         const GIST_FILENAME = 'maikao-burger-checklist.json';
         let syncTimeout = null;
+        let autoSyncInterval = null;
 
         function ghToken() { return localStorage.getItem('gh_token') || ''; }
         function ghGistId() { return localStorage.getItem('gh_gist_id') || ''; }
@@ -1536,6 +1537,20 @@
             if (!ghToken()) return;
             clearTimeout(syncTimeout);
             syncTimeout = setTimeout(pushToGist, 1500);
+        }
+
+        function startAutoSync() {
+            stopAutoSync();
+            if (!ghToken() || !ghGistId()) return;
+            autoSyncInterval = setInterval(async () => {
+                await pullFromGist();
+                loadState();
+                buildApp();
+            }, 30000);
+        }
+
+        function stopAutoSync() {
+            if (autoSyncInterval) { clearInterval(autoSyncInterval); autoSyncInterval = null; }
         }
 
         // ── Modal GitHub ──
@@ -1887,6 +1902,7 @@
             loadState();
             buildApp();
             document.getElementById('app').style.display = 'block';
+            startAutoSync();
         }
 
         function loadScores() {
@@ -2169,12 +2185,16 @@
 
         function buildDiaScreen() {
             const grid = document.getElementById('dia-grid');
-            const hoje = new Date().getDay();
+            const now = new Date();
+            const hoje = now.getDay();
             grid.innerHTML = DIAS.map(({ day, label }) => {
                 const isHoje = day === hoje;
+                const d = new Date(now);
+                d.setDate(now.getDate() + (day - hoje));
+                const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                 return `<button onclick="selectDia(${day})"
                     style="padding:16px 10px;border-radius:14px;border:2px solid rgba(255,255,255,${isHoje ? '1' : '0.3'});background:rgba(255,255,255,${isHoje ? '1' : '0.12'});color:${isHoje ? 'var(--primary)' : 'white'};font-size:15px;font-weight:${isHoje ? '900' : '600'};cursor:pointer">
-                    ${label}${isHoje ? '<br><span style="font-size:10px;opacity:.7">hoje</span>' : ''}
+                    ${label}<br><span style="font-size:12px;opacity:.8;font-weight:500">${dateStr}</span>${isHoje ? '<br><span style="font-size:10px;opacity:.7">hoje</span>' : ''}
                 </button>`;
             }).join('');
         }
@@ -2195,6 +2215,7 @@
         }
 
         function voltarParaSetor() {
+            stopAutoSync();
             document.getElementById('app').style.display = 'none';
             document.getElementById('screen-dia').style.display = 'none';
             document.getElementById('screen-setor').style.display = 'flex';
@@ -2207,6 +2228,7 @@
         }
 
         function voltarParaDia() {
+            stopAutoSync();
             document.getElementById('app').style.display = 'none';
             document.getElementById('screen-dia').style.display = 'flex';
         }
@@ -2404,13 +2426,28 @@
 
             document.getElementById('confirm-item-overlay').classList.add('open');
         }
-        function doConfirmItem() {
+        async function doConfirmItem() {
             document.getElementById('confirm-item-overlay').classList.remove('open');
             if (!pendingItemMeta || !pendingUserForItem) return;
             const { setorId, si, ii } = pendingItemMeta;
             const name = pendingUserForItem;
             pendingItemMeta = null;
             pendingUserForItem = null;
+
+            if (ghToken() && ghGistId()) {
+                setSyncUI('syncing', 'Verificando...');
+                await pullFromGist();
+                loadState();
+                const current = getItemStatus(setorId, si, ii);
+                if (current) {
+                    const meta = getCheckedMeta(setorId, si, ii);
+                    const who = meta ? meta.user : 'outro funcionário';
+                    const statusLabel = current === 'iniciado' ? 'iniciado' : 'concluído';
+                    alert(`Este item já foi ${statusLabel} por ${who}.`);
+                    buildApp();
+                    return;
+                }
+            }
 
             setChecked(setorId, si, ii, { user: name, date: new Date().toISOString(), status: 'iniciado' });
 
@@ -2453,11 +2490,26 @@
             document.getElementById('conclude-item-overlay').classList.add('open');
         }
 
-        function doConcludeItem() {
+        async function doConcludeItem() {
             document.getElementById('conclude-item-overlay').classList.remove('open');
             if (!pendingItemMeta) return;
             const { setorId, si, ii } = pendingItemMeta;
             pendingItemMeta = null;
+
+            if (ghToken() && ghGistId()) {
+                setSyncUI('syncing', 'Verificando...');
+                await pullFromGist();
+                loadState();
+                const current = getItemStatus(setorId, si, ii);
+                if (current === 'concluido') {
+                    const meta = getCheckedMeta(setorId, si, ii);
+                    const who = meta ? meta.user : 'outro funcionário';
+                    alert(`Este item já foi concluído por ${who}.`);
+                    buildApp();
+                    return;
+                }
+            }
+
             const meta = getCheckedMeta(setorId, si, ii);
             const name = meta ? meta.user : '';
             const list = CHECKLISTS[setorId];
