@@ -134,7 +134,6 @@
         }
 
         .setor-section-header.abertura { color: #F59E0B; font-size: 22px; -webkit-text-stroke: 1.5px black; text-stroke: 1.5px black; }
-        .setor-section-header.fechamento { color: #F59E0B; font-size: 22px; -webkit-text-stroke: 1.5px black; text-stroke: 1.5px black; }
 
         .setor-btn-row {
             display: grid;
@@ -156,8 +155,8 @@
             box-shadow: 0 4px 14px rgba(0,0,0,0.2);
             transition: transform 0.15s, box-shadow 0.15s;
             width: 100%;
+            -webkit-text-stroke: 1px black;
         }
-
         .sel-btn-abertura:hover, .sel-btn-fechamento:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(0,0,0,0.28);
@@ -2104,7 +2103,7 @@
             const abertura = SETORES.filter(s => s.id.startsWith('abertura'));
             const fechamento = SETORES.filter(s => s.id.startsWith('fechamento'));
             const emoji = id => id.includes('cozinha') ? '👨‍🍳' : '🛎️';
-            const shortLabel = s => s.label.replace('Abertura\n', '').replace('Fechamento\n', '');
+            const shortLabel = s => s.label.split('\n').pop();
             const renderBtns = (list, cls) => list.map(s =>
                 `<button class="${cls}" onclick="selectChecklist('${s.id}')">${shortLabel(s)}</button>`
             ).join('');
