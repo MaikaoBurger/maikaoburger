@@ -1452,10 +1452,8 @@
                         localStorage.setItem(localK, JSON.stringify(v));
                     });
                 }
-                // Score generation: detect reset (gen change) or score update for current gen.
                 const remoteGen = data.score_generation != null ? data.score_generation : 0;
-                if (remoteGen !== scoreGen) {
-                    // Generation changed → reset happened, clear scores immediately.
+                if (remoteGen > scoreGen) {
                     scoreGen = remoteGen;
                     localStorage.setItem('mb_score_gen', String(scoreGen));
                     localStorage.setItem('mb_scores', JSON.stringify({}));
