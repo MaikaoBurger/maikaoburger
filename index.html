@@ -1446,7 +1446,8 @@
             if (gistId) {
                 try {
                     const r = await fetch(`https://api.github.com/gists/${gistId}`, {
-                        headers: { 'Authorization': `token ${token}` }
+                        headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' },
+                        cache: 'no-store'
                     });
                     if (r.ok) {
                         const j = await r.json();
@@ -1517,7 +1518,8 @@
             setSyncUI('syncing', 'Carregando dados...');
             try {
                 const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-                    headers: { 'Authorization': `token ${token}` }
+                    headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' },
+                    cache: 'no-store'
                 });
                 if (res.ok) {
                     const json = await res.json();
