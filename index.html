@@ -1436,9 +1436,7 @@
         }
 
         let fbListenerActive = false;
-        // Score generation: incremented on each full reset so stale writes from
-        // offline devices (which target the old generation key) are simply ignored.
-        let scoreGen = parseInt(localStorage.getItem('mb_score_gen') || '0');
+        let resetToken = localStorage.getItem('mb_reset_token') || '';
 
         function startFirebaseListener() {
             if (fbListenerActive) return;
@@ -1452,15 +1450,17 @@
                         localStorage.setItem(localK, JSON.stringify(v));
                     });
                 }
-                const remoteGen = data.score_generation != null ? data.score_generation : 0;
-                if (remoteGen > scoreGen) {
-                    scoreGen = remoteGen;
-                    localStorage.setItem('mb_score_gen', String(scoreGen));
+                if (data.resetToken !== undefined && data.resetToken !== resetToken) {
+                    resetToken = data.resetToken || '';
+                    localStorage.setItem('mb_reset_token', resetToken);
                     localStorage.setItem('mb_scores', JSON.stringify({}));
                 }
-                const genKey = 'scores_g' + scoreGen;
-                if (genKey in data) {
-                    localStorage.setItem('mb_scores', JSON.stringify(data[genKey] || {}));
+                if (data.scores) {
+                    const scores = {};
+                    Object.entries(data.scores).forEach(([user, entry]) => {
+                        if (entry && entry.token === resetToken) scores[user] = entry.pts;
+                    });
+                    localStorage.setItem('mb_scores', JSON.stringify(scores));
                 }
                 if (data.last_reset_at !== undefined) localStorage.setItem('mb_last_reset_at', data.last_reset_at || '');
                 if (data.score_log !== undefined) localStorage.setItem('mb_score_log', data.score_log || '[]');
@@ -1863,11 +1863,12 @@
             if (!confirm('Zerar toda a pontuação acumulada?')) return;
             const btn = document.getElementById('rank-reset-btn');
             if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
-            const newGen = scoreGen + 1;
+            const newToken = Date.now().toString(36);
             const resetAt = new Date().toISOString();
             try {
+                await db.ref('scores').remove();
                 await db.ref().update({
-                    score_generation: newGen,
+                    resetToken: newToken,
                     last_reset_at: resetAt,
                     score_log: '[]',
                     completions: '[]'
@@ -1877,8 +1878,8 @@
                 setSyncUI('error');
                 return;
             }
-            scoreGen = newGen;
-            localStorage.setItem('mb_score_gen', String(newGen));
+            resetToken = newToken;
+            localStorage.setItem('mb_reset_token', newToken);
             localStorage.setItem('mb_scores', JSON.stringify({}));
             localStorage.setItem('mb_score_log', JSON.stringify([]));
             localStorage.setItem('mb_completions', JSON.stringify([]));
@@ -1901,7 +1902,7 @@
             const scores = loadScores();
             delete scores[name];
             localStorage.setItem('mb_scores', JSON.stringify(scores));
-            db.ref(`scores_g${scoreGen}/${name}`).remove().catch(() => setSyncUI('error'));
+            db.ref('scores/' + name).remove().catch(() => setSyncUI('error'));
             const log = getScoreLog().filter(e => e.user !== name);
             saveScoreLog(log);
             const comp = getCompletions().filter(c => !c.startsWith(`${name}|`));
@@ -2427,10 +2428,8 @@
             const scores = loadScores();
             scores[user] = (scores[user] || 0) + pts;
             localStorage.setItem('mb_scores', JSON.stringify(scores));
-            // Write to generation-specific path so resets (gen increment) make old writes harmless.
-            db.ref(`scores_g${scoreGen}/${user}`).set(scores[user])
+            db.ref('scores/' + user).set({ pts: scores[user], token: resetToken })
                 .catch(() => setSyncUI('error'));
-
             const log = getScoreLog();
             log.push({ user, sectorLabel: itemLabel || '', isoDate: new Date().toISOString(), pts });
             saveScoreLog(log);
@@ -2442,11 +2441,10 @@
             if (scores[user] === 0) delete scores[user];
             localStorage.setItem('mb_scores', JSON.stringify(scores));
             if (scores[user] !== undefined) {
-                db.ref(`scores_g${scoreGen}/${user}`).set(scores[user]).catch(() => setSyncUI('error'));
+                db.ref('scores/' + user).set({ pts: scores[user], token: resetToken }).catch(() => setSyncUI('error'));
             } else {
-                db.ref(`scores_g${scoreGen}/${user}`).remove().catch(() => setSyncUI('error'));
+                db.ref('scores/' + user).remove().catch(() => setSyncUI('error'));
             }
-
             const log = getScoreLog();
             const idx = [...log].reverse().findIndex(e => e.user === user && e.sectorLabel === itemLabel && e.pts === pts);
             if (idx !== -1) log.splice(log.length - 1 - idx, 1);
