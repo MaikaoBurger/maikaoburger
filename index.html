@@ -1518,7 +1518,7 @@
                     const k = `${e.user}|${e.sectorLabel}|${e.isoDate}`;
                     return seen.has(k) ? false : seen.add(k);
                 });
-                payload.mb_score_log = JSON.stringify(merged);
+                payload.mb_score_log = JSON.stringify(merged.slice(-100));
             }
 
             const body = {
@@ -2069,7 +2069,7 @@
         }
 
         function saveScoreLog(log) {
-            localStorage.setItem('mb_score_log', JSON.stringify(log));
+            localStorage.setItem('mb_score_log', JSON.stringify(log.slice(-100)));
         }
 
         function formatLogDate(isoDate) {
