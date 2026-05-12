@@ -2074,19 +2074,38 @@
             const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
             const medals = ['🥇', '🥈', '🥉'];
 
+            const log = getScoreLog();
+
             const html = sorted.length === 0
                 ? `<div class="rank-empty">Nenhuma pontuação ainda.<br>Complete um setor para pontuar!</div>`
-                : sorted.map(([name, pts], i) => `
-            <div class="rank-item">
-                ${i < 3
+                : sorted.map(([name, pts], i) => {
+                    const userLog = log.filter(e => e.user === name).slice().reverse();
+                    const histHtml = userLog.length === 0
+                        ? '<div style="font-size:12px;color:#aaa;padding:6px 0 4px">Sem histórico.</div>'
+                        : userLog.map(e => `
+                            <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px">
+                                <span style="flex:1;color:var(--text-muted)">${e.sectorLabel}</span>
+                                <span style="color:var(--green);font-weight:700">+${e.pts}pt</span>
+                                <span style="color:#aaa;white-space:nowrap">${formatLogDate(e.isoDate)}</span>
+                            </div>`).join('');
+                    const adminToggle = isAdmin()
+                        ? `onclick="this.parentElement.nextElementSibling.style.display=this.parentElement.nextElementSibling.style.display==='none'?'block':'none'"`
+                        : '';
+                    return `
+                <div class="rank-item" ${adminToggle} style="${isAdmin() ? 'cursor:pointer' : ''}">
+                    ${i < 3
                         ? `<span class="rank-medal">${medals[i]}</span>`
                         : `<span class="rank-pos">${i + 1}º</span>`}
-                <span class="rank-name">${name}</span>
-                <span class="rank-pts">${pts}<span>pts</span></span>
-            </div>`
-                ).join('');
+                    <span class="rank-name">${name}</span>
+                    <span class="rank-pts">${pts}<span>pts</span></span>
+                    ${isAdmin() ? `<span style="font-size:11px;color:#aaa;margin-left:4px">▼</span>` : ''}
+                </div>
+                <div style="display:none;padding:4px 12px 8px 44px;background:#fafafa;border-radius:8px;margin-bottom:4px">
+                    <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 0 4px">Histórico de ${name}</div>
+                    ${histHtml}
+                </div>`;
+                }).join('');
 
-            const log = getScoreLog();
             const logHtml = log.length === 0 ? '' : `
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-muted);margin-bottom:10px">Histórico</div>
