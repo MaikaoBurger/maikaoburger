@@ -1865,14 +1865,10 @@
             if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
             const newToken = Date.now().toString(36);
             const resetAt = new Date().toISOString();
+            const updates = { resetToken: newToken, last_reset_at: resetAt, score_log: '[]', completions: '[]' };
+            NOMES.forEach(name => { updates['scores/' + name] = null; });
             try {
-                await db.ref('scores').remove();
-                await db.ref().update({
-                    resetToken: newToken,
-                    last_reset_at: resetAt,
-                    score_log: '[]',
-                    completions: '[]'
-                });
+                await db.ref().update(updates);
             } catch(e) {
                 if (btn) { btn.disabled = false; btn.textContent = 'Zerar pontuação'; }
                 setSyncUI('error');
