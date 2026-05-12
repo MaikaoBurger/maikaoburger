@@ -1569,9 +1569,12 @@
                         const cb = el.querySelector('input');
                         let timeEl = el.querySelector('.item-time');
                         el.classList.remove('iniciado', 'checked');
+                        const label = el.querySelector('label');
+                        const ptsBadge = label ? label.querySelector('span:not(.item-time):not(.day-tag)') : null;
                         if (status === 'iniciado') {
                             el.classList.add('iniciado');
                             if (cb) cb.checked = true;
+                            if (ptsBadge) ptsBadge.remove();
                             const t = meta?.date ? new Date(meta.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
                             const display = `🟡 ${meta?.user} · ${t}`;
                             if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#f59e0b'; timeEl.style.fontWeight = '700'; }
@@ -1580,11 +1583,12 @@
                                 tag.className = 'item-time';
                                 tag.style.cssText = 'font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap;margin-left:auto;padding-left:8px';
                                 tag.textContent = display;
-                                el.querySelector('label').appendChild(tag);
+                                if (label) label.appendChild(tag);
                             }
                         } else if (status === 'concluido') {
                             el.classList.add('checked');
                             if (cb) cb.checked = true;
+                            if (ptsBadge) ptsBadge.remove();
                             const t = getCheckedTime(setorId, si, ii);
                             if (timeEl) { timeEl.textContent = t; timeEl.style.color = '#aaa'; timeEl.style.fontWeight = '400'; }
                             else {
@@ -1592,7 +1596,7 @@
                                 tag.className = 'item-time';
                                 tag.style.cssText = 'font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:400';
                                 tag.textContent = t;
-                                el.querySelector('label').appendChild(tag);
+                                if (label) label.appendChild(tag);
                             }
                         } else {
                             if (cb) cb.checked = false;
@@ -2555,15 +2559,6 @@
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
                 await pushToGist();
-                setTimeout(async () => {
-                    await pullFromGist();
-                    loadState();
-                    const vm = getCheckedMeta(setorId, si, ii);
-                    if (vm && vm.user !== name) {
-                        alert(`⚠️ Conflito! "${vm.user}" também iniciou este item ao mesmo tempo.\nConfira com a equipe quem vai ficar com a tarefa.`);
-                        buildApp();
-                    }
-                }, 2000);
             }
         }
 
@@ -2628,15 +2623,6 @@
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
                 await pushToGist();
-                setTimeout(async () => {
-                    await pullFromGist();
-                    loadState();
-                    const vm = getCheckedMeta(setorId, si, ii);
-                    if (vm && vm.user !== name) {
-                        alert(`⚠️ Conflito! "${vm.user}" também concluiu este item ao mesmo tempo.\nConfira com a equipe quem vai receber os pontos.`);
-                        buildApp();
-                    }
-                }, 2000);
             }
         }
 
