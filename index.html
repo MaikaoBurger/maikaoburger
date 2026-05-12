@@ -1885,6 +1885,7 @@
             localStorage.setItem('mb_score_log', JSON.stringify([]));
             localStorage.setItem('mb_completions', JSON.stringify([]));
             localStorage.setItem('mb_last_reset_at', resetAt);
+            if (btn) { btn.disabled = false; btn.textContent = 'Zerar pontuação'; }
             openRanking();
         }
 
