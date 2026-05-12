@@ -1106,16 +1106,31 @@
     <div id="pts-toast" style="display:none;position:fixed;top:76px;left:50%;transform:translateX(-50%);background:var(--green);color:white;padding:10px 26px;border-radius:40px;font-size:17px;font-weight:900;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.25);white-space:nowrap;transition:opacity .4s"></div>
 
     <!-- Modal confirmação de item -->
+    <!-- Modal: Concluir item -->
+    <div class="confirm-overlay" id="conclude-item-overlay">
+        <div class="confirm-card">
+            <div style="font-size:40px;margin-bottom:8px">✅</div>
+            <div style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:2px" id="conclude-user-name"></div>
+            <div style="font-size:13px;color:#888;margin-bottom:10px">concluiu esta atividade?</div>
+            <div style="font-size:14px;font-weight:700;color:#333;margin-bottom:14px;text-align:center;line-height:1.4" id="conclude-item-text"></div>
+            <div style="font-size:15px;color:var(--green);font-weight:800;margin-bottom:16px" id="conclude-pts-label">+1 ponto 🏆</div>
+            <div class="confirm-btn-row">
+                <button class="confirm-btn no" onclick="cancelConclude()">Ainda não</button>
+                <button class="confirm-btn yes" onclick="doConcludeItem()">Concluí!</button>
+            </div>
+        </div>
+    </div>
+
     <div class="confirm-overlay" id="confirm-item-overlay">
         <div class="confirm-card">
             <div style="font-size:40px;margin-bottom:8px">🤔</div>
             <div style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:2px" id="ci-user-name"></div>
-            <div style="font-size:13px;color:#888;margin-bottom:10px">você realmente fez isso?</div>
+            <div style="font-size:13px;color:#888;margin-bottom:10px">vai iniciar esta atividade?</div>
             <div style="font-size:14px;font-weight:700;color:#333;margin-bottom:14px;text-align:center;line-height:1.5;background:#f5f5f7;border-radius:10px;padding:10px 14px" id="ci-item-text"></div>
             <div style="font-size:15px;color:var(--green);font-weight:800;margin-bottom:4px" id="ci-pts-label">+1 ponto 🏆</div>
             <div class="confirm-btn-row">
-                <button class="confirm-btn no" onclick="cancelConfirmItem()">Não fiz</button>
-                <button class="confirm-btn yes" onclick="doConfirmItem()">Sim, fiz!</button>
+                <button class="confirm-btn no" onclick="cancelConfirmItem()">Cancelar</button>
+                <button class="confirm-btn yes" onclick="doConfirmItem()">Sim, vou fazer!</button>
             </div>
         </div>
     </div>
@@ -1137,7 +1152,7 @@
     <div class="confirm-overlay" id="quem-fez-overlay">
         <div class="confirm-card">
             <div style="font-size:36px;margin-bottom:8px">👤</div>
-            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:4px">Quem fez?</div>
+            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:4px">Quem vai fazer?</div>
             <div style="font-size:13px;color:#888;margin-bottom:16px" id="quem-fez-item-label"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
             </div>
@@ -2268,16 +2283,27 @@
                     if (!activeItems.length) return '';
 
                     const itemsHtml = activeItems.map(({ item, ii }) => {
-                        const checked = getChecked(id, si, ii);
+                        const status = getItemStatus(id, si, ii);
+                        const isIniciado = status === 'iniciado';
+                        const isConcluido = status === 'concluido';
+                        const isActive = isIniciado || isConcluido;
                         const text = getItemText(item);
                         const dayTag = itemDayTag(item);
                         const pts = typeof item === 'object' && item.pts ? item.pts : 1;
-                        const editBtn = checked && isAdmin()
+                        const editBtn = isActive && isAdmin()
                             ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
                             : '';
-                        return `<div class="item ${checked ? 'checked' : ''}" id="item-${id}-${si}-${ii}">
+                        const itemClass = isConcluido ? 'checked' : isIniciado ? 'iniciado' : '';
+                        const meta = getCheckedMeta(id, si, ii);
+                        const timeDisplay = isIniciado
+                            ? `🟡 ${meta?.user} · ${new Date(meta?.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
+                            : isConcluido ? getCheckedTime(id, si, ii) : '';
+                        const timeHtml = isActive
+                            ? `<span class="item-time" style="font-size:11px;color:${isIniciado?'#f59e0b':'#aaa'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${isIniciado?700:400}">${timeDisplay}</span>`
+                            : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${pts}pt</span>`;
+                        return `<div class="item ${itemClass}" id="item-${id}-${si}-${ii}">
                     <label>
-                        <input type="checkbox" ${checked ? 'checked' : ''}
+                        <input type="checkbox" ${isActive ? 'checked' : ''}
                                onchange="toggle('${id}',${si},${ii},this.checked)">
                         <div class="box">
                             <svg viewBox="0 0 12 10" fill="none">
@@ -2286,10 +2312,9 @@
                             </svg>
                         </div>
                         <span class="item-text">${text}</span>${dayTag}
-                        ${checked
-                            ? `<span class="item-time" style="font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px">${getCheckedTime(id, si, ii)}</span>`
-                            : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${pts}pt</span>`}
+                        ${timeHtml}
                     </label>${editBtn}
+                </div>`;
                 </div>`;
                     }).join('');
 
@@ -2315,9 +2340,9 @@
         </div>`;
             }).join('');
         }
-
         function toggle(setorId, si, ii, checked) {
             if (lockedSectors.has(setorId)) return;
+            const status = getItemStatus(setorId, si, ii);
             if (checked) {
                 const cb = document.getElementById(`item-${setorId}-${si}-${ii}`).querySelector('input');
                 if (cb) cb.checked = false;
@@ -2326,6 +2351,12 @@
                 document.getElementById('quem-fez-item-label').textContent = text;
                 document.getElementById('quem-fez-overlay').classList.add('open');
             } else {
+                if (status === 'iniciado') {
+                    const cb = document.getElementById(`item-${setorId}-${si}-${ii}`).querySelector('input');
+                    if (cb) cb.checked = true;
+                    openConcludeModal(setorId, si, ii);
+                    return;
+                }
                 if (!isAdmin()) {
                     const cb = document.getElementById(`item-${setorId}-${si}-${ii}`).querySelector('input');
                     if (cb) cb.checked = true;
@@ -2333,11 +2364,12 @@
                 }
                 setChecked(setorId, si, ii, false);
                 const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
-                el.classList.remove('checked');
+                el.classList.remove('checked'); el.classList.remove('iniciado');
                 const timeEl = el.querySelector('.item-time');
                 if (timeEl) timeEl.remove();
                 updateProgress(setorId);
             }
+        }
         }
 
         let pendingUserForItem = null;
@@ -2356,7 +2388,6 @@
             document.getElementById('ci-pts-label').textContent = `+${pts} ponto${pts > 1 ? 's' : ''} 🏆`;
             document.getElementById('confirm-item-overlay').classList.add('open');
         }
-
         function doConfirmItem() {
             document.getElementById('confirm-item-overlay').classList.remove('open');
             if (!pendingItemMeta || !pendingUserForItem) return;
@@ -2365,39 +2396,29 @@
             pendingItemMeta = null;
             pendingUserForItem = null;
 
-            const list = CHECKLISTS[setorId];
-            const item = list.sections[si].items[ii];
-            const pts = typeof item === 'object' && item.pts ? item.pts : 1;
-            const itemText = typeof item === 'object' ? item.text : item;
-
-            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString() });
+            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString(), status: 'iniciado' });
 
             const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
-            el.classList.add('checked');
+            el.classList.remove('checked'); el.classList.add('iniciado');
             const cb = el.querySelector('input');
             if (cb) cb.checked = true;
 
             const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            const display = `${name} · ${t}`;
             const label = el.querySelector('label');
             const ptsBadge = label.querySelector('span:last-child');
             if (ptsBadge && !ptsBadge.classList.contains('item-time') && !ptsBadge.classList.contains('day-tag')) ptsBadge.remove();
             let timeEl = el.querySelector('.item-time');
-            if (timeEl) { timeEl.textContent = display; }
+            const display = `🟡 ${name} · ${t}`;
+            if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#f59e0b'; timeEl.style.fontWeight = '700'; }
             else {
                 const tag = document.createElement('span');
                 tag.className = 'item-time';
-                tag.style.cssText = 'font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px';
+                tag.style.cssText = 'font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap;margin-left:auto;padding-left:8px';
                 tag.textContent = display;
                 label.appendChild(tag);
             }
-
-            addItemScore(name, pts, itemText);
-            showPtsToast(name, pts);
             updateProgress(setorId);
         }
-
-        function cancelConfirmItem() {
             pendingItemMeta = null;
             pendingUserForItem = null;
             document.getElementById('confirm-item-overlay').classList.remove('open');
@@ -2407,6 +2428,51 @@
             pendingItemMeta = null;
             document.getElementById('quem-fez-overlay').classList.remove('open');
         }
+        function openConcludeModal(setorId, si, ii) {
+            pendingItemMeta = { setorId, si, ii };
+            const meta = getCheckedMeta(setorId, si, ii);
+            const list = CHECKLISTS[setorId];
+            const item = list.sections[si].items[ii];
+            const text = typeof item === 'object' ? item.text : item;
+            const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+            document.getElementById('conclude-user-name').textContent = meta ? meta.user : '';
+            document.getElementById('conclude-item-text').textContent = text;
+            document.getElementById('conclude-pts-label').textContent = `+${pts} ponto${pts > 1 ? 's' : ''} 🏆`;
+            document.getElementById('conclude-item-overlay').classList.add('open');
+        }
+
+        function doConcludeItem() {
+            document.getElementById('conclude-item-overlay').classList.remove('open');
+            if (!pendingItemMeta) return;
+            const { setorId, si, ii } = pendingItemMeta;
+            pendingItemMeta = null;
+            const meta = getCheckedMeta(setorId, si, ii);
+            const name = meta ? meta.user : '';
+            const list = CHECKLISTS[setorId];
+            const item = list.sections[si].items[ii];
+            const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+            const itemText = typeof item === 'object' ? item.text : item;
+
+            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString(), status: 'concluido' });
+
+            const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
+            el.classList.remove('iniciado'); el.classList.add('checked');
+            const cb = el.querySelector('input');
+            if (cb) cb.checked = true;
+            const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            let timeEl = el.querySelector('.item-time');
+            const display = `${name} · ${t}`;
+            if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#aaa'; timeEl.style.fontWeight = '400'; }
+            addItemScore(name, pts, itemText);
+            showPtsToast(name, pts);
+            updateProgress(setorId);
+        }
+
+        function cancelConclude() {
+            pendingItemMeta = null;
+            document.getElementById('conclude-item-overlay').classList.remove('open');
+        }
+
 
         function openEditItem(setorId, si, ii) {
             if (!isAdmin()) return;
@@ -2462,7 +2528,7 @@
 
             setChecked(setorId, si, ii, false);
             const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
-            el.classList.remove('checked');
+            el.classList.remove('checked'); el.classList.remove('iniciado');
             const cb = el.querySelector('input');
             if (cb) cb.checked = false;
             const timeEl = el.querySelector('.item-time');
@@ -2705,6 +2771,10 @@
 </body>
 
 </html>
+
+
+
+
 
 
 
