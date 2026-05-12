@@ -1755,7 +1755,11 @@
             startFirebaseListener();
             // remove ghost entries left by old awardPoints bug (empty-string user)
             const scores = loadScores();
-            if ('' in scores) { delete scores['']; saveScores(scores); }
+            if ('' in scores) {
+                delete scores[''];
+                localStorage.setItem('mb_scores', JSON.stringify(scores));
+                db.ref('scores/').remove().catch(() => {});
+            }
             const log = getScoreLog();
             const cleanLog = log.filter(e => e.user && e.user.trim() !== '');
             if (cleanLog.length !== log.length) saveScoreLog(cleanLog);
@@ -1774,7 +1778,6 @@
 
         function saveScores(scores) {
             localStorage.setItem('mb_scores', JSON.stringify(scores));
-            fbWrite({ scores });
         }
 
         function getCompletions() {
@@ -1948,7 +1951,9 @@
             if (!confirm('Zerar pontuação de ' + name + '?')) return;
             const scores = loadScores();
             delete scores[name];
-            saveScores(scores);
+            localStorage.setItem('mb_scores', JSON.stringify(scores));
+            // Delete individual user path to preserve _reset flag if present.
+            db.ref(`scores/${name}`).remove().catch(() => setSyncUI('error'));
             const log = getScoreLog().filter(e => e.user !== name);
             saveScoreLog(log);
             const comp = getCompletions().filter(c => !c.startsWith(`${name}|`));
@@ -2473,7 +2478,11 @@
         function addItemScore(user, pts, itemLabel) {
             const scores = loadScores();
             scores[user] = (scores[user] || 0) + pts;
-            saveScores(scores);
+            localStorage.setItem('mb_scores', JSON.stringify(scores));
+            // Write individual user path and clear _reset flag atomically.
+            // Using individual paths prevents stale offline writes from overwriting the reset marker.
+            db.ref().update({ [`scores/${user}`]: scores[user], 'scores/_reset': null })
+                .catch(() => setSyncUI('error'));
 
             const log = getScoreLog();
             log.push({ user, sectorLabel: itemLabel || '', isoDate: new Date().toISOString(), pts });
@@ -2484,7 +2493,13 @@
             const scores = loadScores();
             scores[user] = Math.max(0, (scores[user] || 0) - pts);
             if (scores[user] === 0) delete scores[user];
-            saveScores(scores);
+            localStorage.setItem('mb_scores', JSON.stringify(scores));
+            // Write individual user path to preserve _reset flag if present.
+            if (scores[user] !== undefined) {
+                db.ref(`scores/${user}`).set(scores[user]).catch(() => setSyncUI('error'));
+            } else {
+                db.ref(`scores/${user}`).remove().catch(() => setSyncUI('error'));
+            }
 
             const log = getScoreLog();
             const idx = [...log].reverse().findIndex(e => e.user === user && e.sectorLabel === itemLabel && e.pts === pts);
