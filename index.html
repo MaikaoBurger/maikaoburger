@@ -1180,7 +1180,7 @@
             </div>
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" onclick="openRanking()">🏆</button>
-            <span class="sync-indicator" id="sync-indicator" title="Atualizar" onclick="syncRefresh()">☁️</span>
+            <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
             <button class="header-btn" onclick="voltarParaDia()">← Voltar</button>
         </div>
@@ -1398,10 +1398,37 @@
         function fbKey(key) { return key.replace(/\//g, '|'); }
         function fbStateKey() { return fbKey(stateKey()); }
 
+        let lastSyncTime = null;
+
         function setSyncUI(status) {
             const el = document.getElementById('sync-indicator');
             if (!el) return;
             el.textContent = status === 'online' ? '✅' : status === 'syncing' ? '🔄' : '⚠️';
+            if (status === 'online') lastSyncTime = new Date();
+        }
+
+        function syncRefreshPopup() {
+            syncRefresh();
+            const el = document.getElementById('sync-indicator');
+            const timeStr = lastSyncTime
+                ? lastSyncTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                : '--';
+            const status = el?.textContent === '✅' ? 'Conectado ao Firebase' : el?.textContent === '🔄' ? 'Sincronizando...' : 'Sem conexão';
+            // show a small toast near the icon
+            const toast = document.createElement('div');
+            toast.textContent = `${status} · ${timeStr}`;
+            Object.assign(toast.style, {
+                position: 'fixed', top: '56px', right: '12px',
+                background: '#222', color: '#fff',
+                padding: '8px 14px', borderRadius: '10px',
+                fontSize: '13px', fontWeight: '600', zIndex: '9999',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                fontFamily: 'inherit', whiteSpace: 'nowrap',
+                opacity: '1', transition: 'opacity 0.4s',
+            });
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+            setTimeout(() => toast.remove(), 2500);
         }
 
         function fbWrite(updates) {
