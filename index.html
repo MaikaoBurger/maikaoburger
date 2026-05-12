@@ -2059,6 +2059,7 @@
             saveScores(scores);
             const log = getScoreLog().filter(e => e.user !== name);
             saveScoreLog(log);
+            pushToGist();
             openRanking();
         }
 
