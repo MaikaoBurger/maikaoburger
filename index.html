@@ -1469,9 +1469,15 @@
                 try {
                     const remState = JSON.parse(remote[k]);
                     const locState = JSON.parse(payload[k]);
-                    const statusRank = v => !v ? 0 : (v.status || 'concluido') === 'concluido' ? 2 : 1;
+                    if (locState._resetAt && (!remState._resetAt || locState._resetAt >= remState._resetAt)) return;
+                    if (remState._resetAt && (!locState._resetAt || remState._resetAt > locState._resetAt)) {
+                        payload[k] = remote[k];
+                        return;
+                    }
+                    const statusRank = v => (!v || v._resetAt) ? 0 : (v.status || 'concluido') === 'concluido' ? 2 : 1;
                     const merged = { ...remState };
                     Object.entries(locState).forEach(([ik, lv]) => {
+                        if (ik === '_resetAt') return;
                         const rv = remState[ik];
                         if (statusRank(lv) > statusRank(rv)) merged[ik] = lv;
                         else if (statusRank(rv) > statusRank(lv)) merged[ik] = rv;
@@ -1542,25 +1548,30 @@
             try {
                 const ctrl = new AbortController();
                 const tid = setTimeout(() => ctrl.abort(), 8000);
-                const ghUser = localStorage.getItem('gh_user') || '';
-                const useRaw = !!ghUser;
-                const url = useRaw
-                    ? `https://gist.githubusercontent.com/${ghUser}/${gistId}/raw/${GIST_FILENAME}?t=${Date.now()}`
-                    : `https://api.github.com/gists/${gistId}?t=${Date.now()}`;
-                const fetchOpts = useRaw
-                    ? { signal: ctrl.signal }
-                    : { headers: { 'Authorization': `token ${token}` }, signal: ctrl.signal };
-                const res = await fetch(url, fetchOpts);
+                const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: { 'Authorization': `token ${token}` },
+                    signal: ctrl.signal
+                });
                 clearTimeout(tid);
                 if (res.ok) {
-                    const content = useRaw
-                        ? await res.text()
-                        : (await res.json()).files[GIST_FILENAME]?.content;
+                    const content = (await res.json()).files[GIST_FILENAME]?.content;
                     if (content) {
                         const data = JSON.parse(content);
                         const localKey = stateKey();
                         Object.keys(data).forEach(k => {
                             if (!k.startsWith('mb_')) return;
+                            try {
+                                const remState = JSON.parse(data[k]);
+                                if (remState._resetAt) {
+                                    localStorage.setItem(k, data[k]);
+                                    if (k === localKey) {
+                                        clearTimeout(syncTimeout);
+                                        syncTimeout = null;
+                                        state = remState;
+                                    }
+                                    return;
+                                }
+                            } catch { }
                             if (syncTimeout !== null && k === localKey) return;
                             localStorage.setItem(k, data[k]);
                         });
@@ -2916,16 +2927,29 @@
         async function resetList(id) {
             if (!isAdmin()) return;
             if (!confirm('Reiniciar este checklist?')) return;
-            const key = stateKey();
-            const list = CHECKLISTS[id];
-            list.sections.forEach((s, si) => s.items.forEach((_, ii) => setChecked(id, si, ii, false)));
+            const now = new Date().toISOString();
+            const todayPrefix = `mb_${today()}`;
+            const forceKeys = new Set();
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith(todayPrefix)) {
+                    localStorage.setItem(k, JSON.stringify({ _resetAt: now }));
+                    forceKeys.add(k);
+                }
+            }
+            const currentKey = stateKey();
+            if (!forceKeys.has(currentKey)) {
+                localStorage.setItem(currentKey, JSON.stringify({ _resetAt: now }));
+                forceKeys.add(currentKey);
+            }
+            state = { _resetAt: now };
             const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || id;
             renderPanels();
             switchTab(activeId);
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
                 syncTimeout = null;
-                await pushToGist(new Set([key]));
+                await pushToGist(forceKeys);
             }
         }
 
