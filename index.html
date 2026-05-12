@@ -1438,7 +1438,7 @@
             return data;
         }
 
-        async function pushToGist() {
+        async function pushToGist(forceOverwriteKeys = new Set()) {
             const token = ghToken();
             if (!token) return;
 
@@ -1465,6 +1465,7 @@
             const skipKeys = new Set(['mb_scores','mb_score_log','mb_completions','mb_admin_pw','_v','_at']);
             Object.keys(payload).forEach(k => {
                 if (!k.startsWith('mb_') || skipKeys.has(k) || !remote[k]) return;
+                if (forceOverwriteKeys.has(k)) return;
                 try {
                     const remState = JSON.parse(remote[k]);
                     const locState = JSON.parse(payload[k]);
@@ -2915,6 +2916,7 @@
         async function resetList(id) {
             if (!isAdmin()) return;
             if (!confirm('Reiniciar este checklist?')) return;
+            const key = stateKey();
             const list = CHECKLISTS[id];
             list.sections.forEach((s, si) => s.items.forEach((_, ii) => setChecked(id, si, ii, false)));
             const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || id;
@@ -2923,7 +2925,7 @@
             if (ghToken() && ghGistId()) {
                 clearTimeout(syncTimeout);
                 syncTimeout = null;
-                await pushToGist();
+                await pushToGist(new Set([key]));
             }
         }
 
