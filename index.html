@@ -1462,6 +1462,25 @@
 
             const payload = { ...remote, _v: 1, _at: new Date().toISOString(), ...getAllMbKeys() };
 
+            const skipKeys = new Set(['mb_scores','mb_score_log','mb_completions','mb_admin_pw','_v','_at']);
+            Object.keys(payload).forEach(k => {
+                if (!k.startsWith('mb_') || skipKeys.has(k) || !remote[k]) return;
+                try {
+                    const remState = JSON.parse(remote[k]);
+                    const locState = JSON.parse(payload[k]);
+                    const statusRank = v => !v ? 0 : (v.status || 'concluido') === 'concluido' ? 2 : 1;
+                    const merged = { ...remState };
+                    Object.entries(locState).forEach(([ik, lv]) => {
+                        const rv = remState[ik];
+                        if (statusRank(lv) > statusRank(rv)) merged[ik] = lv;
+                        else if (statusRank(rv) > statusRank(lv)) merged[ik] = rv;
+                        else if (lv && rv && lv.date && rv.date) merged[ik] = lv.date >= rv.date ? lv : rv;
+                        else merged[ik] = lv;
+                    });
+                    payload[k] = JSON.stringify(merged);
+                } catch { /* keep local on parse error */ }
+            });
+
             if (remote.mb_scores && payload.mb_scores) {
                 const rs = JSON.parse(remote.mb_scores);
                 const ls = JSON.parse(payload.mb_scores);
