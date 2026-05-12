@@ -1445,22 +1445,28 @@
                 const data = snap.val();
                 if (!data) return;
                 if (data.state) {
+                    // Skip score-related keys — scores are managed separately and old
+                    // data in state/ would silently override resets.
+                    const scoreKeys = new Set(['mb_scores', 'mb_score_log', 'mb_completions',
+                        'mb_score_gen', 'mb_reset_token', 'mb_last_reset_at', 'score_log', 'completions']);
                     Object.entries(data.state).forEach(([k, v]) => {
                         const localK = k.replace(/\|/g, '/');
-                        localStorage.setItem(localK, JSON.stringify(v));
+                        if (!scoreKeys.has(localK)) localStorage.setItem(localK, JSON.stringify(v));
                     });
                 }
                 if (data.resetToken !== undefined && data.resetToken !== resetToken) {
                     resetToken = data.resetToken || '';
                     localStorage.setItem('mb_reset_token', resetToken);
-                    localStorage.setItem('mb_scores', JSON.stringify({}));
                 }
-                if (data.scores) {
-                    const scores = {};
-                    Object.entries(data.scores).forEach(([user, entry]) => {
-                        if (entry && entry.token === resetToken) scores[user] = entry.pts;
-                    });
-                    localStorage.setItem('mb_scores', JSON.stringify(scores));
+                // Always recompute scores from data.scores once the system is initialised.
+                if (data.resetToken !== undefined) {
+                    const remoteScores = {};
+                    if (data.scores) {
+                        Object.entries(data.scores).forEach(([user, entry]) => {
+                            if (entry && entry.token === resetToken) remoteScores[user] = entry.pts;
+                        });
+                    }
+                    localStorage.setItem('mb_scores', JSON.stringify(remoteScores));
                 }
                 if (data.last_reset_at !== undefined) localStorage.setItem('mb_last_reset_at', data.last_reset_at || '');
                 if (data.score_log !== undefined) localStorage.setItem('mb_score_log', data.score_log || '[]');
@@ -1769,7 +1775,7 @@
         function saveScoreLog(log) {
             const trimmed = log.slice(-100);
             localStorage.setItem('mb_score_log', JSON.stringify(trimmed));
-            fbWrite({ score_log: JSON.stringify(trimmed) });
+            db.ref('score_log').set(JSON.stringify(trimmed)).catch(() => setSyncUI('error'));
         }
 
         function formatLogDate(isoDate) {
@@ -1867,6 +1873,10 @@
             const resetAt = new Date().toISOString();
             const updates = { resetToken: newToken, last_reset_at: resetAt, score_log: '[]', completions: '[]' };
             NOMES.forEach(name => { updates['scores/' + name] = null; });
+            // Limpa caminhos antigos do Firebase que código anterior possa ter gravado
+            ['mb_scores', 'mb_score_log', 'score_log', 'mb_completions', 'completions'].forEach(k => {
+                updates['state/' + k] = null;
+            });
             try {
                 await db.ref().update(updates);
             } catch(e) {
