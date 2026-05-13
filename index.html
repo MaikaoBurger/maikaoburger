@@ -1437,6 +1437,7 @@
 
         let fbListenerActive = false;
         let resetToken = localStorage.getItem('mb_reset_token') || '';
+        let localScores = {};
 
         function startFirebaseListener() {
             if (fbListenerActive) return;
@@ -1466,7 +1467,7 @@
                             if (entry && entry.token === resetToken) remoteScores[user] = entry.pts;
                         });
                     }
-                    localStorage.setItem('mb_scores', JSON.stringify(remoteScores));
+                    localScores = remoteScores;
                 }
                 if (data.last_reset_at !== undefined) localStorage.setItem('mb_last_reset_at', data.last_reset_at || '');
                 if (data.score_log !== undefined) localStorage.setItem('mb_score_log', data.score_log || '[]');
@@ -1753,9 +1754,7 @@
             document.getElementById('app').style.display = 'block';
         }
 
-        function loadScores() {
-            try { return JSON.parse(localStorage.getItem('mb_scores') || '{}'); } catch { return {}; }
-        }
+        function loadScores() { return localScores; }
 
         function getCompletions() {
             const c = localStorage.getItem('mb_completions');
@@ -1886,7 +1885,7 @@
             }
             resetToken = newToken;
             localStorage.setItem('mb_reset_token', newToken);
-            localStorage.setItem('mb_scores', JSON.stringify({}));
+            localScores = {};
             localStorage.setItem('mb_score_log', JSON.stringify([]));
             localStorage.setItem('mb_completions', JSON.stringify([]));
             localStorage.setItem('mb_last_reset_at', resetAt);
@@ -1905,9 +1904,7 @@
         async function resetUserScore(name) {
             if (!isAdmin()) return;
             if (!confirm('Zerar pontuação de ' + name + '?')) return;
-            const scores = loadScores();
-            delete scores[name];
-            localStorage.setItem('mb_scores', JSON.stringify(scores));
+            delete localScores[name];
             db.ref('scores/' + name).remove().catch(() => setSyncUI('error'));
             const log = getScoreLog().filter(e => e.user !== name);
             saveScoreLog(log);
@@ -2433,7 +2430,6 @@
         function addItemScore(user, pts, itemLabel) {
             const scores = loadScores();
             scores[user] = (scores[user] || 0) + pts;
-            localStorage.setItem('mb_scores', JSON.stringify(scores));
             db.ref('scores/' + user).set({ pts: scores[user], token: resetToken })
                 .catch(() => setSyncUI('error'));
             const log = getScoreLog();
@@ -2445,7 +2441,6 @@
             const scores = loadScores();
             scores[user] = Math.max(0, (scores[user] || 0) - pts);
             if (scores[user] === 0) delete scores[user];
-            localStorage.setItem('mb_scores', JSON.stringify(scores));
             if (scores[user] !== undefined) {
                 db.ref('scores/' + user).set({ pts: scores[user], token: resetToken }).catch(() => setSyncUI('error'));
             } else {
@@ -2667,8 +2662,9 @@
             localStorage.setItem('mb_completions', JSON.stringify(comp));
         }
 
+        localStorage.removeItem('mb_scores');
         buildSetorScreen();
-        buildNomeScreen();
+        if (document.getElementById('nome-grid')) buildNomeScreen();
         cleanupOldData();
         if (new Date().getDay() === 3) {
             document.getElementById('screen-setor').style.display = 'none';
