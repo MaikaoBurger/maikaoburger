@@ -1163,6 +1163,17 @@
         </div>
     </div>
 
+    <!-- Modal: Item multi-participante -->
+    <div class="confirm-overlay" id="multi-item-overlay">
+        <div class="confirm-card">
+            <div style="font-size:36px;margin-bottom:8px">👥</div>
+            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:4px" id="multi-item-title"></div>
+            <div style="font-size:13px;color:#888;margin-bottom:16px" id="multi-pts-label"></div>
+            <div id="multi-item-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:14px"></div>
+            <button onclick="closeMultiItem()" style="width:100%;padding:11px;background:none;border:1.5px solid #ddd;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600">Fechar</button>
+        </div>
+    </div>
+
     <!-- App principal -->
     <div id="app" style="display:none">
         <div class="header">
@@ -1257,6 +1268,7 @@
                         'Guardar bolsas e capacetes no armário',
                         'Conferir todos os molhos',
                         'Conferir os bacons',
+                        { text: 'Preparar carne', pts: 12, multi: true },
                         'Cortar tomates e cebolas',
                         'Ligar a chapa, fritadeira e o toaster meia hora antes de abrir',
                         'Cortar papel recife',
@@ -1933,7 +1945,10 @@
         }
 
         function getChecked(setorId, si, ii) {
-            return !!state[`${setorId}_${si}_${ii}`];
+            const v = state[`${setorId}_${si}_${ii}`];
+            if (!v) return false;
+            if (v.multi) return Object.keys(v.users || {}).length > 0;
+            return true;
         }
 
         function getCheckedMeta(setorId, si, ii) {
@@ -1944,6 +1959,7 @@
         function getItemStatus(setorId, si, ii) {
             const v = state[`${setorId}_${si}_${ii}`];
             if (!v) return null;
+            if (v.multi) return Object.keys(v.users || {}).length > 0 ? 'concluido' : null;
             return v.status || 'concluido';
         }
         function getCheckedTime(setorId, si, ii) {
@@ -2155,6 +2171,26 @@
                     if (!activeItems.length) return '';
 
                     const itemsHtml = activeItems.map(({ item, ii }) => {
+                        if (typeof item === 'object' && item.multi) {
+                            const meta = getCheckedMeta(id, si, ii);
+                            const users = (meta && meta.multi) ? (meta.users || {}) : {};
+                            const count = Object.keys(users).length;
+                            const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
+                            const names = Object.entries(users).map(([u, d]) =>
+                                `${u} · ${new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`).join('  ·  ');
+                            return `<div class="item ${count > 0 ? 'checked' : ''}" id="item-${id}-${si}-${ii}" style="cursor:default">
+                                <div style="display:flex;align-items:center;gap:10px;width:100%;padding:2px 0">
+                                    <span style="font-size:20px;flex-shrink:0">👥</span>
+                                    <div style="flex:1;min-width:0">
+                                        <div style="font-size:14px;font-weight:600;color:#1a1a1a">${item.text}</div>
+                                        ${count > 0 ? `<div style="font-size:11px;color:#aaa;margin-top:3px">${names}</div>` : ''}
+                                    </div>
+                                    <button onclick="openMultiItem('${id}',${si},${ii})" style="flex-shrink:0;padding:7px 13px;background:${count > 0 ? '#e8f8ef' : 'var(--green)'};color:${count > 0 ? 'var(--green)' : 'white'};border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">
+                                        ${count > 0 ? `${ptsEach}pt cada` : `+${item.pts}pt`}
+                                    </button>
+                                </div>
+                            </div>`;
+                        }
                         const status = getItemStatus(id, si, ii);
                         const isIniciado = status === 'iniciado';
                         const isConcluido = status === 'concluido';
@@ -2425,6 +2461,101 @@
         function cancelEditItem() {
             pendingItemMeta = null;
             document.getElementById('edit-item-overlay').classList.remove('open');
+        }
+
+        let pendingMultiMeta = null;
+
+        function openMultiItem(setorId, si, ii) {
+            pendingMultiMeta = { setorId, si, ii };
+            const item = CHECKLISTS[setorId].sections[si].items[ii];
+            const meta = getCheckedMeta(setorId, si, ii);
+            const users = (meta && meta.multi) ? (meta.users || {}) : {};
+            const count = Object.keys(users).length;
+            const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
+
+            document.getElementById('multi-item-title').textContent = item.text;
+            document.getElementById('multi-pts-label').textContent = count === 0
+                ? `+${item.pts}pt — toque no seu nome para participar`
+                : `${item.pts}pt divididos · ${ptsEach}pt por pessoa`;
+
+            document.getElementById('multi-item-grid').innerHTML = NOMES.map(name => {
+                const isIn = !!users[name];
+                return `<button onclick="toggleMultiParticipant('${name}')"
+                    style="padding:12px 8px;background:${isIn ? '#e8f8ef' : '#f5f5f7'};border:${isIn ? '2px solid var(--green)' : '2px solid transparent'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">
+                    ${isIn ? '✓ ' : ''}${name}</button>`;
+            }).join('');
+
+            document.getElementById('multi-item-overlay').classList.add('open');
+        }
+
+        function closeMultiItem() {
+            document.getElementById('multi-item-overlay').classList.remove('open');
+            pendingMultiMeta = null;
+        }
+
+        function toggleMultiParticipant(name) {
+            if (!pendingMultiMeta) return;
+            const { setorId, si, ii } = pendingMultiMeta;
+            const item = CHECKLISTS[setorId].sections[si].items[ii];
+            const meta = getCheckedMeta(setorId, si, ii);
+            const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
+            const newUsers = { ...oldUsers };
+
+            if (newUsers[name]) {
+                delete newUsers[name];
+            } else {
+                newUsers[name] = new Date().toISOString();
+            }
+
+            const newMeta = Object.keys(newUsers).length > 0
+                ? { users: newUsers, multi: true }
+                : false;
+            setChecked(setorId, si, ii, newMeta);
+
+            updateMultiScores(oldUsers, newUsers, item.pts);
+            updateProgress(setorId);
+
+            // Refresh the item card without closing the overlay
+            const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
+            if (el) {
+                const count = Object.keys(newUsers).length;
+                const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
+                const names = Object.entries(newUsers).map(([u, d]) =>
+                    `${u} · ${new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`).join('  ·  ');
+                el.className = `item ${count > 0 ? 'checked' : ''}`;
+                el.querySelector('div > div').innerHTML = `
+                    <div style="font-size:14px;font-weight:600;color:#1a1a1a">${item.text}</div>
+                    ${count > 0 ? `<div style="font-size:11px;color:#aaa;margin-top:3px">${names}</div>` : ''}`;
+                const btn = el.querySelector('button');
+                if (btn) {
+                    btn.style.background = count > 0 ? '#e8f8ef' : 'var(--green)';
+                    btn.style.color = count > 0 ? 'var(--green)' : 'white';
+                    btn.textContent = count > 0 ? `${ptsEach}pt cada` : `+${item.pts}pt`;
+                }
+            }
+
+            // Refresh overlay
+            openMultiItem(setorId, si, ii);
+        }
+
+        function updateMultiScores(oldUsers, newUsers, pts) {
+            const oldCount = Object.keys(oldUsers).length;
+            const newCount = Object.keys(newUsers).length;
+            const oldShare = oldCount > 0 ? pts / oldCount : 0;
+            const newShare = newCount > 0 ? pts / newCount : 0;
+
+            const allUsers = new Set([...Object.keys(oldUsers), ...Object.keys(newUsers)]);
+            allUsers.forEach(user => {
+                const delta = (newUsers[user] ? newShare : 0) - (oldUsers[user] ? oldShare : 0);
+                if (Math.abs(delta) < 0.001) return;
+                localScores[user] = Math.round(Math.max(0, (localScores[user] || 0) + delta) * 10) / 10;
+                if (localScores[user] > 0) {
+                    db.ref('scores/' + user).set({ pts: localScores[user], token: resetToken }).catch(() => setSyncUI('error'));
+                } else {
+                    delete localScores[user];
+                    db.ref('scores/' + user).remove().catch(() => setSyncUI('error'));
+                }
+            });
         }
 
         function addItemScore(user, pts, itemLabel) {
