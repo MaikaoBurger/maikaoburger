@@ -2176,19 +2176,21 @@
                             const users = (meta && meta.multi) ? (meta.users || {}) : {};
                             const count = Object.keys(users).length;
                             const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
-                            const names = Object.entries(users).map(([u, d]) =>
-                                `${u} · ${new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`).join('  ·  ');
-                            return `<div class="item ${count > 0 ? 'checked' : ''}" id="item-${id}-${si}-${ii}" style="cursor:default">
-                                <div style="display:flex;align-items:center;gap:10px;width:100%;padding:2px 0">
-                                    <span style="font-size:20px;flex-shrink:0">👥</span>
-                                    <div style="flex:1;min-width:0">
-                                        <div style="font-size:14px;font-weight:600;color:#1a1a1a">${item.text}</div>
-                                        ${count > 0 ? `<div style="font-size:11px;color:#aaa;margin-top:3px">${names}</div>` : ''}
-                                    </div>
-                                    <button onclick="openMultiItem('${id}',${si},${ii})" style="flex-shrink:0;padding:7px 13px;background:${count > 0 ? '#e8f8ef' : 'var(--green)'};color:${count > 0 ? 'var(--green)' : 'white'};border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">
-                                        ${count > 0 ? `${ptsEach}pt cada` : `+${item.pts}pt`}
-                                    </button>
-                                </div>
+                            const namesList = Object.entries(users).map(([u, d]) =>
+                                `${u} · ${new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`).join(' · ');
+                            const editBtn = count > 0 && isAdmin()
+                                ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
+                                : '';
+                            const timeHtml = count > 0
+                                ? `<span class="item-time" style="font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:400">${namesList}</span>`
+                                : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${item.pts}pt</span>`;
+                            return `<div class="item ${count > 0 ? 'checked' : ''}" id="item-${id}-${si}-${ii}">
+                                <label onclick="event.preventDefault();toggleMulti('${id}',${si},${ii})">
+                                    <input type="checkbox" ${count > 0 ? 'checked' : ''} style="pointer-events:none">
+                                    <div class="box"><svg viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                    <span class="item-text">👥 ${item.text}</span>
+                                    ${timeHtml}
+                                </label>${editBtn}
                             </div>`;
                         }
                         const status = getItemStatus(id, si, ii);
@@ -2288,10 +2290,23 @@
             const list = CHECKLISTS[setorId];
             const item = list.sections[si].items[ii];
             const text = typeof item === 'object' ? item.text : item;
-            const pts = typeof item === 'object' && item.pts ? item.pts : 1;
+
+            if (typeof item === 'object' && item.multi) {
+                const meta = getCheckedMeta(setorId, si, ii);
+                const users = (meta && meta.multi) ? (meta.users || {}) : {};
+                const newCount = Object.keys(users).length + (users[name] ? 0 : 1);
+                const ptsEach = Math.round((item.pts / newCount) * 10) / 10;
+                document.getElementById('conclude-user-name').textContent = name;
+                document.getElementById('conclude-item-text').textContent = text;
+                document.getElementById('conclude-pts-label').textContent = users[name]
+                    ? `Você já está na lista (${ptsEach}pt)`
+                    : `+${ptsEach}pt 🏆`;
+                document.getElementById('conclude-item-overlay').classList.add('open');
+                return;
+            }
+
             document.getElementById('ci-user-name').textContent = name;
             document.getElementById('ci-item-text').textContent = text;
-
             document.getElementById('confirm-item-overlay').classList.add('open');
         }
         async function doConfirmItem() {
@@ -2357,8 +2372,30 @@
             document.getElementById('conclude-item-overlay').classList.remove('open');
             if (!pendingItemMeta) return;
             const { setorId, si, ii } = pendingItemMeta;
-            pendingItemMeta = null;
+            const list2 = CHECKLISTS[setorId];
+            const item2 = list2.sections[si].items[ii];
 
+            if (typeof item2 === 'object' && item2.multi) {
+                const name = pendingUserForItem;
+                pendingItemMeta = null;
+                pendingUserForItem = null;
+                if (!name) return;
+                const meta = getCheckedMeta(setorId, si, ii);
+                const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
+                if (oldUsers[name]) return;
+                const newUsers = { ...oldUsers, [name]: new Date().toISOString() };
+                setChecked(setorId, si, ii, { users: newUsers, multi: true });
+                updateMultiScores(oldUsers, newUsers, item2.pts);
+                const ptsEach = Math.round((item2.pts / Object.keys(newUsers).length) * 10) / 10;
+                showPtsToast(name, ptsEach);
+                updateProgress(setorId);
+                renderPanels();
+                const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || setorId;
+                switchTab(activeId);
+                return;
+            }
+
+            pendingItemMeta = null;
             const current = getItemStatus(setorId, si, ii);
             if (current === 'concluido') {
                 const meta = getCheckedMeta(setorId, si, ii);
@@ -2390,8 +2427,16 @@
             updateProgress(setorId);
         }
 
+        function toggleMulti(setorId, si, ii) {
+            pendingItemMeta = { setorId, si, ii };
+            document.getElementById('quem-fez-item-label').textContent =
+                CHECKLISTS[setorId].sections[si].items[ii].text;
+            document.getElementById('quem-fez-overlay').classList.add('open');
+        }
+
         function cancelConclude() {
             pendingItemMeta = null;
+            pendingUserForItem = null;
             document.getElementById('conclude-item-overlay').classList.remove('open');
         }
 
@@ -2399,17 +2444,42 @@
         function openEditItem(setorId, si, ii) {
             if (!isAdmin()) return;
             pendingItemMeta = { setorId, si, ii };
-            const list = CHECKLISTS[setorId];
-            const item = list.sections[si].items[ii];
+            const item = CHECKLISTS[setorId].sections[si].items[ii];
             const text = typeof item === 'object' ? item.text : item;
-            const meta = getCheckedMeta(setorId, si, ii);
             document.getElementById('edit-item-label').textContent = text;
+
+            if (typeof item === 'object' && item.multi) {
+                const meta = getCheckedMeta(setorId, si, ii);
+                const users = (meta && meta.multi) ? (meta.users || {}) : {};
+                document.getElementById('edit-item-current').textContent =
+                    Object.keys(users).length > 0 ? `Participantes: ${Object.keys(users).join(', ')}` : 'Sem participantes';
+                document.getElementById('edit-item-grid').innerHTML = NOMES.map(n =>
+                    `<button onclick="doEditMultiParticipant('${n}')" style="padding:12px 8px;background:${users[n] ? '#e8f8ef' : '#f5f5f7'};border:${users[n] ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${users[n] ? '✓ ' : ''}${n}</button>`
+                ).join('');
+                document.getElementById('edit-item-overlay').classList.add('open');
+                return;
+            }
+
+            const meta = getCheckedMeta(setorId, si, ii);
             document.getElementById('edit-item-current').textContent = meta ? `Feito por: ${meta.user}` : '';
-            const grid = document.getElementById('edit-item-grid');
-            grid.innerHTML = NOMES.map(n =>
+            document.getElementById('edit-item-grid').innerHTML = NOMES.map(n =>
                 `<button onclick="doReassignItem('${n}')" style="padding:12px 8px;background:${meta && meta.user === n ? '#e8f8ef' : '#f5f5f7'};border:${meta && meta.user === n ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${n}</button>`
             ).join('');
             document.getElementById('edit-item-overlay').classList.add('open');
+        }
+
+        function doEditMultiParticipant(name) {
+            if (!pendingItemMeta) return;
+            const { setorId, si, ii } = pendingItemMeta;
+            const item = CHECKLISTS[setorId].sections[si].items[ii];
+            const meta = getCheckedMeta(setorId, si, ii);
+            const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
+            const newUsers = { ...oldUsers };
+            if (newUsers[name]) { delete newUsers[name]; } else { newUsers[name] = new Date().toISOString(); }
+            setChecked(setorId, si, ii, Object.keys(newUsers).length > 0 ? { users: newUsers, multi: true } : false);
+            updateMultiScores(oldUsers, newUsers, item.pts);
+            updateProgress(setorId);
+            openEditItem(setorId, si, ii);
         }
 
         function doReassignItem(name) {
@@ -2442,10 +2512,20 @@
 
             const list = CHECKLISTS[setorId];
             const item = list.sections[si].items[ii];
+
+            if (typeof item === 'object' && item.multi) {
+                const meta = getCheckedMeta(setorId, si, ii);
+                const oldUsers = (meta && meta.multi) ? (meta.users || {}) : {};
+                setChecked(setorId, si, ii, false);
+                updateMultiScores(oldUsers, {}, item.pts);
+                updateProgress(setorId);
+                renderPanels();
+                return;
+            }
+
             const itemText = typeof item === 'object' ? item.text : item;
             const pts = typeof item === 'object' && item.pts ? item.pts : 1;
             const oldMeta = getCheckedMeta(setorId, si, ii);
-
             if (oldMeta && oldMeta.user) removeItemScore(oldMeta.user, pts, itemText);
 
             setChecked(setorId, si, ii, false);
