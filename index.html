@@ -1168,9 +1168,9 @@
         <div class="confirm-card">
             <div style="font-size:36px;margin-bottom:8px">👥</div>
             <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:4px" id="multi-item-title"></div>
-            <div style="font-size:13px;color:#888;margin-bottom:16px" id="multi-pts-label"></div>
-            <div id="multi-item-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:14px"></div>
-            <button onclick="closeMultiItem()" style="width:100%;padding:11px;background:none;border:1.5px solid #ddd;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600">Fechar</button>
+            <div style="font-size:13px;color:#888;margin-bottom:12px" id="multi-pts-label"></div>
+            <div id="multi-item-list" style="display:flex;flex-direction:column;gap:8px;width:100%;margin-bottom:14px"></div>
+            <div id="multi-item-actions"></div>
         </div>
     </div>
 
@@ -2304,21 +2304,11 @@
             if (typeof item === 'object' && item.multi) {
                 const meta = getCheckedMeta(setorId, si, ii);
                 const users = (meta && meta.multi) ? (meta.users || {}) : {};
-                const uv = users[name];
-                const uStatus = typeof uv === 'object' ? uv.status : (uv ? 'concluido' : null);
-                if (uStatus === 'concluido') return;
-                if (uStatus === 'iniciado') {
-                    const ptsEach = Math.round((item.pts / Object.keys(users).length) * 10) / 10;
-                    document.getElementById('conclude-user-name').textContent = name;
-                    document.getElementById('conclude-item-text').textContent = text;
-                    document.getElementById('conclude-pts-label').textContent = `${ptsEach}pt 🏆 (já contabilizado)`;
-                    document.getElementById('conclude-item-overlay').classList.add('open');
-                    return;
-                }
+                if (users[name]) { closeMultiItem(); return; } // já está na lista
                 const newCount = Object.keys(users).length + 1;
                 const ptsEach = Math.round((item.pts / newCount) * 10) / 10;
                 document.getElementById('ci-user-name').textContent = name;
-                document.getElementById('ci-item-text').textContent = `${text}\n+${ptsEach}pt`;
+                document.getElementById('ci-item-text').textContent = `${text} · +${ptsEach}pt`;
                 document.getElementById('confirm-item-overlay').classList.add('open');
                 return;
             }
@@ -2411,23 +2401,6 @@
             const list2 = CHECKLISTS[setorId];
             const item2 = list2.sections[si].items[ii];
 
-            if (typeof item2 === 'object' && item2.multi) {
-                const name = pendingUserForItem;
-                pendingItemMeta = null;
-                pendingUserForItem = null;
-                if (!name) return;
-                const meta = getCheckedMeta(setorId, si, ii);
-                const users = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
-                const uv = users[name];
-                if (!uv || (typeof uv === 'object' && uv.status === 'concluido')) return;
-                users[name] = { date: typeof uv === 'object' ? uv.date : uv, status: 'concluido' };
-                setChecked(setorId, si, ii, { users, multi: true });
-                updateProgress(setorId);
-                renderPanels();
-                const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || setorId;
-                switchTab(activeId);
-                return;
-            }
 
             pendingItemMeta = null;
             const current = getItemStatus(setorId, si, ii);
@@ -2462,6 +2435,12 @@
         }
 
         function toggleMulti(setorId, si, ii) {
+            const meta = getCheckedMeta(setorId, si, ii);
+            const users = (meta && meta.multi) ? (meta.users || {}) : {};
+            if (Object.keys(users).length > 0) {
+                openMultiItem(setorId, si, ii);
+                return;
+            }
             pendingItemMeta = { setorId, si, ii };
             document.getElementById('quem-fez-item-label').textContent =
                 CHECKLISTS[setorId].sections[si].items[ii].text;
@@ -2586,18 +2565,27 @@
             const users = (meta && meta.multi) ? (meta.users || {}) : {};
             const count = Object.keys(users).length;
             const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
+            const hasIniciado = Object.values(users).some(v => typeof v === 'object' && v.status === 'iniciado');
 
             document.getElementById('multi-item-title').textContent = item.text;
-            document.getElementById('multi-pts-label').textContent = count === 0
-                ? `+${item.pts}pt — toque no seu nome para participar`
-                : `${item.pts}pt divididos · ${ptsEach}pt por pessoa`;
+            document.getElementById('multi-pts-label').textContent = `${item.pts}pt · ${ptsEach}pt por pessoa`;
 
-            document.getElementById('multi-item-grid').innerHTML = NOMES.map(name => {
-                const isIn = !!users[name];
-                return `<button onclick="toggleMultiParticipant('${name}')"
-                    style="padding:12px 8px;background:${isIn ? '#e8f8ef' : '#f5f5f7'};border:${isIn ? '2px solid var(--green)' : '2px solid transparent'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">
-                    ${isIn ? '✓ ' : ''}${name}</button>`;
+            document.getElementById('multi-item-list').innerHTML = Object.entries(users).map(([u, v]) => {
+                const st = typeof v === 'object' ? v.status : 'concluido';
+                const dt = typeof v === 'object' ? v.date : v;
+                const t = new Date(dt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${st==='iniciado'?'#fffbeb':'#f0fdf4'};border-radius:12px">
+                    <span style="font-size:20px">${st==='iniciado'?'🟡':'✅'}</span>
+                    <div style="flex:1"><div style="font-weight:700;font-size:14px">${u}</div>
+                    <div style="font-size:11px;color:#aaa">${st==='iniciado'?'em andamento':'concluído'} · ${t}</div></div>
+                </div>`;
             }).join('');
+
+            document.getElementById('multi-item-actions').innerHTML = `
+                ${hasIniciado ? `<button onclick="concludeAllMulti()" style="width:100%;padding:13px;background:var(--green);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:8px">✅ Concluir tudo!</button>` : ''}
+                <button onclick="addMoreMulti()" style="width:100%;padding:11px;background:#f5f5f7;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#333;margin-bottom:8px">➕ Adicionar mais</button>
+                <button onclick="closeMultiItem()" style="width:100%;padding:11px;background:none;border:1.5px solid #ddd;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600">Fechar</button>
+            `;
 
             document.getElementById('multi-item-overlay').classList.add('open');
         }
@@ -2607,49 +2595,31 @@
             pendingMultiMeta = null;
         }
 
-        function toggleMultiParticipant(name) {
+        function concludeAllMulti() {
             if (!pendingMultiMeta) return;
             const { setorId, si, ii } = pendingMultiMeta;
-            const item = CHECKLISTS[setorId].sections[si].items[ii];
+            closeMultiItem();
             const meta = getCheckedMeta(setorId, si, ii);
-            const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
-            const newUsers = { ...oldUsers };
-
-            if (newUsers[name]) {
-                delete newUsers[name];
-            } else {
-                newUsers[name] = new Date().toISOString();
-            }
-
-            const newMeta = Object.keys(newUsers).length > 0
-                ? { users: newUsers, multi: true }
-                : false;
-            setChecked(setorId, si, ii, newMeta);
-
-            updateMultiScores(oldUsers, newUsers, item.pts);
+            const users = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
+            const newUsers = {};
+            Object.entries(users).forEach(([u, v]) => {
+                newUsers[u] = { date: typeof v === 'object' ? v.date : v, status: 'concluido' };
+            });
+            setChecked(setorId, si, ii, { users: newUsers, multi: true });
             updateProgress(setorId);
+            renderPanels();
+            const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || setorId;
+            switchTab(activeId);
+        }
 
-            // Refresh the item card without closing the overlay
-            const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
-            if (el) {
-                const count = Object.keys(newUsers).length;
-                const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
-                const names = Object.entries(newUsers).map(([u, d]) =>
-                    `${u} · ${new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`).join('  ·  ');
-                el.className = `item ${count > 0 ? 'checked' : ''}`;
-                el.querySelector('div > div').innerHTML = `
-                    <div style="font-size:14px;font-weight:600;color:#1a1a1a">${item.text}</div>
-                    ${count > 0 ? `<div style="font-size:11px;color:#aaa;margin-top:3px">${names}</div>` : ''}`;
-                const btn = el.querySelector('button');
-                if (btn) {
-                    btn.style.background = count > 0 ? '#e8f8ef' : 'var(--green)';
-                    btn.style.color = count > 0 ? 'var(--green)' : 'white';
-                    btn.textContent = count > 0 ? `${ptsEach}pt cada` : `+${item.pts}pt`;
-                }
-            }
-
-            // Refresh overlay
-            openMultiItem(setorId, si, ii);
+        function addMoreMulti() {
+            if (!pendingMultiMeta) return;
+            const { setorId, si, ii } = pendingMultiMeta;
+            closeMultiItem();
+            pendingItemMeta = { setorId, si, ii };
+            document.getElementById('quem-fez-item-label').textContent =
+                CHECKLISTS[setorId].sections[si].items[ii].text;
+            document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
         function updateMultiScores(oldUsers, newUsers, pts) {
