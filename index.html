@@ -2332,7 +2332,6 @@
                 if (oldUsers[name]) return;
                 const newUsers = { ...oldUsers, [name]: { date: new Date().toISOString(), status: 'iniciado' } };
                 setChecked(setorId, si, ii, { users: newUsers, multi: true });
-                updateMultiScores(oldUsers, newUsers, itemDCI.pts);
                 updateProgress(setorId);
                 const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
                 if (el) {
@@ -2622,6 +2621,8 @@
             Object.entries(users).forEach(([u, v]) => {
                 newUsers[u] = { date: typeof v === 'object' ? v.date : v, status: 'concluido' };
             });
+            const itemCA = CHECKLISTS[setorId].sections[si].items[ii];
+            updateMultiScores({}, newUsers, itemCA.pts);
             setChecked(setorId, si, ii, { users: newUsers, multi: true });
             updateProgress(setorId);
             renderPanels();
