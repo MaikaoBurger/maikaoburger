@@ -1959,7 +1959,11 @@
         function getItemStatus(setorId, si, ii) {
             const v = state[`${setorId}_${si}_${ii}`];
             if (!v) return null;
-            if (v.multi) return Object.keys(v.users || {}).length > 0 ? 'concluido' : null;
+            if (v.multi) {
+                const entries = Object.values(v.users || {});
+                if (!entries.length) return null;
+                return entries.some(e => typeof e === 'object' && e.status === 'iniciado') ? 'iniciado' : 'concluido';
+            }
             return v.status || 'concluido';
         }
         function getCheckedTime(setorId, si, ii) {
@@ -2176,15 +2180,21 @@
                             const users = (meta && meta.multi) ? (meta.users || {}) : {};
                             const count = Object.keys(users).length;
                             const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
-                            const namesList = Object.entries(users).map(([u, d]) =>
-                                `${u} · ${new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`).join(' · ');
+                            const multiStatus = getItemStatus(id, si, ii);
+                            const itemClass = multiStatus === 'concluido' ? 'checked' : multiStatus === 'iniciado' ? 'iniciado' : '';
+                            const namesList = Object.entries(users).map(([u, v]) => {
+                                const st = typeof v === 'object' ? v.status : 'concluido';
+                                const dt = typeof v === 'object' ? v.date : v;
+                                const t = new Date(dt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+                                return st === 'iniciado' ? `🟡 ${u} · ${t}` : `${u} · ${t}`;
+                            }).join(' · ');
                             const editBtn = count > 0 && isAdmin()
                                 ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
                                 : '';
                             const timeHtml = count > 0
-                                ? `<span class="item-time" style="font-size:11px;color:#aaa;white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:400">${namesList}</span>`
+                                ? `<span class="item-time" style="font-size:11px;color:${multiStatus==='iniciado'?'#f59e0b':'#aaa'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${multiStatus==='iniciado'?700:400}">${namesList}</span>`
                                 : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${item.pts}pt</span>`;
-                            return `<div class="item ${count > 0 ? 'checked' : ''}" id="item-${id}-${si}-${ii}">
+                            return `<div class="item ${itemClass}" id="item-${id}-${si}-${ii}">
                                 <label onclick="event.preventDefault();toggleMulti('${id}',${si},${ii})">
                                     <input type="checkbox" ${count > 0 ? 'checked' : ''} style="pointer-events:none">
                                     <div class="box"><svg viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -2294,14 +2304,22 @@
             if (typeof item === 'object' && item.multi) {
                 const meta = getCheckedMeta(setorId, si, ii);
                 const users = (meta && meta.multi) ? (meta.users || {}) : {};
-                const newCount = Object.keys(users).length + (users[name] ? 0 : 1);
+                const uv = users[name];
+                const uStatus = typeof uv === 'object' ? uv.status : (uv ? 'concluido' : null);
+                if (uStatus === 'concluido') return;
+                if (uStatus === 'iniciado') {
+                    const ptsEach = Math.round((item.pts / Object.keys(users).length) * 10) / 10;
+                    document.getElementById('conclude-user-name').textContent = name;
+                    document.getElementById('conclude-item-text').textContent = text;
+                    document.getElementById('conclude-pts-label').textContent = `${ptsEach}pt 🏆 (já contabilizado)`;
+                    document.getElementById('conclude-item-overlay').classList.add('open');
+                    return;
+                }
+                const newCount = Object.keys(users).length + 1;
                 const ptsEach = Math.round((item.pts / newCount) * 10) / 10;
-                document.getElementById('conclude-user-name').textContent = name;
-                document.getElementById('conclude-item-text').textContent = text;
-                document.getElementById('conclude-pts-label').textContent = users[name]
-                    ? `Você já está na lista (${ptsEach}pt)`
-                    : `+${ptsEach}pt 🏆`;
-                document.getElementById('conclude-item-overlay').classList.add('open');
+                document.getElementById('ci-user-name').textContent = name;
+                document.getElementById('ci-item-text').textContent = `${text}\n+${ptsEach}pt`;
+                document.getElementById('confirm-item-overlay').classList.add('open');
                 return;
             }
 
@@ -2314,6 +2332,24 @@
             if (!pendingItemMeta || !pendingUserForItem) return;
             const { setorId, si, ii } = pendingItemMeta;
             const name = pendingUserForItem;
+            const listDCI = CHECKLISTS[setorId];
+            const itemDCI = listDCI.sections[si].items[ii];
+
+            if (typeof itemDCI === 'object' && itemDCI.multi) {
+                pendingItemMeta = null; pendingUserForItem = null;
+                const meta = getCheckedMeta(setorId, si, ii);
+                const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
+                if (oldUsers[name]) return;
+                const newUsers = { ...oldUsers, [name]: { date: new Date().toISOString(), status: 'iniciado' } };
+                setChecked(setorId, si, ii, { users: newUsers, multi: true });
+                updateMultiScores(oldUsers, newUsers, itemDCI.pts);
+                updateProgress(setorId);
+                renderPanels();
+                const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || setorId;
+                switchTab(activeId);
+                return;
+            }
+
             pendingItemMeta = null;
             pendingUserForItem = null;
 
@@ -2381,13 +2417,11 @@
                 pendingUserForItem = null;
                 if (!name) return;
                 const meta = getCheckedMeta(setorId, si, ii);
-                const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
-                if (oldUsers[name]) return;
-                const newUsers = { ...oldUsers, [name]: new Date().toISOString() };
-                setChecked(setorId, si, ii, { users: newUsers, multi: true });
-                updateMultiScores(oldUsers, newUsers, item2.pts);
-                const ptsEach = Math.round((item2.pts / Object.keys(newUsers).length) * 10) / 10;
-                showPtsToast(name, ptsEach);
+                const users = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
+                const uv = users[name];
+                if (!uv || (typeof uv === 'object' && uv.status === 'concluido')) return;
+                users[name] = { date: typeof uv === 'object' ? uv.date : uv, status: 'concluido' };
+                setChecked(setorId, si, ii, { users, multi: true });
                 updateProgress(setorId);
                 renderPanels();
                 const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || setorId;
@@ -2475,7 +2509,7 @@
             const meta = getCheckedMeta(setorId, si, ii);
             const oldUsers = (meta && meta.multi) ? { ...(meta.users || {}) } : {};
             const newUsers = { ...oldUsers };
-            if (newUsers[name]) { delete newUsers[name]; } else { newUsers[name] = new Date().toISOString(); }
+            if (newUsers[name]) { delete newUsers[name]; } else { newUsers[name] = { date: new Date().toISOString(), status: 'concluido' }; }
             setChecked(setorId, si, ii, Object.keys(newUsers).length > 0 ? { users: newUsers, multi: true } : false);
             updateMultiScores(oldUsers, newUsers, item.pts);
             updateProgress(setorId);
