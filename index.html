@@ -1944,6 +1944,16 @@
             fbWrite({ [`state/${fbStateKey()}`]: state });
         }
 
+        async function refreshStateFromFirebase() {
+            try {
+                const snap = await db.ref(`state/${fbStateKey()}`).get();
+                if (snap.exists()) {
+                    state = snap.val();
+                    localStorage.setItem(stateKey(), JSON.stringify(state));
+                }
+            } catch(e) { /* offline — use local state */ }
+        }
+
         function getChecked(setorId, si, ii) {
             const v = state[`${setorId}_${si}_${ii}`];
             if (!v) return false;
@@ -2320,6 +2330,7 @@
         async function doConfirmItem() {
             document.getElementById('confirm-item-overlay').classList.remove('open');
             if (!pendingItemMeta || !pendingUserForItem) return;
+            await refreshStateFromFirebase();
             const { setorId, si, ii } = pendingItemMeta;
             const name = pendingUserForItem;
             const listDCI = CHECKLISTS[setorId];
@@ -2413,6 +2424,7 @@
         async function doConcludeItem() {
             document.getElementById('conclude-item-overlay').classList.remove('open');
             if (!pendingItemMeta) return;
+            await refreshStateFromFirebase();
             const { setorId, si, ii } = pendingItemMeta;
             const list2 = CHECKLISTS[setorId];
             const item2 = list2.sections[si].items[ii];
