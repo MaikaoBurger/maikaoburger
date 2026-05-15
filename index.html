@@ -1927,7 +1927,8 @@
 
         // ── Estado ──
         function today() {
-            return new Date().toLocaleDateString('pt-BR');
+            const d = new Date(Date.now() - 30 * 60 * 1000);
+            return d.toLocaleDateString('pt-BR');
         }
 
         function stateKey() {
