@@ -1284,8 +1284,8 @@
                         { text: 'Cortar papel recife', skippable: true },
                         { text: 'Limpar os morangos', pts: 2, skippable: true },
                         'Abastecer caixinha do combo infantil e caixinha da fritura',
-                        { text: 'Dobrar papel de mesa para a semana', pts: 3, skippable: true },
-                        { text: 'Produzir caixinha de combo infantil e caixinha da fritura para a semana', pts: 3, skippable: true },
+                        { text: 'Dobrar papel de mesa para a semana', pts: 3, skippable: true, weekly: true },
+                        { text: 'Produzir caixinha de combo infantil e caixinha da fritura para a semana', pts: 3, skippable: true, weekly: true },
                         { text: 'Produzir milk shake', pts: 5, skippable: true },
                         'Conferir a coxinha',
                         { text: 'Trocar o saco de lixo', skippable: true },
@@ -1946,9 +1946,40 @@
             return `mb_${today()}_d${selectedDay}_${selectedSetores.sort().join(',')}`;
         }
 
+        function thisMonday() {
+            const d = new Date(Date.now() - 30 * 60 * 1000);
+            const day = d.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            const mon = new Date(d);
+            mon.setDate(d.getDate() + diff);
+            return mon.toLocaleDateString('pt-BR');
+        }
+
+        function weeklyStateKey() {
+            return `mb_weekly_${thisMonday()}_${selectedSetores.sort().join(',')}`;
+        }
+
+        let weeklyState = {};
+
+        function loadWeeklyState() {
+            const s = localStorage.getItem(weeklyStateKey());
+            weeklyState = s ? JSON.parse(s) : {};
+        }
+
+        function saveWeeklyState() {
+            localStorage.setItem(weeklyStateKey(), JSON.stringify(weeklyState));
+            fbWrite({ [`state/${fbKey(weeklyStateKey())}`]: weeklyState });
+        }
+
+        function storeFor(setorId, si, ii) {
+            const item = CHECKLISTS[setorId]?.sections[si]?.items[ii];
+            return (typeof item === 'object' && item.weekly) ? weeklyState : state;
+        }
+
         function loadState() {
             const s = localStorage.getItem(stateKey());
             state = s ? JSON.parse(s) : {};
+            loadWeeklyState();
         }
 
         function saveState() {
@@ -1963,11 +1994,16 @@
                     state = snap.val();
                     localStorage.setItem(stateKey(), JSON.stringify(state));
                 }
+                const wsnap = await db.ref(`state/${fbKey(weeklyStateKey())}`).get();
+                if (wsnap.exists()) {
+                    weeklyState = wsnap.val();
+                    localStorage.setItem(weeklyStateKey(), JSON.stringify(weeklyState));
+                }
             } catch(e) { /* offline — use local state */ }
         }
 
         function getChecked(setorId, si, ii) {
-            const v = state[`${setorId}_${si}_${ii}`];
+            const v = storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`];
             if (!v) return false;
             if (v.skipped) return true;
             if (v.multi) return Object.keys(v.users || {}).length > 0;
@@ -1975,12 +2011,11 @@
         }
 
         function getCheckedMeta(setorId, si, ii) {
-            return state[`${setorId}_${si}_${ii}`] || null;
+            return storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`] || null;
         }
 
-
         function getItemStatus(setorId, si, ii) {
-            const v = state[`${setorId}_${si}_${ii}`];
+            const v = storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`];
             if (!v) return null;
             if (v.skipped) return 'skipped';
             if (v.multi) {
@@ -1990,8 +2025,9 @@
             }
             return v.status || 'concluido';
         }
+
         function getCheckedTime(setorId, si, ii) {
-            const v = state[`${setorId}_${si}_${ii}`];
+            const v = storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`];
             if (!v) return '';
             if (typeof v === 'object' && v.date) {
                 const t = new Date(v.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -2001,8 +2037,14 @@
         }
 
         function setChecked(setorId, si, ii, val) {
-            state[`${setorId}_${si}_${ii}`] = val || false;
-            saveState();
+            const item = CHECKLISTS[setorId]?.sections[si]?.items[ii];
+            if (typeof item === 'object' && item.weekly) {
+                weeklyState[`${setorId}_${si}_${ii}`] = val || false;
+                saveWeeklyState();
+            } else {
+                state[`${setorId}_${si}_${ii}`] = val || false;
+                saveState();
+            }
         }
 
         function isSectionVisible(secTitle) {
