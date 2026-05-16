@@ -2408,6 +2408,11 @@
             pendingItemMeta = null;
             document.getElementById('quem-fez-overlay').classList.remove('open');
         }
+        function cancelConfirmItem() {
+            pendingItemMeta = null;
+            pendingUserForItem = null;
+            document.getElementById('confirm-item-overlay').classList.remove('open');
+        }
         function openConcludeModal(setorId, si, ii) {
             pendingItemMeta = { setorId, si, ii };
             const meta = getCheckedMeta(setorId, si, ii);
