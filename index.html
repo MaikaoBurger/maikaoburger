@@ -1159,6 +1159,7 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
             </div>
             <div id="quem-fez-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:12px"></div>
+            <button id="skip-item-btn" onclick="skipItemToday()" style="display:none;width:100%;padding:11px;background:#f5f5f7;border:none;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600;margin-bottom:8px">⏭️ Não precisa hoje</button>
             <button onclick="cancelQuemFez()" style="width:100%;padding:11px;background:none;border:1.5px solid #ddd;border-radius:12px;font-size:14px;color:#888;cursor:pointer;font-weight:600">Cancelar</button>
         </div>
     </div>
@@ -1266,18 +1267,18 @@
                 sections: [{
                     title: 'Itens', items: [
                         'Conferir todos os molhos',
-                        { text: 'Produzir molho especial', pts: 5 },
+                        { text: 'Produzir molho especial', pts: 5, skippable: true },
                         'Conferir os bacons',
-                        { text: 'Preparar carne', pts: 12, multi: true },
-                        'Cortar tomates e cebolas',
+                        { text: 'Preparar carne', pts: 12, multi: true, skippable: true },
+                        { text: 'Cortar tomates e cebolas', skippable: true },
                         'Ligar a chapa, fritadeira e o toaster meia hora antes de abrir',
-                        'Cortar papel recife',
-                        'Limpar os morangos',
+                        { text: 'Cortar papel recife', skippable: true },
+                        { text: 'Limpar os morangos', skippable: true },
                         'Verificar itens do setor',
-                        'Produzir milk shake',
+                        { text: 'Produzir milk shake', skippable: true },
                         'Conferir a coxinha',
-                        'Trocar o saco de lixo',
-                        'Lavar os pratos até as 17:00hs',
+                        { text: 'Trocar o saco de lixo', skippable: true },
+                        { text: 'Lavar os pratos até as 17:00hs', skippable: true },
                     ]
                 }]
             },
@@ -1957,6 +1958,7 @@
         function getChecked(setorId, si, ii) {
             const v = state[`${setorId}_${si}_${ii}`];
             if (!v) return false;
+            if (v.skipped) return true;
             if (v.multi) return Object.keys(v.users || {}).length > 0;
             return true;
         }
@@ -1969,6 +1971,7 @@
         function getItemStatus(setorId, si, ii) {
             const v = state[`${setorId}_${si}_${ii}`];
             if (!v) return null;
+            if (v.skipped) return 'skipped';
             if (v.multi) {
                 const entries = Object.values(v.users || {});
                 if (!entries.length) return null;
@@ -2187,6 +2190,16 @@
                     const itemsHtml = activeItems.map(({ item, ii }) => {
                         if (typeof item === 'object' && item.multi) {
                             const meta = getCheckedMeta(id, si, ii);
+                            if (meta && meta.skipped) {
+                                return `<div class="item checked" id="item-${id}-${si}-${ii}">
+                                    <label onclick="event.preventDefault()">
+                                        <input type="checkbox" checked style="pointer-events:none">
+                                        <div class="box"><svg viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                                        <span class="item-text">👥 ${item.text}</span>
+                                        <span class="item-time" style="font-size:11px;color:#bbb;white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:400">Não necessário</span>
+                                    </label>${isAdmin() ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>` : ''}
+                                </div>`;
+                            }
                             const users = (meta && meta.multi) ? (meta.users || {}) : {};
                             const count = Object.keys(users).length;
                             const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
@@ -2214,22 +2227,23 @@
                             </div>`;
                         }
                         const status = getItemStatus(id, si, ii);
+                        const isSkipped = status === 'skipped';
                         const isIniciado = status === 'iniciado';
                         const isConcluido = status === 'concluido';
-                        const isActive = isIniciado || isConcluido;
+                        const isActive = isIniciado || isConcluido || isSkipped;
                         const text = getItemText(item);
                         const dayTag = itemDayTag(item);
                         const pts = typeof item === 'object' && item.pts ? item.pts : 1;
                         const editBtn = isActive && isAdmin()
                             ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
                             : '';
-                        const itemClass = isConcluido ? 'checked' : isIniciado ? 'iniciado' : '';
+                        const itemClass = (isConcluido || isSkipped) ? 'checked' : isIniciado ? 'iniciado' : '';
                         const meta = getCheckedMeta(id, si, ii);
-                        const timeDisplay = isIniciado
-                            ? `🟡 ${meta?.user} · ${new Date(meta?.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
+                        const timeDisplay = isSkipped ? 'Não necessário'
+                            : isIniciado ? `🟡 ${meta?.user} · ${new Date(meta?.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
                             : isConcluido ? getCheckedTime(id, si, ii) : '';
                         const timeHtml = isActive
-                            ? `<span class="item-time" style="font-size:11px;color:${isIniciado?'#f59e0b':'#aaa'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${isIniciado?700:400}">${timeDisplay}</span>`
+                            ? `<span class="item-time" style="font-size:11px;color:${isIniciado?'#f59e0b':'#bbb'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${isIniciado?700:400}">${timeDisplay}</span>`
                             : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${pts}pt</span>`;
                         return `<div class="item ${itemClass}" id="item-${id}-${si}-${ii}">
                     <label>
@@ -2272,12 +2286,16 @@
         function toggle(setorId, si, ii, checked) {
             if (lockedSectors.has(setorId)) return;
             const status = getItemStatus(setorId, si, ii);
+            if (status === 'skipped') { const cb = document.getElementById(`item-${setorId}-${si}-${ii}`)?.querySelector('input'); if (cb) cb.checked = true; return; }
             if (checked) {
                 const cb = document.getElementById(`item-${setorId}-${si}-${ii}`).querySelector('input');
                 if (cb) cb.checked = false;
                 pendingItemMeta = { setorId, si, ii };
                 const text = document.getElementById(`item-${setorId}-${si}-${ii}`).querySelector('.item-text')?.textContent || '';
                 document.getElementById('quem-fez-item-label').textContent = text;
+                const itemDef = CHECKLISTS[setorId].sections[si].items[ii];
+                const isSkippable = typeof itemDef === 'object' && itemDef.skippable;
+                document.getElementById('skip-item-btn').style.display = isSkippable ? 'block' : 'none';
                 document.getElementById('quem-fez-overlay').classList.add('open');
             } else {
                 if (status === 'iniciado') {
@@ -2413,6 +2431,32 @@
             pendingUserForItem = null;
             document.getElementById('confirm-item-overlay').classList.remove('open');
         }
+        function skipItemToday() {
+            if (!pendingItemMeta) return;
+            const { setorId, si, ii } = pendingItemMeta;
+            pendingItemMeta = null;
+            document.getElementById('quem-fez-overlay').classList.remove('open');
+            setChecked(setorId, si, ii, { skipped: true, date: new Date().toISOString() });
+            updateProgress(setorId);
+            const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
+            if (el) {
+                el.className = 'item checked';
+                const cb = el.querySelector('input');
+                if (cb) cb.checked = true;
+                const lbl = el.querySelector('label');
+                const ptsBadge = lbl.querySelector('span:last-child');
+                if (ptsBadge && !ptsBadge.classList.contains('item-time') && !ptsBadge.classList.contains('day-tag')) ptsBadge.remove();
+                let timeEl = el.querySelector('.item-time');
+                if (timeEl) { timeEl.textContent = 'Não necessário'; timeEl.style.color = '#bbb'; timeEl.style.fontWeight = '400'; }
+                else {
+                    const tag = document.createElement('span');
+                    tag.className = 'item-time';
+                    tag.style.cssText = 'font-size:11px;color:#bbb;font-weight:400;white-space:nowrap;margin-left:auto;padding-left:8px';
+                    tag.textContent = 'Não necessário';
+                    lbl.appendChild(tag);
+                }
+            }
+        }
         function openConcludeModal(setorId, si, ii) {
             pendingItemMeta = { setorId, si, ii };
             const meta = getCheckedMeta(setorId, si, ii);
@@ -2468,6 +2512,8 @@
         }
 
         function toggleMulti(setorId, si, ii) {
+            const status = getItemStatus(setorId, si, ii);
+            if (status === 'skipped') return;
             const meta = getCheckedMeta(setorId, si, ii);
             const users = (meta && meta.multi) ? (meta.users || {}) : {};
             if (Object.keys(users).length > 0) {
@@ -2477,6 +2523,7 @@
             pendingItemMeta = { setorId, si, ii };
             document.getElementById('quem-fez-item-label').textContent =
                 CHECKLISTS[setorId].sections[si].items[ii].text;
+            document.getElementById('skip-item-btn').style.display = 'block';
             document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
@@ -2654,6 +2701,7 @@
             pendingItemMeta = { setorId, si, ii };
             document.getElementById('quem-fez-item-label').textContent =
                 CHECKLISTS[setorId].sections[si].items[ii].text;
+            document.getElementById('skip-item-btn').style.display = 'none';
             document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
