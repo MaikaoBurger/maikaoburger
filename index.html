@@ -2260,7 +2260,10 @@
                             const ptsEach = count > 0 ? Math.round((item.pts / count) * 10) / 10 : item.pts;
                             const multiStatus = getItemStatus(id, si, ii);
                             const itemClass = multiStatus === 'concluido' ? 'checked' : multiStatus === 'iniciado' ? 'iniciado' : '';
-                            const namesList = Object.entries(users).map(([u, v]) => {
+                            const namesList = Object.entries(users).filter(([u, v]) => {
+                                const dt = typeof v === 'object' ? v.date : v;
+                                return u && u !== 'undefined' && !isNaN(new Date(dt));
+                            }).map(([u, v]) => {
                                 const st = typeof v === 'object' ? v.status : 'concluido';
                                 const dt = typeof v === 'object' ? v.date : v;
                                 const t = new Date(dt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -2293,9 +2296,13 @@
                             ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
                             : '';
                         const itemClass = (isConcluido || isSkipped) ? 'checked' : isIniciado ? 'iniciado' : '';
-                        const meta = getCheckedMeta(id, si, ii);
+                        let meta = getCheckedMeta(id, si, ii);
+                        if (isIniciado && (!meta?.user || isNaN(new Date(meta?.date)))) {
+                            setChecked(id, si, ii, false);
+                            meta = null;
+                        }
                         const timeDisplay = isSkipped ? 'Não necessário'
-                            : isIniciado ? `🟡 ${meta?.user} · ${new Date(meta?.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
+                            : isIniciado && meta ? `🟡 ${meta.user} · ${new Date(meta.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
                             : isConcluido ? getCheckedTime(id, si, ii) : '';
                         const timeHtml = isActive
                             ? `<span class="item-time" style="font-size:11px;color:${isIniciado?'#f59e0b':'#bbb'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${isIniciado?700:400}">${timeDisplay}</span>`
