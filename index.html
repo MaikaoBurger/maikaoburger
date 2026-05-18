@@ -2010,8 +2010,11 @@
             const v = storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`];
             if (!v) return false;
             if (v.skipped) return true;
-            if (v.multi) return Object.keys(v.users || {}).length > 0;
-            return true;
+            if (v.multi) {
+                const entries = Object.values(v.users || {});
+                return entries.length > 0 && entries.every(e => typeof e !== 'object' || e.status !== 'iniciado');
+            }
+            return !v.status || v.status === 'concluido';
         }
 
         function getCheckedMeta(setorId, si, ii) {
