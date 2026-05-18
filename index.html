@@ -2006,10 +2006,18 @@
             } catch(e) { /* offline — use local state */ }
         }
 
+        function isSkipValidToday(v, setorId, si, ii) {
+            if (!v || !v.skipped) return false;
+            const item = CHECKLISTS[setorId]?.sections[si]?.items[ii];
+            if (typeof item !== 'object' || !item.weekly) return true;
+            const skipDay = v.date ? new Date(new Date(v.date).getTime() - 30*60*1000).toLocaleDateString('pt-BR') : null;
+            return skipDay === today();
+        }
+
         function getChecked(setorId, si, ii) {
             const v = storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`];
             if (!v) return false;
-            if (v.skipped) return true;
+            if (v.skipped) return isSkipValidToday(v, setorId, si, ii);
             if (v.multi) {
                 const entries = Object.values(v.users || {});
                 return entries.length > 0 && entries.every(e => typeof e !== 'object' || e.status !== 'iniciado');
@@ -2024,7 +2032,7 @@
         function getItemStatus(setorId, si, ii) {
             const v = storeFor(setorId, si, ii)[`${setorId}_${si}_${ii}`];
             if (!v) return null;
-            if (v.skipped) return 'skipped';
+            if (v.skipped) return isSkipValidToday(v, setorId, si, ii) ? 'skipped' : null;
             if (v.multi) {
                 const entries = Object.values(v.users || {});
                 if (!entries.length) return null;
