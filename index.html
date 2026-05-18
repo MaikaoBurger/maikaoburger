@@ -2567,9 +2567,9 @@
                 return;
             }
             pendingItemMeta = { setorId, si, ii };
-            document.getElementById('quem-fez-item-label').textContent =
-                CHECKLISTS[setorId].sections[si].items[ii].text;
-            document.getElementById('skip-item-btn').style.display = 'block';
+            const itemDef = CHECKLISTS[setorId].sections[si].items[ii];
+            document.getElementById('quem-fez-item-label').textContent = itemDef.text;
+            document.getElementById('skip-item-btn').style.display = itemDef.skippable ? 'block' : 'none';
             document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
