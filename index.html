@@ -2653,7 +2653,7 @@
             const newUsers = { ...oldUsers };
             if (newUsers[name]) { delete newUsers[name]; } else { newUsers[name] = { date: new Date().toISOString(), status: 'concluido' }; }
             setChecked(setorId, si, ii, Object.keys(newUsers).length > 0 ? { users: newUsers, multi: true } : false);
-            updateMultiScores(oldUsers, newUsers, item.pts);
+            updateMultiScores(oldUsers, newUsers, item.pts, typeof item === 'object' ? item.text : item);
             updateProgress(setorId);
             openEditItem(setorId, si, ii);
         }
@@ -2693,7 +2693,7 @@
                 const meta = getCheckedMeta(setorId, si, ii);
                 const oldUsers = (meta && meta.multi) ? (meta.users || {}) : {};
                 setChecked(setorId, si, ii, false);
-                updateMultiScores(oldUsers, {}, item.pts);
+                updateMultiScores(oldUsers, {}, item.pts, item.text);
                 updateProgress(setorId);
                 renderPanels();
                 return;
@@ -2769,7 +2769,7 @@
                 newUsers[u] = { date: typeof v === 'object' ? v.date : v, status: 'concluido' };
             });
             const itemCA = CHECKLISTS[setorId].sections[si].items[ii];
-            updateMultiScores({}, newUsers, itemCA.pts);
+            updateMultiScores({}, newUsers, itemCA.pts, typeof itemCA === 'object' ? itemCA.text : itemCA);
             setChecked(setorId, si, ii, { users: newUsers, multi: true });
             updateProgress(setorId);
             renderPanels();
@@ -2788,13 +2788,14 @@
             document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
-        function updateMultiScores(oldUsers, newUsers, pts) {
+        function updateMultiScores(oldUsers, newUsers, pts, itemLabel) {
             const oldCount = Object.keys(oldUsers).length;
             const newCount = Object.keys(newUsers).length;
             const oldShare = oldCount > 0 ? pts / oldCount : 0;
             const newShare = newCount > 0 ? pts / newCount : 0;
 
             const allUsers = new Set([...Object.keys(oldUsers), ...Object.keys(newUsers)]);
+            const newLogEntries = [];
             allUsers.forEach(user => {
                 const delta = (newUsers[user] ? newShare : 0) - (oldUsers[user] ? oldShare : 0);
                 if (Math.abs(delta) < 0.001) return;
@@ -2805,7 +2806,15 @@
                     delete localScores[user];
                     db.ref('scores/' + user).remove().catch(() => setSyncUI('error'));
                 }
+                if (delta > 0 && itemLabel) {
+                    newLogEntries.push({ user, sectorLabel: itemLabel, isoDate: new Date().toISOString(), pts: Math.round(delta * 10) / 10 });
+                }
             });
+            if (newLogEntries.length > 0) {
+                const log = getScoreLog();
+                newLogEntries.forEach(e => log.push(e));
+                saveScoreLog(log);
+            }
         }
 
         function addItemScore(user, pts, itemLabel) {
