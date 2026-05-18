@@ -2252,7 +2252,7 @@
                                         <input type="checkbox" checked style="pointer-events:none">
                                         <div class="box"><svg viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                                         <span class="item-text">👥 ${item.text}</span>
-                                        <span class="item-time" style="font-size:11px;color:#bbb;white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:400">${meta?.user ? `Não necessário · ${meta.user}` : 'Não necessário'}</span>
+                                        <span class="item-time" style="font-size:11px;color:#bbb;white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:400">${meta?.user ? `Não necessário · ${meta.user}${meta.date && !isNaN(new Date(meta.date)) ? ' · ' + new Date(meta.date).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}` : 'Não necessário'}</span>
                                     </label>${isAdmin() ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>` : ''}
                                 </div>`;
                             }
@@ -2302,7 +2302,8 @@
                             setChecked(id, si, ii, false);
                             meta = null;
                         }
-                        const timeDisplay = isSkipped ? (meta?.user ? `Não necessário · ${meta.user}` : 'Não necessário')
+                        const skippedTime = meta?.date ? new Date(meta.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+                        const timeDisplay = isSkipped ? (meta?.user ? `Não necessário · ${meta.user}${skippedTime ? ` · ${skippedTime}` : ''}` : 'Não necessário')
                             : isIniciado && meta ? `🟡 ${meta.user} · ${new Date(meta.date).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
                             : isConcluido ? getCheckedTime(id, si, ii) : '';
                         const timeHtml = isActive
@@ -2504,7 +2505,7 @@
         function skipItemToday() {
             if (!pendingItemMeta) return;
             pendingSkip = true;
-            document.getElementById('quem-fez-overlay').querySelector('[style*="font-size:17px"]').textContent = 'Quem não precisa fazer hoje?';
+            document.getElementById('quem-fez-overlay').querySelector('[style*="font-size:17px"]').textContent = 'Quem confirma?';
             document.getElementById('skip-item-btn').style.display = 'none';
         }
         function doSkipWithUser(name) {
@@ -2525,7 +2526,8 @@
                 const lbl = el.querySelector('label');
                 const ptsBadge = lbl.querySelector('span:last-child');
                 if (ptsBadge && !ptsBadge.classList.contains('item-time') && !ptsBadge.classList.contains('day-tag')) ptsBadge.remove();
-                const display = `Não necessário · ${name}`;
+                const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const display = `Não necessário · ${name} · ${t}`;
                 let timeEl = el.querySelector('.item-time');
                 if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#bbb'; timeEl.style.fontWeight = '400'; }
                 else {
