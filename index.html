@@ -3006,22 +3006,12 @@
             if (!confirm('Reiniciar este checklist?')) return;
             const btn = document.getElementById(`reset-btn-${id}`);
             if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
-            const now = new Date().toISOString();
-            const resetState = { _resetAt: now };
-            const snap = await db.ref('state').get();
-            const stateData = snap.val() || {};
-            const todayFb = fbKey(today());
-            const updates = {};
-            Object.keys(stateData).forEach(k => {
-                if (k.includes(todayFb)) updates[`state/${k}`] = resetState;
-            });
-            updates[`state/${fbStateKey()}`] = resetState;
-            // reset weekly items for this setor
+            // clear only this setor's items from daily state
+            Object.keys(state).forEach(k => { if (k.startsWith(`${id}_`)) delete state[k]; });
+            saveState();
+            // clear only this setor's weekly items
             Object.keys(weeklyState).forEach(k => { if (k.startsWith(`${id}_`)) delete weeklyState[k]; });
             saveWeeklyState();
-            await db.ref().update(updates);
-            state = resetState;
-            localStorage.setItem(stateKey(), JSON.stringify(resetState));
             const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || id;
             renderPanels();
             switchTab(activeId);
