@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -1191,11 +1191,21 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-8px); }
         }
+
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+        }
     </style>
 </head>
 
 
 <body>
+    <canvas id="confetti-canvas"></canvas>
 
     <!-- Modal Histórico -->
     <div class="hist-overlay" id="hist-overlay" onclick="histOverlayClick(event)">
@@ -1354,6 +1364,7 @@
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" onclick="openRanking()">🏆</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
+            <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
             <button class="header-btn" onclick="voltarParaDia()">← Voltar</button>
         </div>
@@ -2681,6 +2692,7 @@
                 const pts = typeof itemDCI === 'object' && itemDCI.pts ? itemDCI.pts : 1;
                 addItemScore(name, pts, typeof itemDCI === 'object' ? itemDCI.text : itemDCI);
                 showPtsToast(name, pts);
+                playCoinSound();
             } else {
                 el.classList.remove('checked'); el.classList.add('iniciado');
                 const cb = el.querySelector('input');
@@ -2800,6 +2812,7 @@
             if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#aaa'; timeEl.style.fontWeight = '400'; }
             addItemScore(name, pts, itemText);
             showPtsToast(name, pts);
+            playCoinSound();
             updateProgress(setorId);
         }
 
@@ -2980,6 +2993,7 @@
             const itemCA = CHECKLISTS[setorId].sections[si].items[ii];
             updateMultiScores({}, newUsers, itemCA.pts, typeof itemCA === 'object' ? itemCA.text : itemCA);
             setChecked(setorId, si, ii, { users: newUsers, multi: true });
+            playCoinSound();
             updateProgress(setorId);
             renderPanels();
             const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || setorId;
@@ -3103,6 +3117,8 @@
             pendingConfirmSector = null;
             lockedSectors.add(id);
             lockSector(id);
+            playVictorySound();
+            triggerConfetti();
 
             const allLocked = selectedSetores.every(sid => lockedSectors.has(sid));
             if (allLocked) {
@@ -3259,6 +3275,190 @@
         buildSetorScreen();
         if (document.getElementById('nome-grid')) buildNomeScreen();
         cleanupOldData();
+
+        // --- SISTEMA DE AUDIO & CONFETES RETRO ---
+        let soundEnabled = localStorage.getItem('mb_sound_enabled') !== 'false';
+
+        function updateSoundBtnUI() {
+            const btn = document.getElementById('sound-btn');
+            if (btn) {
+                btn.textContent = soundEnabled ? '🔊' : '🔇';
+                btn.title = soundEnabled ? 'Desativar Som' : 'Ativar Som';
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('mb_sound_enabled', soundEnabled);
+            updateSoundBtnUI();
+            if (soundEnabled) {
+                playCoinSound();
+            }
+        }
+
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        function playCoinSound() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'square';
+                gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                
+                osc.frequency.setValueAtTime(988, ctx.currentTime);
+                osc.frequency.setValueAtTime(1319, ctx.currentTime + 0.08);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (e) {
+                console.error("Erro ao tocar som:", e);
+            }
+        }
+
+        function playVictorySound() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const now = ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                const noteLength = 0.12;
+                
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * noteLength);
+                    
+                    gain.gain.setValueAtTime(0.06, now + idx * noteLength);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * noteLength + noteLength * 1.5);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.start(now + idx * noteLength);
+                    osc.stop(now + idx * noteLength + noteLength * 1.5);
+                });
+            } catch (e) {
+                console.error("Erro ao tocar vitória:", e);
+            }
+        }
+
+        // Confetes
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const confettiCtx = confettiCanvas.getContext('2d');
+        let confettiParticles = [];
+        let confettiAnimationId = null;
+
+        function resizeConfettiCanvas() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfettiCanvas);
+
+        class ConfettiParticle {
+            constructor(startX, startY, angle, velocity) {
+                this.x = startX;
+                this.y = startY;
+                this.size = Math.random() * 8 + 6;
+                this.color = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'][Math.floor(Math.random() * 7)];
+                
+                const rad = (angle * Math.PI) / 180;
+                const speed = velocity * (Math.random() * 0.6 + 0.7);
+                this.speedX = Math.cos(rad) * speed;
+                this.speedY = Math.sin(rad) * speed;
+                
+                this.gravity = 0.25;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 10 - 5;
+                this.opacity = 1.0;
+                this.fadeSpeed = Math.random() * 0.01 + 0.005;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.speedY += this.gravity;
+                this.y += this.speedY;
+                this.rotation += this.rotationSpeed;
+                this.opacity -= this.fadeSpeed;
+            }
+
+            draw() {
+                if (this.opacity <= 0) return;
+                confettiCtx.save();
+                confettiCtx.globalAlpha = this.opacity;
+                confettiCtx.translate(this.x, this.y);
+                confettiCtx.rotate((this.rotation * Math.PI) / 180);
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                confettiCtx.restore();
+            }
+        }
+
+        function triggerConfetti() {
+            resizeConfettiCanvas();
+            confettiParticles = [];
+            const w = confettiCanvas.width;
+            const h = confettiCanvas.height;
+            
+            for (let i = 0; i < 75; i++) {
+                const angle = -45 - Math.random() * 30;
+                const velocity = Math.random() * 15 + 10;
+                confettiParticles.push(new ConfettiParticle(0, h, angle, velocity));
+            }
+            
+            for (let i = 0; i < 75; i++) {
+                const angle = -105 - Math.random() * 30;
+                const velocity = Math.random() * 15 + 10;
+                confettiParticles.push(new ConfettiParticle(w, h, angle, velocity));
+            }
+            
+            if (confettiAnimationId) {
+                cancelAnimationFrame(confettiAnimationId);
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let active = false;
+
+            confettiParticles.forEach(p => {
+                p.update();
+                p.draw();
+                if (p.opacity > 0 && p.y < confettiCanvas.height && p.x >= 0 && p.x <= confettiCanvas.width) {
+                    active = true;
+                }
+            });
+
+            if (active) {
+                confettiAnimationId = requestAnimationFrame(animateConfetti);
+            } else {
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                confettiAnimationId = null;
+            }
+        }
+
+        updateSoundBtnUI();
         if (new Date().getDay() === 3) {
             document.getElementById('screen-setor').style.display = 'none';
             document.getElementById('screen-fechado').style.display = 'flex';
