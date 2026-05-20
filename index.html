@@ -1126,14 +1126,14 @@
 
     <div class="confirm-overlay" id="confirm-item-overlay">
         <div class="confirm-card">
-            <div style="font-size:40px;margin-bottom:8px">🤔</div>
+            <div style="font-size:40px;margin-bottom:8px" id="ci-emoji">🤔</div>
             <div style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:2px" id="ci-user-name"></div>
-            <div style="font-size:13px;color:#888;margin-bottom:10px">vai iniciar esta atividade?</div>
+            <div style="font-size:13px;color:#888;margin-bottom:10px" id="ci-question">vai iniciar esta atividade?</div>
             <div style="font-size:14px;font-weight:700;color:#333;margin-bottom:14px;text-align:center;line-height:1.5;background:#f5f5f7;border-radius:10px;padding:10px 14px" id="ci-item-text"></div>
-            
+
             <div class="confirm-btn-row">
                 <button class="confirm-btn no" onclick="cancelConfirmItem()">Cancelar</button>
-                <button class="confirm-btn yes" onclick="doConfirmItem()">Sim, vou fazer!</button>
+                <button class="confirm-btn yes" id="ci-confirm-btn" onclick="doConfirmItem()">Sim, vou fazer!</button>
             </div>
         </div>
     </div>
@@ -2440,6 +2440,10 @@
 
             document.getElementById('ci-user-name').textContent = name;
             document.getElementById('ci-item-text').textContent = text;
+            const isDirect = typeof item === 'object' && item.direct;
+            document.getElementById('ci-emoji').textContent = isDirect ? '✅' : '🤔';
+            document.getElementById('ci-question').textContent = isDirect ? 'concluiu esta atividade?' : 'vai iniciar esta atividade?';
+            document.getElementById('ci-confirm-btn').textContent = isDirect ? 'Sim, concluí!' : 'Sim, vou fazer!';
             document.getElementById('confirm-item-overlay').classList.add('open');
         }
         async function doConfirmItem() {
