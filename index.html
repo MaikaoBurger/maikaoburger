@@ -1086,6 +1086,7 @@
         <div style="font-size:52px;margin-bottom:12px">🔴</div>
         <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:8px">Fechado hoje</div>
         <div style="font-size:15px;color:rgba(255,255,255,0.75);text-align:center;line-height:1.6">Quarta-feira é dia de folga.<br>Até amanhã! 👋</div>
+        <button onclick="openAdminFromClosed()" style="margin-top:32px;padding:10px 24px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);border-radius:12px;color:rgba(255,255,255,0.6);font-size:13px;font-weight:600;cursor:pointer">🔐 Acesso ADM</button>
     </div>
 
     <!-- Passo 0: Dia da semana -->
@@ -1721,6 +1722,12 @@
 
             adminSession = true;
             document.getElementById('screen-admin-auth').style.display = 'none';
+            if (adminAuthFromClosed) {
+                adminAuthFromClosed = false;
+                document.getElementById('screen-fechado').style.display = 'none';
+                document.getElementById('screen-setor').style.display = 'flex';
+                return;
+            }
             if (adminAuthFromApp) {
                 adminAuthFromApp = false;
                 document.getElementById('adm-btn').textContent = '✅ ADM';
@@ -1735,6 +1742,18 @@
         }
 
         let adminAuthFromApp = false;
+        let adminAuthFromClosed = false;
+
+        function openAdminFromClosed() {
+            adminAuthFromClosed = true;
+            const hasPw = !!getAdminHash();
+            document.getElementById('auth-error').textContent = '';
+            document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
+            document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
+            document.getElementById('auth-sub').textContent = hasPw ? 'Digite sua senha, Mike' : 'Primeiro acesso — defina uma senha';
+            document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
+            document.getElementById('screen-admin-auth').style.display = 'flex';
+        }
 
         function toggleAdminFromHeader() {
             if (adminSession) {
