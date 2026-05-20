@@ -2297,6 +2297,7 @@
         const DIAS = [
             { day: 1, label: 'Segunda' },
             { day: 2, label: 'Terça' },
+            { day: 3, label: 'Quarta' },
             { day: 4, label: 'Quinta' },
             { day: 5, label: 'Sexta' },
             { day: 6, label: 'Sábado' },
@@ -3482,10 +3483,7 @@
 
         updateSoundBtnUI();
         initMobileAudioUnlock();
-        if (new Date().getDay() === 3) {
-            document.getElementById('screen-setor').style.display = 'none';
-            document.getElementById('screen-fechado').style.display = 'flex';
-        }
+
     </script>
 </body>
 
