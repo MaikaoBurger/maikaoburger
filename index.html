@@ -1286,8 +1286,8 @@
                         { text: 'Produzir sal com pimenta', pts: 3, skippable: true },
                         { text: 'Preparar carne', pts: 12, multi: true, skippable: true },
                         { text: 'Limpar a coifa', pts: 15, skippable: true, weekly: true },
-                        'Ligar a chapa, fritadeira e o toaster meia hora antes de abrir',
-                        'Ligar a mesa aquecida, a maquina da cebola e o conservador de delivery meia hora antes de abrir',
+                        { text: 'Ligar a chapa, fritadeira e o toaster meia hora antes de abrir', pts: 1, direct: true },
+                        { text: 'Ligar a mesa aquecida, a maquina da cebola e o conservador de delivery meia hora antes de abrir', pts: 1, direct: true },
                         { text: 'Cortar papel recife', pts: 3, skippable: true, weekly: true },
                         { text: 'Cortar tomate', pts: 2, skippable: true },
                         { text: 'Cortar cebola', pts: 2, skippable: true },
@@ -2494,26 +2494,46 @@
                 return;
             }
 
-            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString(), status: 'iniciado' });
+            const isDirect = typeof itemDCI === 'object' && itemDCI.direct;
+            const finalStatus = isDirect ? 'concluido' : 'iniciado';
+            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString(), status: finalStatus });
 
             const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
-            el.classList.remove('checked'); el.classList.add('iniciado');
-            const cb = el.querySelector('input');
-            if (cb) cb.checked = true;
-
             const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const label = el.querySelector('label');
             const ptsBadge = label.querySelector('span:last-child');
             if (ptsBadge && !ptsBadge.classList.contains('item-time') && !ptsBadge.classList.contains('day-tag')) ptsBadge.remove();
             let timeEl = el.querySelector('.item-time');
-            const display = `🟡 ${name} · ${t}`;
-            if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#f59e0b'; timeEl.style.fontWeight = '700'; }
-            else {
-                const tag = document.createElement('span');
-                tag.className = 'item-time';
-                tag.style.cssText = 'font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap;margin-left:auto;padding-left:8px';
-                tag.textContent = display;
-                label.appendChild(tag);
+
+            if (isDirect) {
+                el.classList.remove('iniciado'); el.classList.add('checked');
+                const cb = el.querySelector('input');
+                if (cb) cb.checked = true;
+                const display = `${name} · ${t}`;
+                if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#aaa'; timeEl.style.fontWeight = '400'; }
+                else {
+                    const tag = document.createElement('span');
+                    tag.className = 'item-time';
+                    tag.style.cssText = 'font-size:11px;color:#aaa;font-weight:400;white-space:nowrap;margin-left:auto;padding-left:8px';
+                    tag.textContent = display;
+                    label.appendChild(tag);
+                }
+                const pts = typeof itemDCI === 'object' && itemDCI.pts ? itemDCI.pts : 1;
+                addItemScore(name, pts, typeof itemDCI === 'object' ? itemDCI.text : itemDCI);
+                showPtsToast(name, pts);
+            } else {
+                el.classList.remove('checked'); el.classList.add('iniciado');
+                const cb = el.querySelector('input');
+                if (cb) cb.checked = true;
+                const display = `🟡 ${name} · ${t}`;
+                if (timeEl) { timeEl.textContent = display; timeEl.style.color = '#f59e0b'; timeEl.style.fontWeight = '700'; }
+                else {
+                    const tag = document.createElement('span');
+                    tag.className = 'item-time';
+                    tag.style.cssText = 'font-size:11px;color:#f59e0b;font-weight:700;white-space:nowrap;margin-left:auto;padding-left:8px';
+                    tag.textContent = display;
+                    label.appendChild(tag);
+                }
             }
             updateProgress(setorId);
         }
