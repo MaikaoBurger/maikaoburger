@@ -3016,6 +3016,9 @@
                 if (k.includes(todayFb)) updates[`state/${k}`] = resetState;
             });
             updates[`state/${fbStateKey()}`] = resetState;
+            // reset weekly items for this setor
+            Object.keys(weeklyState).forEach(k => { if (k.startsWith(`${id}_`)) delete weeklyState[k]; });
+            saveWeeklyState();
             await db.ref().update(updates);
             state = resetState;
             localStorage.setItem(stateKey(), JSON.stringify(resetState));
