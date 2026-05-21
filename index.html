@@ -1450,6 +1450,8 @@
 
         // items podem ser string (todos os dias) ou { text, days: [0-6] } (0=dom,1=seg...6=sab)
         const QUI_DOM = [4, 5, 6, 0]; // quinta a domingo
+        const SAB_DOM = [6, 0]; // sabado e domingo
+
 
         const CHECKLISTS = {
             'abertura-cozinha': {
@@ -1460,6 +1462,7 @@
                         { text: 'Abastecer caixinha da fritura', pts: 1, skippable: true },
                         { text: 'Abastecer caixinha do combo infantil', pts: 1, skippable: true },
                         { text: 'Abastecer cheddar na bisnaga', pts: 2, skippable: true },
+                        { text: 'Abastecer conservador de proteína', pts: 5, multi: true, skippable: true, days: SAB_DOM },
                         { text: 'Abastecer coxinha', pts: 2, skippable: true },
                         { text: 'Abastecer o brownie', pts: 1, skippable: true },
                         { text: 'Encher potinho de maionese defumada', pts: 2, skippable: true },
