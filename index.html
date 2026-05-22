@@ -2477,7 +2477,7 @@
                     const itemsHtml = activeItems.map(({ item, ii }) => {
                         if (typeof item === 'object' && item.multi) {
                             const meta = getCheckedMeta(id, si, ii);
-                            if (meta && meta.skipped) {
+                            if (meta && meta.skipped && isSkipValidToday(meta, id, si, ii)) {
                                 return `<div class="item checked" id="item-${id}-${si}-${ii}">
                                     <label onclick="event.preventDefault()">
                                         <input type="checkbox" checked style="pointer-events:none">
