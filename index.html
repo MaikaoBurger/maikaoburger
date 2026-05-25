@@ -1380,7 +1380,7 @@
                 </div>
             </div>
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
-            <button class="header-btn" onclick="openRanking()">🏆</button>
+            <button class="header-btn" id="rank-btn" onclick="openRanking()" style="display:none">🏆</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
@@ -1932,6 +1932,7 @@
                 document.getElementById('adm-btn').style.background = 'rgba(255,255,255,0.25)';
                 document.getElementById('h-adm-badge').style.display = 'inline-block';
                 document.getElementById('hist-btn').style.display = 'inline-block';
+                document.getElementById('rank-btn').style.display = 'inline-block';
                 renderPanels();
                 switchTab(selectedSetores[0]);
             } else {
@@ -1985,6 +1986,7 @@
             document.getElementById('adm-btn').style.background = '';
             document.getElementById('h-adm-badge').style.display = 'none';
             document.getElementById('hist-btn').style.display = 'none';
+            document.getElementById('rank-btn').style.display = 'none';
             renderPanels();
             switchTab(selectedSetores[0]);
         }
@@ -2034,6 +2036,10 @@
         }
 
         function openRanking() {
+            if (!isAdmin()) {
+                closeRanking();
+                return;
+            }
             const scores = loadScores();
             const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
             const medals = ['🥇', '🥈', '🥉'];
@@ -2438,6 +2444,7 @@
             document.getElementById('h-meta').textContent = `${today()} · ${setorLabels}`;
             document.getElementById('h-adm-badge').style.display = adminSession ? 'inline-block' : 'none';
             document.getElementById('hist-btn').style.display = adminSession ? 'inline-block' : 'none';
+            document.getElementById('rank-btn').style.display = adminSession ? 'inline-block' : 'none';
             tickClock();
             clearInterval(clockInterval);
             clockInterval = setInterval(tickClock, 10000);
@@ -2505,7 +2512,7 @@
                                 : '';
                             const timeHtml = count > 0
                                 ? `<span class="item-time" style="font-size:11px;color:${multiStatus==='iniciado'?'#f59e0b':'#aaa'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${multiStatus==='iniciado'?700:400}">${namesList}</span>`
-                                : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${item.pts}pt</span>`;
+                                : (isAdmin() ? `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${item.pts}pt</span>` : '');
                             return `<div class="item ${itemClass}" id="item-${id}-${si}-${ii}">
                                 <label onclick="event.preventDefault();toggleMulti('${id}',${si},${ii})">
                                     <input type="checkbox" ${count > 0 ? 'checked' : ''} style="pointer-events:none">
@@ -2538,7 +2545,7 @@
                             : isConcluido ? getCheckedTime(id, si, ii) : '';
                         const timeHtml = isActive
                             ? `<span class="item-time" style="font-size:11px;color:${isIniciado?'#f59e0b':'#bbb'};white-space:nowrap;margin-left:auto;padding-left:8px;font-weight:${isIniciado?700:400}">${timeDisplay}</span>`
-                            : `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${pts}pt</span>`;
+                            : (isAdmin() ? `<span style="font-size:11px;font-weight:800;color:var(--green);white-space:nowrap;margin-left:auto;padding-left:8px">+${pts}pt</span>` : '');
                         return `<div class="item ${itemClass}" id="item-${id}-${si}-${ii}">
                     <label>
                         <input type="checkbox" ${isActive ? 'checked' : ''}
@@ -2804,6 +2811,7 @@
             document.getElementById('conclude-user-name').textContent = meta ? meta.user : '';
             document.getElementById('conclude-item-text').textContent = text;
             document.getElementById('conclude-pts-label').textContent = `+${pts} ponto${pts > 1 ? 's' : ''} 🏆`;
+            document.getElementById('conclude-pts-label').style.display = isAdmin() ? 'block' : 'none';
             document.getElementById('conclude-item-overlay').classList.add('open');
         }
 
@@ -2987,6 +2995,7 @@
 
             document.getElementById('multi-item-title').textContent = item.text;
             document.getElementById('multi-pts-label').textContent = `${item.pts}pt · ${ptsEach}pt por pessoa`;
+            document.getElementById('multi-pts-label').style.display = isAdmin() ? 'block' : 'none';
 
             document.getElementById('multi-item-list').innerHTML = Object.entries(users).map(([u, v]) => {
                 const st = typeof v === 'object' ? v.status : 'concluido';
@@ -3100,6 +3109,7 @@
 
         let toastTimer = null;
         function showPtsToast(user, pts) {
+            if (!isAdmin()) return;
             const toast = document.getElementById('pts-toast');
             toast.textContent = `+${pts}pt para ${user}! 🏆`;
             toast.style.display = 'block';
