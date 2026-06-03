@@ -1689,6 +1689,73 @@
             db.ref().on('value', snap => {
                 const data = snap.val();
                 if (!data) return;
+
+                // One-time migration of legacy flat scores to monthly (May 2026-05 & June 2026-06)
+                let hasLegacy = false;
+                if (data.scores) {
+                    Object.keys(data.scores).forEach(key => {
+                        if (!/^\d{4}-\d{2}$/.test(key)) {
+                            hasLegacy = true;
+                        }
+                    });
+                }
+                if (hasLegacy) {
+                    const migrationUpdates = {};
+                    const legacyScores = {};
+                    Object.entries(data.scores).forEach(([key, val]) => {
+                        if (!/^\d{4}-\d{2}$/.test(key)) {
+                            if (val && val.pts !== undefined) {
+                                legacyScores[key] = val.pts;
+                            }
+                        }
+                    });
+                    
+                    const juneScores = {};
+                    let logEntries = [];
+                    try {
+                        logEntries = JSON.parse(data.score_log || '[]');
+                    } catch(e) {}
+                    
+                    logEntries.forEach(entry => {
+                        if (entry && entry.user && entry.pts && entry.isoDate) {
+                            const d = new Date(entry.isoDate);
+                            const entryYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                            if (entryYM === '2026-06') {
+                                juneScores[entry.user] = (juneScores[entry.user] || 0) + entry.pts;
+                            }
+                        }
+                    });
+                    
+                    const mayScores = {};
+                    Object.entries(legacyScores).forEach(([user, totalPts]) => {
+                        const junePts = juneScores[user] || 0;
+                        const mayPts = Math.max(0, totalPts - junePts);
+                        if (mayPts > 0) {
+                            mayScores[user] = Math.round(mayPts * 10) / 10;
+                        }
+                        if (junePts > 0) {
+                            juneScores[user] = Math.round(junePts * 10) / 10;
+                        }
+                    });
+                    
+                    Object.entries(mayScores).forEach(([user, pts]) => {
+                        migrationUpdates[`scores/2026-05/${user}`] = { pts, token: resetToken };
+                    });
+                    
+                    const existingJune = data.scores['2026-06'] || {};
+                    Object.entries(juneScores).forEach(([user, pts]) => {
+                        const existingPts = (existingJune[user] && existingJune[user].token === resetToken) ? existingJune[user].pts : 0;
+                        const mergedPts = Math.round((existingPts + pts) * 10) / 10;
+                        migrationUpdates[`scores/2026-06/${user}`] = { pts: mergedPts, token: resetToken };
+                    });
+                    
+                    Object.keys(legacyScores).forEach(user => {
+                        migrationUpdates[`scores/${user}`] = null;
+                    });
+                    
+                    db.ref().update(migrationUpdates).catch(() => {});
+                }
+
                 if (data.state) {
                     // Skip score-related keys — scores are managed separately and old
                     // data in state/ would silently override resets.
