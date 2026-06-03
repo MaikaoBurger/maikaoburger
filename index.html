@@ -1716,20 +1716,22 @@
                         logEntries = JSON.parse(data.score_log || '[]');
                     } catch(e) {}
                     
-                    logEntries.forEach(entry => {
-                        if (entry && entry.user && entry.pts && entry.isoDate) {
-                            const d = new Date(entry.isoDate);
-                            const entryYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                            if (entryYM === '2026-06') {
-                                juneScores[entry.user] = (juneScores[entry.user] || 0) + entry.pts;
+                    if (Array.isArray(logEntries)) {
+                        logEntries.forEach(entry => {
+                            if (entry && entry.user && entry.pts !== undefined && entry.isoDate) {
+                                const d = new Date(entry.isoDate);
+                                const entryYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                                if (entryYM === '2026-06') {
+                                    juneScores[entry.user] = (juneScores[entry.user] || 0) + Number(entry.pts);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                     
                     const mayScores = {};
                     Object.entries(legacyScores).forEach(([user, totalPts]) => {
                         const junePts = juneScores[user] || 0;
-                        const mayPts = Math.max(0, totalPts - junePts);
+                        const mayPts = Math.max(0, Number(totalPts) - junePts);
                         if (mayPts > 0) {
                             mayScores[user] = Math.round(mayPts * 10) / 10;
                         }
@@ -1744,7 +1746,7 @@
                     
                     const existingJune = data.scores['2026-06'] || {};
                     Object.entries(juneScores).forEach(([user, pts]) => {
-                        const existingPts = (existingJune[user] && existingJune[user].token === resetToken) ? existingJune[user].pts : 0;
+                        const existingPts = (existingJune[user] && existingJune[user].token === resetToken) ? Number(existingJune[user].pts) : 0;
                         const mergedPts = Math.round((existingPts + pts) * 10) / 10;
                         migrationUpdates[`scores/2026-06/${user}`] = { pts: mergedPts, token: resetToken };
                     });
@@ -1753,7 +1755,10 @@
                         migrationUpdates[`scores/${user}`] = null;
                     });
                     
-                    db.ref().update(migrationUpdates).catch(() => {});
+                    db.ref().update(migrationUpdates).catch(err => {
+                        console.error("Erro na migração:", err);
+                        alert("Erro de migração do banco: " + err.message);
+                    });
                 }
 
                 if (data.state) {
