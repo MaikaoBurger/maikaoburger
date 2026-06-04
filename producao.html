@@ -754,13 +754,13 @@
         // CONFIGURAÇÕES & DADOS INICIAIS
         // ==========================================
         const DIAS_SEMANA = [
-            { id: 1, name: 'Segunda', label: 'Segunda-feira', icon: '📅' },
-            { id: 2, name: 'Terça', label: 'Terça-feira', icon: '📅' },
-            { id: 3, name: 'Quarta', label: 'Quarta-feira (Folga)', icon: '💤' },
-            { id: 4, name: 'Quinta', label: 'Quinta-feira', icon: '📅' },
-            { id: 5, name: 'Sexta', label: 'Sexta-feira', icon: '📅' },
-            { id: 6, name: 'Sábado', label: 'Sábado', icon: '📅' },
-            { id: 0, name: 'Domingo', label: 'Domingo', icon: '📅' },
+            { id: '1', name: 'Segunda', label: 'Segunda-feira', icon: '📅' },
+            { id: '2', name: 'Terça', label: 'Terça-feira', icon: '📅' },
+            { id: '3', name: 'Quarta', label: 'Quarta-feira (Folga)', icon: '💤' },
+            { id: '4', name: 'Quinta', label: 'Quinta-feira', icon: '📅' },
+            { id: '5', name: 'Sexta', label: 'Sexta-feira', icon: '📅' },
+            { id: '6', name: 'Sábado', label: 'Sábado', icon: '📅' },
+            { id: '0', name: 'Domingo', label: 'Domingo', icon: '📅' },
             { id: 'feriado', name: 'Feriado', label: 'Feriado Nacional', icon: '📅' }
         ];
 
@@ -776,7 +776,7 @@
 
         // Estado do App
         let productionItems = [];
-        let activeDayId = 1; // Segunda por padrão
+        let activeDayId = '1'; // Segunda por padrão
         let tempEditingItems = []; // Para o painel do gerente
 
         // ==========================================
@@ -808,19 +808,19 @@
         function detectToday() {
             const today = new Date().getDay();
             // Se hoje for quarta (dia de folga), deixa quarta ativa, mas exibirá banner de fechado.
-            activeDayId = today;
+            activeDayId = today.toString();
         }
 
         // Constrói abas dos dias da semana
         function buildDaySelector() {
             const container = document.getElementById('day-selector');
             container.innerHTML = DIAS_SEMANA.map(day => {
-                const isToday = day.id === activeDayId;
+                const isToday = day.id.toString() === activeDayId.toString();
                 // Formatação simples do nome do dia
                 const label = day.name;
                 return `<button class="day-pill ${isToday ? 'active' : ''}" 
                                 id="day-pill-${day.id}" 
-                                onclick="selectDay(${day.id})">
+                                onclick="selectDay('${day.id}')">
                             ${day.icon} ${label}
                         </button>`;
             }).join('');
@@ -828,7 +828,7 @@
 
         // Seleciona um dia da semana
         function selectDay(dayId) {
-            activeDayId = dayId;
+            activeDayId = dayId.toString();
             
             // Atualiza botões
             document.querySelectorAll('.day-pill').forEach(btn => btn.classList.remove('active'));
