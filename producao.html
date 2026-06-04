@@ -780,6 +780,24 @@
                 name: 'OVO CONSERVADOR',
                 unit: 'un',
                 targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 15, '0': 0, 'feriado': 0 }
+            },
+            {
+                id: '5',
+                name: 'MILK DE MORANGO',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 0, 'feriado': 0 }
+            },
+            {
+                id: '6',
+                name: 'MILK DE BROWNIE',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 8, '0': 0, 'feriado': 0 }
+            },
+            {
+                id: '7',
+                name: 'LIMONADA ROSA',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 3, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -800,7 +818,7 @@
 
         // Carrega dados do LocalStorage ou define padrões
         function loadDatabase() {
-            const saved = localStorage.getItem('mb_production_items_v7');
+            const saved = localStorage.getItem('mb_production_items_v8');
             if (saved) {
                 productionItems = JSON.parse(saved);
             } else {
@@ -810,7 +828,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('mb_production_items_v7', JSON.stringify(productionItems));
+            localStorage.setItem('mb_production_items_v8', JSON.stringify(productionItems));
         }
 
         // Detecta dia da semana atual
