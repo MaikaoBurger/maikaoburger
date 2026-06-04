@@ -1383,6 +1383,7 @@
             <button class="header-btn" id="rank-btn" onclick="openRanking()" style="display:none">🏆</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
+            <button class="header-btn" id="prod-btn" onclick="window.location.href='producao.html'" title="Planilha de Produção">📊</button>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
             <button class="header-btn" onclick="voltarParaDia()">← Voltar</button>
         </div>
@@ -2483,6 +2484,12 @@
                 <div class="setor-section">
                     <div class="setor-section-header fechamento">Fechamento</div>
                     <div class="setor-btn-row">${renderBtns(fechamento, 'sel-btn-fechamento')}</div>
+                </div>
+                <div class="setor-section" style="margin-top: 4px;">
+                    <div class="setor-section-header" style="color: var(--secondary-light); font-size: 14px;">Utilitários</div>
+                    <button class="sel-btn-abertura" onclick="window.location.href='producao.html'" style="background: linear-gradient(135deg, var(--secondary-light), #B45309); border: none; width: 100%; padding: 18px 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(217, 119, 6, 0.25);">
+                        <span>📊</span> Planilha de Produção
+                    </button>
                 </div>
             `;
 
