@@ -767,43 +767,43 @@
                 id: '2',
                 name: 'BURGER DE TOSCANA CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 5, '0': 5, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 5, '0': 5, 'feriado': 5 }
             },
             {
                 id: '3',
                 name: 'ARTESANAL DE FRANGO CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 15 }
             },
             {
                 id: '4',
                 name: 'OVO CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 15, '0': 20, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 15, '0': 20, 'feriado': 20 }
             },
             {
                 id: '5',
                 name: 'SHAKE DE MORANGO',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 15 }
             },
             {
                 id: '6',
                 name: 'SHAKE DE BROWNIE',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 8, '0': 8, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 8, '0': 8, 'feriado': 8 }
             },
             {
                 id: '7',
                 name: 'LIMONADA ROSA',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 3, '0': 6, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 3, '0': 6, 'feriado': 6 }
             },
             {
                 id: '8',
                 name: 'CALABRESA CONSERVADOR',
                 unit: 'g',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 300, '0': 300, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 300, '0': 300, 'feriado': 300 }
             }
         ];
 
@@ -824,7 +824,7 @@
 
         // Carrega dados do LocalStorage ou define padrões
         function loadDatabase() {
-            const saved = localStorage.getItem('mb_production_items_v11');
+            const saved = localStorage.getItem('mb_production_items_v12');
             if (saved) {
                 productionItems = JSON.parse(saved);
             } else {
@@ -834,7 +834,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('mb_production_items_v11', JSON.stringify(productionItems));
+            localStorage.setItem('mb_production_items_v12', JSON.stringify(productionItems));
         }
 
         // Detecta dia da semana atual
