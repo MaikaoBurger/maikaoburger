@@ -767,13 +767,13 @@
                 id: '2',
                 name: 'BURGER DE TOSCANA CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 5, '0': 0, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 5, '0': 5, 'feriado': 0 }
             },
             {
                 id: '3',
                 name: 'ARTESANAL DE FRANGO CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 0, 'feriado': 0 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 0 }
             },
             {
                 id: '4',
@@ -818,7 +818,7 @@
 
         // Carrega dados do LocalStorage ou define padrões
         function loadDatabase() {
-            const saved = localStorage.getItem('mb_production_items_v9');
+            const saved = localStorage.getItem('mb_production_items_v10');
             if (saved) {
                 productionItems = JSON.parse(saved);
             } else {
@@ -828,7 +828,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('mb_production_items_v9', JSON.stringify(productionItems));
+            localStorage.setItem('mb_production_items_v10', JSON.stringify(productionItems));
         }
 
         // Detecta dia da semana atual
