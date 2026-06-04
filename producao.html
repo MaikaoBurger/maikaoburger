@@ -190,73 +190,7 @@
             box-shadow: 0 4px 12px rgba(122, 18, 30, 0.25);
         }
 
-        .holiday-toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 10px;
-            padding: 8px 12px;
-            background: linear-gradient(135deg, rgba(217, 119, 6, 0.08), rgba(245, 158, 11, 0.03));
-            border: 1.5px dashed rgba(217, 119, 6, 0.3);
-            border-radius: var(--radius-sm);
-        }
 
-        .holiday-label {
-            font-family: var(--font-title);
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--secondary-light);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Toggle Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 46px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #E2E8F0;
-            transition: .3s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        input:checked + .slider {
-            background-color: var(--secondary);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(22px);
-        }
 
         /* ── Conteúdo Principal ── */
         .content {
@@ -726,17 +660,6 @@
             <div class="day-selector" id="day-selector">
                 <!-- Preenchido via JS -->
             </div>
-            
-            <!-- Switch Feriado -->
-            <div class="holiday-toggle-container">
-                <div class="holiday-label">
-                    <span>✨</span> Feriado Nacional (Simular Metas)
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="holiday-switch" onchange="toggleHoliday(this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
         </div>
 
         <!-- Conteúdo do Funcionário -->
@@ -837,7 +760,8 @@
             { id: 4, name: 'Quinta', label: 'Quinta-feira', icon: '📅' },
             { id: 5, name: 'Sexta', label: 'Sexta-feira', icon: '📅' },
             { id: 6, name: 'Sábado', label: 'Sábado', icon: '📅' },
-            { id: 0, name: 'Domingo', label: 'Domingo', icon: '📅' }
+            { id: 0, name: 'Domingo', label: 'Domingo', icon: '📅' },
+            { id: 'feriado', name: 'Feriado', label: 'Feriado Nacional', icon: '📅' }
         ];
 
         // Dados Iniciais Otimizados com "Carne"
@@ -853,7 +777,6 @@
         // Estado do App
         let productionItems = [];
         let activeDayId = 1; // Segunda por padrão
-        let isHolidayMode = false;
         let tempEditingItems = []; // Para o painel do gerente
 
         // ==========================================
@@ -915,11 +838,7 @@
             renderEmployeeList();
         }
 
-        // Liga/Desliga simulação de feriado
-        function toggleHoliday(checked) {
-            isHolidayMode = checked;
-            renderEmployeeList();
-        }
+
 
         // ==========================================
         // RENDERIZAR VISUALIZAÇÃO DO FUNCIONÁRIO
@@ -932,14 +851,10 @@
             const currentDayDef = DIAS_SEMANA.find(d => d.id === activeDayId);
             
             // Título principal
-            if (isHolidayMode) {
-                dayTitle.innerHTML = `Produção para Feriado Nacional 🌟`;
-            } else {
-                dayTitle.innerHTML = `Produção de ${currentDayDef.label} ${currentDayDef.icon}`;
-            }
+            dayTitle.innerHTML = `Produção de ${currentDayDef.label} ${currentDayDef.icon}`;
 
             // Tratamento específico de Quarta-feira (Folga)
-            if (activeDayId === 3 && !isHolidayMode) {
+            if (activeDayId === 3) {
                 listContainer.style.display = 'none';
                 closedBanner.style.display = 'block';
                 return;
@@ -953,12 +868,7 @@
             let count = 0;
 
             productionItems.forEach(item => {
-                let qty = 0;
-                if (isHolidayMode) {
-                    qty = item.targets['feriado'] || 0;
-                } else {
-                    qty = item.targets[activeDayId] || 0;
-                }
+                let qty = item.targets[activeDayId] || 0;
 
                 // Se a quantidade configurada for maior que 0, exibe na lista do funcionário
                 if (qty > 0) {
@@ -996,16 +906,13 @@
             const dateStr = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
             
             let title = `🍔 *PRODUÇÃO DIÁRIA - MAIKÃO BURGER*`;
-            let subtitle = isHolidayMode 
-                ? `🌟 *Feriado Nacional* (${dateStr})` 
-                : `${currentDayDef.icon} *${currentDayDef.label}* (${dateStr})`;
+            let subtitle = `${currentDayDef.icon} *${currentDayDef.label}* (${dateStr})`;
 
             let msg = `${title}\n${subtitle}\n\n`;
             let itemsCount = 0;
 
             productionItems.forEach(item => {
-                let qty = isHolidayMode ? item.targets['feriado'] : item.targets[activeDayId];
-                qty = qty || 0;
+                let qty = item.targets[activeDayId] || 0;
                 if (qty > 0) {
                     itemsCount++;
                     msg += `• *${item.name}:* ${qty} ${item.unit}\n`;
