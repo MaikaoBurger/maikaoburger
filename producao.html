@@ -798,6 +798,12 @@
                 name: 'LIMONADA ROSA',
                 unit: 'un',
                 targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 3, '0': 6, 'feriado': 0 }
+            },
+            {
+                id: '8',
+                name: 'CALABRESA CONSERVADOR',
+                unit: 'g',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 300, '0': 300, 'feriado': 0 }
             }
         ];
 
@@ -818,7 +824,7 @@
 
         // Carrega dados do LocalStorage ou define padrões
         function loadDatabase() {
-            const saved = localStorage.getItem('mb_production_items_v10');
+            const saved = localStorage.getItem('mb_production_items_v11');
             if (saved) {
                 productionItems = JSON.parse(saved);
             } else {
@@ -828,7 +834,7 @@
         }
 
         function saveDatabase() {
-            localStorage.setItem('mb_production_items_v10', JSON.stringify(productionItems));
+            localStorage.setItem('mb_production_items_v11', JSON.stringify(productionItems));
         }
 
         // Detecta dia da semana atual
