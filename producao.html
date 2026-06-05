@@ -754,11 +754,11 @@
             { id: 'feriado', name: 'Feriado', label: 'Feriado Nacional', icon: '📅' }
         ];
 
-        // Dados Iniciais Otimizados com "Carne" e novos itens
+        // Dados Iniciais Otimizados com "CARNE" e novos itens
         const DEFAULT_ITEMS = [
             {
                 id: '1',
-                name: 'Carne',
+                name: 'CARNE',
                 unit: 'kg',
                 targets: { '1': 10, '2': 10, '3': 0, '4': 20, '5': 20, '6': 35, '0': 35, 'feriado': 35 }
             },
@@ -833,6 +833,12 @@
             if (saved) {
                 productionItems = JSON.parse(saved);
                 
+                // Migração/Atualização: Se "CARNE" estiver em minúscula/camelCase, atualiza para maiúscula.
+                let carneItem = productionItems.find(item => item.name === 'Carne');
+                if (carneItem) {
+                    carneItem.name = 'CARNE';
+                }
+
                 // Migração/Atualização: Se "COXINHA NO BALCÃO REFRIGERADA" não existir nos itens salvos, adiciona/atualiza.
                 let coxinhaItem = productionItems.find(item => item.name.toUpperCase().includes('COXINHA'));
                 if (!coxinhaItem) {
@@ -843,12 +849,11 @@
                         targets: { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 }
                     };
                     productionItems.push(coxinhaItem);
-                    saveDatabase();
                 } else {
                     coxinhaItem.name = 'COXINHA NO BALCÃO REFRIGERADA';
                     coxinhaItem.targets = { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 };
-                    saveDatabase();
                 }
+                saveDatabase();
             } else {
                 productionItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
                 saveDatabase();
