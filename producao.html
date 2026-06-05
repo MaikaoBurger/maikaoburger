@@ -803,6 +803,12 @@
                 name: 'CALABRESA CONSERVADOR',
                 unit: 'g',
                 targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 300, '0': 300, 'feriado': 300 }
+            },
+            {
+                id: '9',
+                name: 'COXINHA NO BALCÃO REFRIGERADA',
+                unit: 'un',
+                targets: { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 }
             }
         ];
 
@@ -826,6 +832,23 @@
             const saved = localStorage.getItem('mb_production_items_v12');
             if (saved) {
                 productionItems = JSON.parse(saved);
+                
+                // Migração/Atualização: Se "COXINHA NO BALCÃO REFRIGERADA" não existir nos itens salvos, adiciona/atualiza.
+                let coxinhaItem = productionItems.find(item => item.name.toUpperCase().includes('COXINHA'));
+                if (!coxinhaItem) {
+                    coxinhaItem = {
+                        id: '9',
+                        name: 'COXINHA NO BALCÃO REFRIGERADA',
+                        unit: 'un',
+                        targets: { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 }
+                    };
+                    productionItems.push(coxinhaItem);
+                    saveDatabase();
+                } else {
+                    coxinhaItem.name = 'COXINHA NO BALCÃO REFRIGERADA';
+                    coxinhaItem.targets = { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 };
+                    saveDatabase();
+                }
             } else {
                 productionItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
                 saveDatabase();
