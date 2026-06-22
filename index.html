@@ -1944,7 +1944,7 @@
             for (let i = 0; i < localStorage.length; i++) {
                 try {
                     const k = localStorage.key(i);
-                    if (!k || !k.startsWith('mb_') || preserved.has(k) || k.startsWith('mb_score')) continue;
+                    if (!k || !k.startsWith('mb_') || preserved.has(k) || k.startsWith('mb_score') || k.startsWith('mb_weekly')) continue;
 
                     const body = k.slice(3);
                     const f = body.indexOf('_');
@@ -1972,10 +1972,15 @@
                                         const text = typeof item === 'string' ? item : (item.text || '');
                                         const val = stateData[`${sectorId}_${si}_${ii}`];
                                         if (!val || val === true) return;
+                                        
+                                        const itemDate = (val && typeof val === 'object') ? (val.date || '') : val;
+                                        const completedUser = (val && typeof val === 'object') ? (val.user || user) : user;
+                                        const time = itemDate ? new Date(itemDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+                                        
                                         entries[date][user][sectorId].push({
                                             text,
-                                            isoDate: val,
-                                            time: new Date(val).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                            isoDate: itemDate,
+                                            time: `${completedUser} · ${time}`
                                         });
                                     });
                                 }
