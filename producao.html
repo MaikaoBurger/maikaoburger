@@ -1014,10 +1014,11 @@
             
             // Busca senha configurada no checklist
             const savedHash = localStorage.getItem('mb_admin_pw');
+            const savedHashMarcelo = localStorage.getItem('mb_admin_pw_marcelo');
 
-            if (savedHash) {
+            if (savedHash || savedHashMarcelo) {
                 // Existe senha no checklist
-                if (hashedInput === savedHash) {
+                if ((savedHash && hashedInput === savedHash) || (savedHashMarcelo && hashedInput === savedHashMarcelo)) {
                     enterManagerMode();
                 } else {
                     errorEl.textContent = 'Senha incorreta.';

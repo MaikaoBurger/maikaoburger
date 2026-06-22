@@ -1241,7 +1241,17 @@
         <div class="auth-card">
             <div style="font-size:40px;margin-bottom:8px">🔐</div>
             <div class="screen-title" style="font-size:20px" id="auth-title">Área Administrativa</div>
-            <div class="screen-sub" id="auth-sub">Digite sua senha, Marcelo</div>
+            
+            <!-- Seletor de Admin -->
+            <div style="margin: 16px 0 12px; text-align: left;">
+                <label class="gh-field-label" style="color: rgba(255,255,255,0.7); font-size: 11px; text-align: center; display: block; margin-bottom: 6px;">Selecionar Administrador</label>
+                <select id="auth-admin-select" onchange="onAdminSelectChange()" style="width:100%; padding:12px; border-radius:var(--radius-md); border:2px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.15); color:#fff; font-size:16px; font-weight:600; text-align:center; text-align-last:center; outline:none; cursor:pointer;">
+                    <option value="Mike" style="color:#000; background:#fff;">Mike</option>
+                    <option value="Marcelo" style="color:#000; background:#fff;">Marcelo</option>
+                </select>
+            </div>
+
+            <div class="screen-sub" id="auth-sub">Digite sua senha</div>
 
             <!-- Primeiro acesso: definir senha -->
             <div id="auth-set-form" style="display:none">
@@ -1381,6 +1391,7 @@
             </div>
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" id="rank-btn" onclick="openRanking()" style="display:none">🏆</button>
+            <button class="header-btn" id="farda-btn" onclick="openFardaControl()" style="display:none" title="Controle de Farda">👕</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
@@ -1410,6 +1421,55 @@
             <button id="rank-reset-btn" onclick="confirmResetScores()"
                 style="margin-top:18px;width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text-muted);cursor:pointer;display:none">Zerar
                 pontuação</button>
+        </div>
+    </div>
+
+    <!-- Modal: Controle de Farda -->
+    <div class="gh-overlay" id="farda-overlay" onclick="fardaOverlayClick(event)">
+        <div class="gh-modal" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; flex-shrink: 0;">
+                <h2 style="font-family: var(--font-title); font-size: 22px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px;">👕 Controle de Farda</h2>
+                <button onclick="closeFardaControl()"
+                    style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#bbb;padding:0 4px">×</button>
+            </div>
+            
+            <!-- Botão de Registrar -->
+            <button class="next-btn" id="farda-register-toggle" onclick="toggleFardaForm()" style="margin: 0 0 16px; padding: 12px; font-size: 15px; width: 100%;">
+                ➕ Registrar Entrega
+            </button>
+
+            <!-- Form de Cadastro (oculto por padrão) -->
+            <div id="farda-form" style="display: none; background: #faf8f5; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; flex-shrink: 0; text-align: left;">
+                <h3 id="farda-form-title" style="font-family: var(--font-title); font-size: 14px; font-weight: 800; color: var(--primary-light); text-transform: uppercase; margin-bottom: 12px;">Nova Entrega</h3>
+                
+                <input type="hidden" id="farda-edit-id">
+
+                <div style="margin-bottom: 10px;">
+                    <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Nome do Motoboy</label>
+                    <input class="gh-input" id="farda-motoboy" type="text" placeholder="Ex: João Silva" style="padding: 10px 12px; font-size: 14px; letter-spacing: normal; text-align: left;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Cor da Farda</label>
+                        <input class="gh-input" id="farda-cor" type="text" placeholder="Ex: Preta, Vermelha" style="padding: 10px 12px; font-size: 14px; letter-spacing: normal; text-align: left;">
+                    </div>
+                    <div>
+                        <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Data de Entrega</label>
+                        <input class="gh-input" id="farda-data-entrega" type="date" style="padding: 10px 12px; font-size: 14px; letter-spacing: normal; text-align: left;">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="gh-btn cancel" onclick="toggleFardaForm(false)" style="padding: 10px; font-size: 14px;">Cancelar</button>
+                    <button class="gh-btn save" onclick="saveFardaRecord()" style="padding: 10px; font-size: 14px;">Salvar</button>
+                </div>
+            </div>
+
+            <!-- Lista de fardas (scrollable) -->
+            <div id="farda-list-container" style="flex: 1; overflow-y: auto; margin-top: 8px; padding-right: 4px;">
+                <div id="farda-list"></div>
+            </div>
         </div>
     </div>
 
@@ -1802,6 +1862,13 @@
                 if (data.last_reset_at !== undefined) localStorage.setItem('mb_last_reset_at', data.last_reset_at || '');
                 if (data.score_log !== undefined) localStorage.setItem('mb_score_log', data.score_log || '[]');
                 if (data.completions !== undefined) localStorage.setItem('mb_completions', data.completions || '[]');
+                if (data.fardas !== undefined) {
+                    localFardas = data.fardas || {};
+                    localStorage.setItem('mb_fardas', JSON.stringify(localFardas));
+                    if (document.getElementById('farda-overlay')?.classList.contains('open')) {
+                        renderFardaList();
+                    }
+                }
                 if (document.getElementById('app')?.style.display !== 'none') {
                     loadState();
                     const activeId = document.querySelector('.tab.active')?.id?.replace('tab-', '') || selectedSetores[0];
@@ -1851,9 +1918,10 @@
         }
 
         // ── Pontuação ──
-        const ADMINS = ['Mike'];
+        const ADMINS = ['Mike', 'Marcelo'];
 
         let adminSession = false;
+        let currentAdmin = null;
 
         function isAdmin() { return adminSession; }
 
@@ -1995,7 +2063,44 @@
             return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function getAdminHash() { return localStorage.getItem('mb_admin_pw') || ''; }
+        function getAdminHash(admin) {
+            // Migration check: if mb_admin_pw exists but mb_admin_pw_mike doesn't, copy it
+            if (localStorage.getItem('mb_admin_pw') && !localStorage.getItem('mb_admin_pw_mike')) {
+                localStorage.setItem('mb_admin_pw_mike', localStorage.getItem('mb_admin_pw'));
+            }
+            
+            if (admin === 'Mike') {
+                return localStorage.getItem('mb_admin_pw_mike') || '';
+            } else if (admin === 'Marcelo') {
+                return localStorage.getItem('mb_admin_pw_marcelo') || '';
+            }
+            
+            return localStorage.getItem('mb_admin_pw') || '';
+        }
+
+        let selectedAdmin = 'Mike';
+
+        function onAdminSelectChange() {
+            const selectEl = document.getElementById('auth-admin-select');
+            if (selectEl) {
+                selectedAdmin = selectEl.value;
+            }
+            const admin = selectedAdmin;
+            const hasPw = !!getAdminHash(admin);
+            
+            document.getElementById('auth-error').textContent = '';
+            document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
+            document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
+            document.getElementById('auth-sub').textContent = hasPw 
+                ? `Digite sua senha, ${admin}` 
+                : `Primeiro acesso de ${admin} — defina uma senha`;
+            document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
+            
+            // Clear fields
+            document.getElementById('auth-pw').value = '';
+            document.getElementById('auth-new-pw').value = '';
+            document.getElementById('auth-confirm-pw').value = '';
+        }
 
         function showAuthError(msg) {
             const el = document.getElementById('auth-error');
@@ -2004,7 +2109,8 @@
 
         async function submitAdminAuth() {
             showAuthError('');
-            const hasPin = !!getAdminHash();
+            const admin = selectedAdmin;
+            const hasPin = !!getAdminHash(admin);
 
             if (!hasPin) {
                 const pw1 = document.getElementById('auth-new-pw').value;
@@ -2012,11 +2118,18 @@
                 if (!pw1) { showAuthError('Defina uma senha.'); return; }
                 if (pw1.length < 4) { showAuthError('Mínimo 4 caracteres.'); return; }
                 if (pw1 !== pw2) { showAuthError('Senhas não coincidem.'); return; }
-                localStorage.setItem('mb_admin_pw', await sha256(pw1));
+                
+                const hash = await sha256(pw1);
+                if (admin === 'Mike') {
+                    localStorage.setItem('mb_admin_pw_mike', hash);
+                    localStorage.setItem('mb_admin_pw', hash); // sync with legacy for compatibility
+                } else if (admin === 'Marcelo') {
+                    localStorage.setItem('mb_admin_pw_marcelo', hash);
+                }
             } else {
                 const pw = document.getElementById('auth-pw').value;
                 if (!pw) { showAuthError('Digite a senha.'); return; }
-                if (await sha256(pw) !== getAdminHash()) {
+                if (await sha256(pw) !== getAdminHash(admin)) {
                     showAuthError('Senha incorreta.');
                     document.getElementById('auth-pw').value = '';
                     return;
@@ -2024,7 +2137,10 @@
             }
 
             adminSession = true;
+            currentAdmin = admin;
+
             document.getElementById('screen-admin-auth').style.display = 'none';
+            
             if (adminAuthFromClosed) {
                 adminAuthFromClosed = false;
                 document.getElementById('screen-fechado').style.display = 'none';
@@ -2033,13 +2149,18 @@
             }
             if (adminAuthFromApp) {
                 adminAuthFromApp = false;
-                document.getElementById('adm-btn').textContent = '✅ ADM';
+                document.getElementById('adm-btn').textContent = `✅ ADM (${admin})`;
                 document.getElementById('adm-btn').style.background = 'rgba(255,255,255,0.25)';
                 document.getElementById('h-adm-badge').style.display = 'inline-block';
+                document.getElementById('h-adm-badge').textContent = `ADM: ${admin.toUpperCase()}`;
                 document.getElementById('hist-btn').style.display = 'inline-block';
                 document.getElementById('rank-btn').style.display = 'inline-block';
+                
+                const fardaBtn = document.getElementById('farda-btn');
+                if (fardaBtn) fardaBtn.style.display = (admin === 'Marcelo') ? 'inline-block' : 'none';
+
                 renderPanels();
-                switchTab(selectedSetores[0]);
+                if (selectedSetores.length) switchTab(selectedSetores[0]);
             } else {
                 await enterApp();
             }
@@ -2048,15 +2169,23 @@
         let adminAuthFromApp = false;
         let adminAuthFromClosed = false;
 
+        function showAdminAuthScreen() {
+            const selectEl = document.getElementById('auth-admin-select');
+            if (selectEl) {
+                selectEl.value = selectedAdmin || 'Mike';
+            }
+            onAdminSelectChange();
+            document.getElementById('screen-admin-auth').style.display = 'flex';
+            setTimeout(() => {
+                const hasPw = !!getAdminHash(selectedAdmin);
+                const f = hasPw ? document.getElementById('auth-pw') : document.getElementById('auth-new-pw');
+                if (f) f.focus();
+            }, 100);
+        }
+
         function openAdminFromClosed() {
             adminAuthFromClosed = true;
-            const hasPw = !!getAdminHash();
-            document.getElementById('auth-error').textContent = '';
-            document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
-            document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
-            document.getElementById('auth-sub').textContent = hasPw ? 'Digite sua senha, Mike' : 'Primeiro acesso — defina uma senha';
-            document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
-            document.getElementById('screen-admin-auth').style.display = 'flex';
+            showAdminAuthScreen();
         }
 
         function toggleAdminFromHeader() {
@@ -2064,19 +2193,7 @@
                 logoutAdmin();
             } else {
                 adminAuthFromApp = true;
-                const hasPw = !!getAdminHash();
-                document.getElementById('auth-error').textContent = '';
-                document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
-                document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
-                document.getElementById('auth-sub').textContent = hasPw ? 'Digite sua senha, Mike' : 'Primeiro acesso — defina uma senha';
-                document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
-                if (hasPw) document.getElementById('auth-pw').value = '';
-                else { document.getElementById('auth-new-pw').value = ''; document.getElementById('auth-confirm-pw').value = ''; }
-                document.getElementById('screen-admin-auth').style.display = 'flex';
-                setTimeout(() => {
-                    const f = hasPw ? document.getElementById('auth-pw') : document.getElementById('auth-new-pw');
-                    f.focus();
-                }, 100);
+                showAdminAuthScreen();
             }
         }
 
@@ -2087,13 +2204,18 @@
 
         function logoutAdmin() {
             adminSession = false;
+            currentAdmin = null;
             document.getElementById('adm-btn').textContent = '🔐';
             document.getElementById('adm-btn').style.background = '';
             document.getElementById('h-adm-badge').style.display = 'none';
             document.getElementById('hist-btn').style.display = 'none';
             document.getElementById('rank-btn').style.display = 'none';
+            
+            const fardaBtn = document.getElementById('farda-btn');
+            if (fardaBtn) fardaBtn.style.display = 'none';
+            
             renderPanels();
-            switchTab(selectedSetores[0]);
+            if (selectedSetores.length) switchTab(selectedSetores[0]);
         }
 
         async function enterApp() {
@@ -2142,6 +2264,244 @@
             const yest = new Date(now); yest.setDate(yest.getDate() - 1);
             if (dStr === yest.toLocaleDateString('pt-BR')) return `ontem ${time}`;
             return `${dStr.slice(0, 5)} ${time}`;
+        }
+
+        // ── Controle de Fardas ──
+        let localFardas = {};
+
+        function loadFardas() {
+            try {
+                const f = localStorage.getItem('mb_fardas');
+                localFardas = f ? JSON.parse(f) : {};
+            } catch (e) {
+                localFardas = {};
+            }
+        }
+
+        function saveFardas(fardasObj) {
+            localFardas = fardasObj;
+            localStorage.setItem('mb_fardas', JSON.stringify(fardasObj));
+            db.ref('fardas').set(fardasObj).catch(() => setSyncUI('error'));
+            renderFardaList();
+        }
+
+        function getTodayIsoDate() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateDisplay(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function openFardaControl() {
+            if (!isAdmin() || currentAdmin !== 'Marcelo') {
+                closeFardaControl();
+                return;
+            }
+            loadFardas();
+            // Default delivery date to today
+            document.getElementById('farda-data-entrega').value = getTodayIsoDate();
+            // Close form by default
+            toggleFardaForm(false);
+            renderFardaList();
+            document.getElementById('farda-overlay').classList.add('open');
+        }
+
+        function closeFardaControl() {
+            document.getElementById('farda-overlay').classList.remove('open');
+        }
+
+        function fardaOverlayClick(e) {
+            if (e.target === document.getElementById('farda-overlay')) {
+                closeFardaControl();
+            }
+        }
+
+        function toggleFardaForm(show) {
+            const form = document.getElementById('farda-form');
+            const btn = document.getElementById('farda-register-toggle');
+            if (show === undefined) {
+                show = form.style.display === 'none';
+            }
+            form.style.display = show ? 'block' : 'none';
+            btn.textContent = show ? '➖ Fechar Formulário' : '➕ Registrar Entrega';
+            
+            // Clear inputs if opening for new delivery
+            if (show && !document.getElementById('farda-edit-id').value) {
+                document.getElementById('farda-motoboy').value = '';
+                document.getElementById('farda-cor').value = '';
+                document.getElementById('farda-data-entrega').value = getTodayIsoDate();
+                document.getElementById('farda-form-title').textContent = 'Nova Entrega';
+            }
+        }
+
+        function saveFardaRecord() {
+            const motoboy = document.getElementById('farda-motoboy').value.trim();
+            const cor = document.getElementById('farda-cor').value.trim();
+            const dataEntrega = document.getElementById('farda-data-entrega').value;
+            const editId = document.getElementById('farda-edit-id').value;
+
+            if (!motoboy) { alert('Informe o nome do motoboy.'); return; }
+            if (!cor) { alert('Informe a cor da farda.'); return; }
+            if (!dataEntrega) { alert('Informe a data de entrega.'); return; }
+
+            loadFardas();
+            const fardasCopy = { ...localFardas };
+
+            if (editId && fardasCopy[editId]) {
+                // Edit existing
+                fardasCopy[editId].motoboy = motoboy;
+                fardasCopy[editId].cor = cor;
+                fardasCopy[editId].dataEntrega = dataEntrega;
+            } else {
+                // New record
+                const newId = 'farda_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                fardasCopy[newId] = {
+                    id: newId,
+                    motoboy: motoboy,
+                    cor: cor,
+                    dataEntrega: dataEntrega,
+                    dataDevolucao: ''
+                };
+            }
+
+            saveFardas(fardasCopy);
+            
+            // Reset form
+            document.getElementById('farda-edit-id').value = '';
+            document.getElementById('farda-motoboy').value = '';
+            document.getElementById('farda-cor').value = '';
+            toggleFardaForm(false);
+        }
+
+        function renderFardaList() {
+            const listEl = document.getElementById('farda-list');
+            if (!listEl) return;
+
+            const records = Object.values(localFardas);
+            if (records.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-weight:600;">Nenhuma farda entregue registrada.</div>';
+                return;
+            }
+
+            // Sort by deliveryDate desc, then id desc
+            records.sort((a, b) => {
+                const dateCompare = b.dataEntrega.localeCompare(a.dataEntrega);
+                if (dateCompare !== 0) return dateCompare;
+                return b.id.localeCompare(a.id);
+            });
+
+            listEl.innerHTML = records.map(item => {
+                const isReturned = !!item.dataDevolucao;
+                const statusLabel = isReturned ? '🟢 Devolvido' : '🔴 Em aberto';
+                
+                // Color schemes: Green for returned, amber/red for open
+                const bg = isReturned ? '#ECFDF5' : '#FEF2F2';
+                const border = isReturned ? '#A7F3D0' : '#FCA5A5';
+                const textMuted = 'color: #7E6E6E;';
+
+                return `
+                    <div class="item" style="background: ${bg}; border: 1.5px solid ${border}; border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 10px; text-align: left; position: relative; transition: all 0.2s;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                            <div>
+                                <span style="font-family: var(--font-title); font-size: 16px; font-weight: 800; color: var(--text);">${item.motoboy}</span>
+                                <span style="font-size: 11px; background: rgba(0,0,0,0.06); border-radius: 6px; padding: 2px 8px; margin-left: 8px; font-weight: 700; color: var(--text-muted);">${item.cor}</span>
+                            </div>
+                            <span style="font-size: 12px; font-weight: 800; color: ${isReturned ? 'var(--green)' : 'var(--primary-light)'};">${statusLabel}</span>
+                        </div>
+                        
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; ${textMuted}">
+                            📅 Entrega: <strong style="color:var(--text);">${formatDateDisplay(item.dataEntrega)}</strong>
+                        </div>
+                        
+                        ${isReturned ? `
+                            <div style="font-size: 13px; font-weight: 600; ${textMuted}">
+                                🟢 Devolução: <strong style="color:var(--green);">${formatDateDisplay(item.dataDevolucao)}</strong>
+                            </div>
+                        ` : ''}
+
+                        <!-- Form inline de Devolução (oculto por padrão) -->
+                        <div id="dev-inline-${item.id}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(0,0,0,0.1); align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 0; flex: 1 1 100%;">Data de Devolução:</label>
+                            <input class="gh-input" id="dev-date-input-${item.id}" type="date" style="padding: 6px 10px; font-size: 13px; width: 140px; letter-spacing: normal; text-align: left;">
+                            <button class="gh-btn save" onclick="confirmFardaReturn('${item.id}')" style="padding: 6px 12px; font-size: 13px; flex: none;">Confirmar</button>
+                            <button class="gh-btn cancel" onclick="cancelFardaReturn('${item.id}')" style="padding: 6px 12px; font-size: 13px; flex: none; background: #eee;">Voltar</button>
+                        </div>
+
+                        <!-- Barra de Ações do Item -->
+                        <div id="actions-row-${item.id}" style="display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; align-items: center; border-top: 1px dashed rgba(0,0,0,0.05); padding-top: 8px;">
+                            ${!isReturned ? `
+                                <button class="gh-btn save" onclick="showDevolverInline('${item.id}')" style="padding: 6px 12px; font-size: 12px; font-weight: 800; border-radius: 8px; flex: none; background: linear-gradient(135deg, var(--green), #059669); color: white;">Devolver 🤝</button>
+                            ` : ''}
+                            <button onclick="editFardaRecord('${item.id}')" style="background:none; border:none; font-size:16px; cursor:pointer; padding: 4px;" title="Editar">✏️</button>
+                            <button onclick="deleteFardaRecord('${item.id}')" style="background:none; border:none; font-size:16px; cursor:pointer; padding: 4px;" title="Excluir">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showDevolverInline(id) {
+            // Hide other action rows, show this inline dev form
+            document.getElementById(`actions-row-${id}`).style.display = 'none';
+            const devForm = document.getElementById(`dev-inline-${id}`);
+            devForm.style.display = 'flex';
+            document.getElementById(`dev-date-input-${id}`).value = getTodayIsoDate();
+        }
+
+        function cancelFardaReturn(id) {
+            document.getElementById(`dev-inline-${id}`).style.display = 'none';
+            document.getElementById(`actions-row-${id}`).style.display = 'flex';
+        }
+
+        function confirmFardaReturn(id) {
+            const devDate = document.getElementById(`dev-date-input-${id}`).value;
+            if (!devDate) { alert('Informe a data de devolução.'); return; }
+
+            loadFardas();
+            if (localFardas[id]) {
+                const fardasCopy = { ...localFardas };
+                fardasCopy[id].dataDevolucao = devDate;
+                saveFardas(fardasCopy);
+            }
+        }
+
+        function editFardaRecord(id) {
+            loadFardas();
+            const item = localFardas[id];
+            if (!item) return;
+
+            document.getElementById('farda-edit-id').value = item.id;
+            document.getElementById('farda-motoboy').value = item.motoboy;
+            document.getElementById('farda-cor').value = item.cor;
+            document.getElementById('farda-data-entrega').value = item.dataEntrega;
+            
+            document.getElementById('farda-form-title').textContent = 'Editar Registro';
+            toggleFardaForm(true);
+            
+            // Scroll to form
+            document.getElementById('farda-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function deleteFardaRecord(id) {
+            loadFardas();
+            const item = localFardas[id];
+            if (!item) return;
+
+            if (confirm(`Excluir o registro de entrega de farda de "${item.motoboy}"?`)) {
+                const fardasCopy = { ...localFardas };
+                delete fardasCopy[id];
+                saveFardas(fardasCopy);
+            }
         }
 
         function openRanking(selectedMonth) {
@@ -2572,23 +2932,9 @@
             currentUser = name;
 
             if (ADMINS.includes(name)) {
-                const hasPw = !!getAdminHash();
-                document.getElementById('auth-error').textContent = '';
-                document.getElementById('auth-set-form').style.display = hasPw ? 'none' : 'block';
-                document.getElementById('auth-login-form').style.display = hasPw ? 'block' : 'none';
-                document.getElementById('auth-sub').textContent = hasPw
-                    ? `Digite sua senha, ${name}`
-                    : 'Primeiro acesso — defina uma senha';
-                document.getElementById('auth-submit-btn').textContent = hasPw ? 'Entrar' : 'Definir senha';
-                if (hasPw) document.getElementById('auth-pw').value = '';
-                else { document.getElementById('auth-new-pw').value = ''; document.getElementById('auth-confirm-pw').value = ''; }
-
+                selectedAdmin = name;
                 document.getElementById('screen-nome').style.display = 'none';
-                document.getElementById('screen-admin-auth').style.display = 'flex';
-                setTimeout(() => {
-                    const f = hasPw ? document.getElementById('auth-pw') : document.getElementById('auth-new-pw');
-                    f.focus();
-                }, 100);
+                showAdminAuthScreen();
                 return;
             }
 
@@ -2610,8 +2956,17 @@
 
             document.getElementById('h-meta').textContent = `${today()} · ${setorLabels}`;
             document.getElementById('h-adm-badge').style.display = adminSession ? 'inline-block' : 'none';
+            if (adminSession && currentAdmin) {
+                document.getElementById('h-adm-badge').textContent = `ADM: ${currentAdmin.toUpperCase()}`;
+            }
             document.getElementById('hist-btn').style.display = adminSession ? 'inline-block' : 'none';
             document.getElementById('rank-btn').style.display = adminSession ? 'inline-block' : 'none';
+            
+            const fardaBtn = document.getElementById('farda-btn');
+            if (fardaBtn) {
+                fardaBtn.style.display = (adminSession && currentAdmin === 'Marcelo') ? 'inline-block' : 'none';
+            }
+
             tickClock();
             clearInterval(clockInterval);
             clockInterval = setInterval(tickClock, 10000);
@@ -3486,6 +3841,7 @@
 
         localStorage.removeItem('mb_scores');
         localStorage.removeItem('mb_score_log');
+        loadFardas();
         buildSetorScreen();
         if (document.getElementById('nome-grid')) buildNomeScreen();
         cleanupOldData();
