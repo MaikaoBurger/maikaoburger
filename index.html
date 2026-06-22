@@ -1927,51 +1927,71 @@
 
         // ── Histórico ──
         function scanHistoryData() {
-            const preserved = new Set(['mb_scores', 'mb_completions', 'mb_score_log', 'mb_admin_pw']);
+            const preserved = new Set([
+                'mb_scores', 
+                'mb_completions', 
+                'mb_score_log', 
+                'mb_admin_pw', 
+                'mb_admin_pw_mike', 
+                'mb_admin_pw_marcelo', 
+                'mb_fardas', 
+                'mb_sound_enabled', 
+                'mb_reset_token', 
+                'mb_last_reset_at'
+            ]);
             const entries = {};
 
             for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (!k || !k.startsWith('mb_') || preserved.has(k) || k.startsWith('mb_score')) continue;
+                try {
+                    const k = localStorage.key(i);
+                    if (!k || !k.startsWith('mb_') || preserved.has(k) || k.startsWith('mb_score')) continue;
 
-                const body = k.slice(3);
-                const f = body.indexOf('_');
-                const s = body.indexOf('_', f + 1);
-                if (f === -1 || s === -1) continue;
+                    const body = k.slice(3);
+                    const f = body.indexOf('_');
+                    const s = body.indexOf('_', f + 1);
+                    if (f === -1 || s === -1) continue;
 
-                const user = body.slice(0, f);
-                const date = body.slice(f + 1, s);
-                const sectors = body.slice(s + 1).split(',').filter(id => CHECKLISTS[id]);
+                    const user = body.slice(0, f);
+                    const date = body.slice(f + 1, s);
+                    const sectors = body.slice(s + 1).split(',').filter(id => CHECKLISTS[id]);
 
-                if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date) || !sectors.length) continue;
+                    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date) || !sectors.length) continue;
 
-                const stateData = JSON.parse(localStorage.getItem(k) || '{}');
+                    const stateData = JSON.parse(localStorage.getItem(k) || '{}');
 
-                if (!entries[date]) entries[date] = {};
-                if (!entries[date][user]) entries[date][user] = {};
+                    if (!entries[date]) entries[date] = {};
+                    if (!entries[date][user]) entries[date][user] = {};
 
-                sectors.forEach(sectorId => {
-                    if (!entries[date][user][sectorId]) entries[date][user][sectorId] = [];
-                    const list = CHECKLISTS[sectorId];
-                    list.sections.forEach((sec, si) => {
-                        sec.items.forEach((text, ii) => {
-                            const val = stateData[`${sectorId}_${si}_${ii}`];
-                            if (!val || val === true) return;
-                            entries[date][user][sectorId].push({
-                                text,
-                                isoDate: val,
-                                time: new Date(val).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                    sectors.forEach(sectorId => {
+                        if (!entries[date][user][sectorId]) entries[date][user][sectorId] = [];
+                        const list = CHECKLISTS[sectorId];
+                        if (list && list.sections) {
+                            list.sections.forEach((sec, si) => {
+                                if (sec && sec.items) {
+                                    sec.items.forEach((item, ii) => {
+                                        const text = typeof item === 'string' ? item : (item.text || '');
+                                        const val = stateData[`${sectorId}_${si}_${ii}`];
+                                        if (!val || val === true) return;
+                                        entries[date][user][sectorId].push({
+                                            text,
+                                            isoDate: val,
+                                            time: new Date(val).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                        });
+                                    });
+                                }
                             });
-                        });
+                        }
+
+                        entries[date][user][sectorId].sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+
+                        if (!entries[date][user][sectorId].length) delete entries[date][user][sectorId];
                     });
 
-                    entries[date][user][sectorId].sort((a, b) => a.isoDate.localeCompare(b.isoDate));
-
-                    if (!entries[date][user][sectorId].length) delete entries[date][user][sectorId];
-                });
-
-                if (!Object.keys(entries[date][user]).length) delete entries[date][user];
-                if (!Object.keys(entries[date]).length) delete entries[date];
+                    if (!Object.keys(entries[date][user]).length) delete entries[date][user];
+                    if (!Object.keys(entries[date]).length) delete entries[date];
+                } catch (err) {
+                    console.error("Erro ao analisar chave no histórico: ", err);
+                }
             }
 
             return entries;
@@ -1989,22 +2009,27 @@
         let histDates = [];
 
         function openHistorico() {
-            histData = scanHistoryData();
-            histDates = sortDatesDesc(Object.keys(histData));
+            try {
+                histData = scanHistoryData();
+                histDates = sortDatesDesc(Object.keys(histData));
 
-            const pills = document.getElementById('hist-date-pills');
-            if (!histDates.length) {
-                pills.innerHTML = '';
-                document.getElementById('hist-body').innerHTML =
-                    '<div class="hist-empty">Nenhum registro encontrado.</div>';
-            } else {
-                pills.innerHTML = histDates.map((d, i) =>
-                    `<button class="date-pill ${i === 0 ? 'active' : ''}" id="pill-${d.replace(/\//g, '')}" onclick="selectHistDate('${d}')">${d.slice(0, 5)}</button>`
-                ).join('');
-                renderHistDate(histDates[0]);
+                const pills = document.getElementById('hist-date-pills');
+                if (!histDates.length) {
+                    pills.innerHTML = '';
+                    document.getElementById('hist-body').innerHTML =
+                        '<div class="hist-empty">Nenhum registro encontrado.</div>';
+                } else {
+                    pills.innerHTML = histDates.map((d, i) =>
+                        `<button class="date-pill ${i === 0 ? 'active' : ''}" id="pill-${d.replace(/\//g, '')}" onclick="selectHistDate('${d}')">${d.slice(0, 5)}</button>`
+                    ).join('');
+                    renderHistDate(histDates[0]);
+                }
+
+                document.getElementById('hist-overlay').classList.add('open');
+            } catch (err) {
+                console.error("Erro ao abrir histórico: ", err);
+                alert("Erro ao abrir o histórico: " + err.message);
             }
-
-            document.getElementById('hist-overlay').classList.add('open');
         }
 
         function selectHistDate(date) {
@@ -2015,38 +2040,44 @@
         }
 
         function renderHistDate(date) {
-            const users = histData[date] || {};
-            const userNames = Object.keys(users).sort();
+            try {
+                const users = histData[date] || {};
+                const userNames = Object.keys(users).sort();
 
-            if (!userNames.length) {
-                document.getElementById('hist-body').innerHTML =
-                    '<div class="hist-empty">Nenhuma atividade nesta data.</div>';
-                return;
-            }
+                if (!userNames.length) {
+                    document.getElementById('hist-body').innerHTML =
+                        '<div class="hist-empty">Nenhuma atividade nesta data.</div>';
+                    return;
+                }
 
-            const html = userNames.map(user => {
-                const sectors = users[user];
-                const sectorsHtml = Object.keys(sectors).map(sectorId => {
-                    const items = sectors[sectorId];
-                    const list = CHECKLISTS[sectorId];
-                    const itemsHtml = items.map(it =>
-                        `<div class="hist-item">
-                    <span class="hist-item-text">✅ ${it.text}</span>
-                    <span class="hist-item-time">${it.time}</span>
-                </div>`
-                    ).join('');
-                    const done = items.length;
-                    const total = list.sections.reduce((n, s) => n + s.items.length, 0);
-                    return `<div class="hist-sector-label">${list.label} <span style="font-weight:400;color:#bbb">${done}/${total}</span></div>${itemsHtml}`;
+                const html = userNames.map(user => {
+                    const sectors = users[user];
+                    const sectorsHtml = Object.keys(sectors).map(sectorId => {
+                        const items = sectors[sectorId];
+                        const list = CHECKLISTS[sectorId];
+                        if (!list) return '';
+                        const itemsHtml = items.map(it =>
+                            `<div class="hist-item">
+                        <span class="hist-item-text">✅ ${it.text}</span>
+                        <span class="hist-item-time">${it.time}</span>
+                    </div>`
+                        ).join('');
+                        const done = items.length;
+                        const total = list.sections ? list.sections.reduce((n, s) => n + (s.items ? s.items.length : 0), 0) : 0;
+                        return `<div class="hist-sector-label">${list.label || sectorId} <span style="font-weight:400;color:#bbb">${done}/${total}</span></div>${itemsHtml}`;
+                    }).join('');
+
+                    return `<div class="hist-employee">
+                <div class="hist-employee-name">👤 ${user}</div>
+                ${sectorsHtml}
+            </div>`;
                 }).join('');
 
-                return `<div class="hist-employee">
-            <div class="hist-employee-name">👤 ${user}</div>
-            ${sectorsHtml}
-        </div>`;
-            }).join('');
-
-            document.getElementById('hist-body').innerHTML = html;
+                document.getElementById('hist-body').innerHTML = html;
+            } catch (err) {
+                console.error("Erro ao renderizar histórico: ", err);
+                document.getElementById('hist-body').innerHTML = '<div class="hist-empty">Erro ao renderizar dados da data.</div>';
+            }
         }
 
         function closeHistorico() {
