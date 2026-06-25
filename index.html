@@ -1941,29 +1941,46 @@
             ]);
             const entries = {};
 
+            const addEntry = (dateKey, userName, sectorId, entryObj) => {
+                if (!entries[dateKey]) entries[dateKey] = {};
+                if (!entries[dateKey][userName]) entries[dateKey][userName] = {};
+                if (!entries[dateKey][userName][sectorId]) entries[dateKey][userName][sectorId] = [];
+                entries[dateKey][userName][sectorId].push(entryObj);
+            };
+
             for (let i = 0; i < localStorage.length; i++) {
                 try {
                     const k = localStorage.key(i);
                     if (!k || !k.startsWith('mb_') || preserved.has(k) || k.startsWith('mb_score') || k.startsWith('mb_weekly')) continue;
 
                     const body = k.slice(3);
-                    const f = body.indexOf('_');
-                    const s = body.indexOf('_', f + 1);
-                    if (f === -1 || s === -1) continue;
+                    const parts = body.split('_');
+                    if (parts.length < 3) continue;
 
-                    const user = body.slice(0, f);
-                    const date = body.slice(f + 1, s);
-                    const sectors = body.slice(s + 1).split(',').filter(id => CHECKLISTS[id]);
+                    let date = '';
+                    let sectorsPart = '';
+                    let legacyUser = '';
 
-                    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date) || !sectors.length) continue;
+                    // Detect new format: mb_date_dayCode_sectors (e.g. mb_25/06/2026_d4_cozinha)
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(parts[0])) {
+                        date = parts[0];
+                        sectorsPart = parts.slice(2).join('_');
+                    } 
+                    // Detect legacy format: mb_user_date_sectors (e.g. mb_Mike_25/06/2026_cozinha)
+                    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(parts[1])) {
+                        legacyUser = parts[0];
+                        date = parts[1];
+                        sectorsPart = parts.slice(2).join('_');
+                    } else {
+                        continue;
+                    }
+
+                    const sectors = sectorsPart.split(',').filter(id => CHECKLISTS[id]);
+                    if (!sectors.length) continue;
 
                     const stateData = JSON.parse(localStorage.getItem(k) || '{}');
 
-                    if (!entries[date]) entries[date] = {};
-                    if (!entries[date][user]) entries[date][user] = {};
-
                     sectors.forEach(sectorId => {
-                        if (!entries[date][user][sectorId]) entries[date][user][sectorId] = [];
                         const list = CHECKLISTS[sectorId];
                         if (list && list.sections) {
                             list.sections.forEach((sec, si) => {
@@ -1971,33 +1988,81 @@
                                     sec.items.forEach((item, ii) => {
                                         const text = typeof item === 'string' ? item : (item.text || '');
                                         const val = stateData[`${sectorId}_${si}_${ii}`];
-                                        if (!val || val === true) return;
-                                        
-                                        const itemDate = (val && typeof val === 'object') ? (val.date || '') : val;
-                                        const completedUser = (val && typeof val === 'object') ? (val.user || user) : user;
-                                        const time = itemDate ? new Date(itemDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-                                        
-                                        entries[date][user][sectorId].push({
-                                            text,
-                                            isoDate: itemDate,
-                                            time: `${completedUser} · ${time}`
-                                        });
+                                        if (!val) return;
+
+                                        // Checked but no user metadata (legacy or simple boolean true)
+                                        if (val === true) {
+                                            const name = legacyUser || 'Equipe';
+                                            addEntry(date, name, sectorId, {
+                                                text,
+                                                isoDate: '',
+                                                time: `${name}`
+                                            });
+                                            return;
+                                        }
+
+                                        // If val is an object
+                                        if (typeof val === 'object') {
+                                            if (val.multi) {
+                                                const users = val.users || {};
+                                                Object.entries(users).forEach(([userName, userVal]) => {
+                                                    const itemDate = (userVal && typeof userVal === 'object') ? (userVal.date || '') : '';
+                                                    const time = itemDate ? new Date(itemDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+                                                    addEntry(date, userName, sectorId, {
+                                                        text,
+                                                        isoDate: itemDate,
+                                                        time: `${userName} · ${time}`
+                                                    });
+                                                });
+                                            } else if (val.skipped) {
+                                                const userName = val.user || legacyUser || 'Equipe';
+                                                const itemDate = val.date || '';
+                                                const time = itemDate ? new Date(itemDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+                                                addEntry(date, userName, sectorId, {
+                                                    text: `🚫 (Não nec.) ${text}`,
+                                                    isoDate: itemDate,
+                                                    time: `${userName} · ${time}`
+                                                });
+                                            } else {
+                                                const userName = val.user || legacyUser || 'Equipe';
+                                                const itemDate = val.date || '';
+                                                const time = itemDate ? new Date(itemDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+                                                addEntry(date, userName, sectorId, {
+                                                    text,
+                                                    isoDate: itemDate,
+                                                    time: `${userName} · ${time}`
+                                                });
+                                            }
+                                        } else {
+                                            // val is string (e.g. legacy ISO date string) or other simple type
+                                            const userName = legacyUser || 'Equipe';
+                                            const time = typeof val === 'string' && !isNaN(Date.parse(val))
+                                                ? new Date(val).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                                : '';
+                                            addEntry(date, userName, sectorId, {
+                                                text,
+                                                isoDate: typeof val === 'string' ? val : '',
+                                                time: time ? `${userName} · ${time}` : `${userName}`
+                                            });
+                                        }
                                     });
                                 }
                             });
                         }
-
-                        entries[date][user][sectorId].sort((a, b) => a.isoDate.localeCompare(b.isoDate));
-
-                        if (!entries[date][user][sectorId].length) delete entries[date][user][sectorId];
                     });
-
-                    if (!Object.keys(entries[date][user]).length) delete entries[date][user];
-                    if (!Object.keys(entries[date]).length) delete entries[date];
                 } catch (err) {
                     console.error("Erro ao analisar chave no histórico: ", err);
                 }
             }
+
+            // Sort each user's sector items by isoDate
+            Object.keys(entries).forEach(date => {
+                Object.keys(entries[date]).forEach(user => {
+                    Object.keys(entries[date][user]).forEach(sectorId => {
+                        entries[date][user][sectorId].sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+                    });
+                });
+            });
 
             return entries;
         }
@@ -2061,12 +2126,13 @@
                         const items = sectors[sectorId];
                         const list = CHECKLISTS[sectorId];
                         if (!list) return '';
-                        const itemsHtml = items.map(it =>
-                            `<div class="hist-item">
-                        <span class="hist-item-text">✅ ${it.text}</span>
+                        const itemsHtml = items.map(it => {
+                            const isSkipped = it.text.startsWith('🚫');
+                            return `<div class="hist-item">
+                        <span class="hist-item-text">${isSkipped ? '' : '✅ '}${it.text}</span>
                         <span class="hist-item-time">${it.time}</span>
-                    </div>`
-                        ).join('');
+                    </div>`;
+                        }).join('');
                         const done = items.length;
                         const total = list.sections ? list.sections.reduce((n, s) => n + (s.items ? s.items.length : 0), 0) : 0;
                         return `<div class="hist-sector-label">${list.label || sectorId} <span style="font-weight:400;color:#bbb">${done}/${total}</span></div>${itemsHtml}`;
@@ -3853,16 +3919,26 @@
             for (let i = 0; i < localStorage.length; i++) {
                 const k = localStorage.key(i);
                 if (!k || preserved.has(k) || k.startsWith('gh_') || !k.startsWith('mb_')) continue;
-                if (k.startsWith('mb_score')) continue;
+                if (k.startsWith('mb_score') || k.startsWith('mb_weekly')) continue;
 
                 const body = k.slice(3);
-                const f = body.indexOf('_');
-                const s = body.indexOf('_', f + 1);
-                if (f === -1 || s === -1) continue;
-                const dateStr = body.slice(f + 1, s);
-                if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) continue;
+                const parts = body.split('_');
+                if (parts.length < 3) continue;
 
-                if (parsePtDate(dateStr) < cutoff) toRemove.push(k);
+                let dateStr = '';
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(parts[0])) {
+                    dateStr = parts[0];
+                } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(parts[1])) {
+                    dateStr = parts[1];
+                } else {
+                    continue;
+                }
+
+                try {
+                    if (parsePtDate(dateStr) < cutoff) toRemove.push(k);
+                } catch (e) {
+                    console.error("Erro ao analisar data no cleanup:", e);
+                }
             }
 
             toRemove.forEach(k => localStorage.removeItem(k));
