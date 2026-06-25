@@ -4799,27 +4799,38 @@
             container.innerHTML = items.map(([id, item]) => {
                 const isKg = item.unidade === 'kg';
                 const qtyVal = localContagemQty[id] || '';
+                const priceVal = item.preco ? item.preco.toFixed(2) : '';
                 return `
                     <div class="estoque-item-row" id="row-contar-${id}">
                         <div style="flex: 1;">
                             <div class="estoque-item-name">${item.nome}</div>
                             <div style="font-size: 11px; color:#888;">
-                                Preço unitário: <strong>R$ ${item.preco.toFixed(2)}</strong> por ${item.unidade} | Mín: ${item.estoqueMinimo} ${item.unidade}
+                                Mínimo recomendado: <strong>${item.estoqueMinimo} ${item.unidade}</strong>
                             </div>
                         </div>
                         <div class="estoque-item-input-wrap">
                             <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
                             <input class="gh-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
                                 value="${qtyVal}"
-                                oninput="inputQtyChanged('${id}', this.value)" style="padding: 6px; font-size: 14px; width: 55px; text-align: center; height: 32px;">
+                                oninput="inputQtyChanged('${id}', this.value)" style="padding: 6px; font-size: 14px; width: 50px; text-align: center; height: 32px;">
                             <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
-                            <span style="font-size: 9px; font-weight: 800; background: var(--bg-warm); color: var(--text-muted); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; border: 1px solid var(--border); min-width: 28px; text-align: center; display: inline-block;" title="${item.unidade}">
+                            
+                            <span style="font-size: 9px; font-weight: 800; background: var(--bg-warm); color: var(--text-muted); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; border: 1px solid var(--border); min-width: 26px; text-align: center; display: inline-block;" title="${item.unidade}">
                                 ${formatarUnidadePill(item.unidade)}
                             </span>
-                            <span style="font-size: 9px; font-weight: 800; background: #FFFBEB; color: #D97706; padding: 3px 5px; border-radius: 4px; border: 1px solid #FEF3C7; min-width: 36px; text-align: center; display: inline-block;" title="Estoque Mínimo">
+                            
+                            <span style="font-size: 9px; font-weight: 800; background: #FFFBEB; color: #D97706; padding: 3px 5px; border-radius: 4px; border: 1px solid #FEF3C7; min-width: 32px; text-align: center; display: inline-block;" title="Estoque Mínimo">
                                 Mín: ${item.estoqueMinimo}
                             </span>
-                            <span style="font-size: 13px; font-weight: 700; min-width: 70px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
+
+                            <div style="display: flex; align-items: center; gap: 2px;">
+                                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">R$</span>
+                                <input class="gh-input" id="price-input-${id}" type="number" step="0.01" min="0" placeholder="0.00" 
+                                    value="${priceVal}"
+                                    oninput="inputPriceChanged('${id}', this.value)" style="padding: 4px; font-size: 13px; width: 55px; text-align: center; height: 32px;">
+                            </div>
+                            
+                            <span style="font-size: 13px; font-weight: 700; min-width: 65px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
                         </div>
                     </div>
                 `;
@@ -4830,6 +4841,15 @@
 
         function inputQtyChanged(id, value) {
             localContagemQty[id] = value;
+            atualizarEstoqueTotais();
+        }
+
+        function inputPriceChanged(id, value) {
+            const price = parseFloat(value) || 0;
+            if (localEstoqueItens[id]) {
+                localEstoqueItens[id].preco = price;
+                localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
+            }
             atualizarEstoqueTotais();
         }
 
@@ -4912,6 +4932,9 @@
             if (!user) { alert('Selecione quem está fazendo a contagem.'); return; }
             if (!dateStr) { alert('Selecione a data da contagem.'); return; }
 
+            // Save updated prices to Firebase and localStorage
+            saveEstoqueItens(localEstoqueItens);
+
             const countItens = {};
             let valorTotalGeral = 0;
 
@@ -4933,7 +4956,12 @@
                 valorTotalGeral += qty * item.preco;
             });
 
-            loadEstoque();
+            // Re-load only contagens from local storage to avoid overwriting updated in-memory prices
+            try {
+                const c = localStorage.getItem('mb_estoque_contagens');
+                localEstoqueContagens = c ? JSON.parse(c) : {};
+            } catch(e) { localEstoqueContagens = {}; }
+
             localEstoqueContagens[dateStr] = {
                 data: new Date(dateStr + 'T12:00:00').toISOString(),
                 usuario: user,
