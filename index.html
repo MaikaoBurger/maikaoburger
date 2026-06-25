@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -1598,12 +1598,32 @@
                 <div id="estoque-lista-contar" style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 12px;"></div>
 
                 <!-- Rodapé da contagem (Valores Totais e Salvar) -->
-                <div style="border-top: 1.5px solid var(--border); padding-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: #fff; gap: 10px;">
-                    <div>
-                        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: left;">VALOR DO ESTOQUE:</div>
-                        <div style="font-size: 20px; font-weight: 900; color: var(--primary-light); text-align: left;" id="estoque-valor-total">R$ 0,00</div>
+                <div style="border-top: 1.5px solid var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; background: #fff;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 11px; text-align: center; background: var(--bg-warm); padding: 8px; border-radius: var(--radius-sm);">
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">CMV</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-total-cmv">R$ 0,00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">Descartáveis</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-total-descartaveis">R$ 0,00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">Limpeza</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-total-limpeza">R$ 0,00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">Escritório</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-total-escritorio">R$ 0,00</div>
+                        </div>
                     </div>
-                    <button class="next-btn" onclick="salvarContagemEstoque()" style="padding: 12px 24px; font-size: 14px; width: auto; margin: 0;">Salvar Contagem 💾</button>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <div>
+                            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: left;">TOTAL GERAL:</div>
+                            <div style="font-size: 18px; font-weight: 900; color: var(--primary-light); text-align: left;" id="estoque-valor-total">R$ 0,00</div>
+                        </div>
+                        <button class="next-btn" onclick="salvarContagemEstoque()" style="padding: 10px 20px; font-size: 13px; width: auto; margin: 0; font-weight: 800;">Salvar Contagem 💾</button>
+                    </div>
                 </div>
             </div>
 
@@ -1617,9 +1637,32 @@
                 <!-- Detalhes da contagem histórica -->
                 <div id="estoque-hist-detalhe" style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 10px;"></div>
                 
-                <div style="border-top: 1.5px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                    <span id="estoque-hist-meta" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
-                    <strong id="estoque-hist-total" style="font-size: 18px; font-weight: 900; color: var(--green);">R$ 0,00</strong>
+                <div style="border-top: 1.5px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 11px; text-align: center; background: var(--bg-warm); padding: 8px; border-radius: var(--radius-sm);">
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">CMV</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-hist-total-cmv">R$ 0,00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">Descartáveis</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-hist-total-descartaveis">R$ 0,00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">Limpeza</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-hist-total-limpeza">R$ 0,00</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-weight: 700; font-size: 9px;">Escritório</div>
+                            <div style="font-weight: 800; color: var(--text);" id="estoque-hist-total-escritorio">R$ 0,00</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="estoque-hist-meta" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">TOTAL:</span>
+                            <strong id="estoque-hist-total" style="font-size: 18px; font-weight: 900; color: var(--green);">R$ 0,00</strong>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -4769,6 +4812,11 @@
 
         function atualizarEstoqueTotais() {
             let totalGeral = 0;
+            let totalCMV = 0;
+            let totalDescartaveis = 0;
+            let totalLimpeza = 0;
+            let totalEscritorio = 0;
+
             Object.entries(localEstoqueItens).forEach(([id, item]) => {
                 if (!item.ativo) return;
                 
@@ -4776,6 +4824,12 @@
                 const qty = parseFloat(qtyStr) || 0;
                 const subtotal = qty * item.preco;
                 totalGeral += subtotal;
+
+                const grp = item.grupo || 'cmv';
+                if (grp === 'cmv') totalCMV += subtotal;
+                else if (grp === 'descartaveis') totalDescartaveis += subtotal;
+                else if (grp === 'limpeza') totalLimpeza += subtotal;
+                else if (grp === 'escritorio') totalEscritorio += subtotal;
 
                 const subtotalLabel = document.getElementById(`subtotal-${id}`);
                 if (subtotalLabel) {
@@ -4795,6 +4849,15 @@
 
             const totalEl = document.getElementById('estoque-valor-total');
             if (totalEl) totalEl.textContent = `R$ ${totalGeral.toFixed(2)}`;
+
+            const elCmv = document.getElementById('estoque-total-cmv');
+            if (elCmv) elCmv.textContent = `R$ ${totalCMV.toFixed(2)}`;
+            const elDesc = document.getElementById('estoque-total-descartaveis');
+            if (elDesc) elDesc.textContent = `R$ ${totalDescartaveis.toFixed(2)}`;
+            const elLimp = document.getElementById('estoque-total-limpeza');
+            if (elLimp) elLimp.textContent = `R$ ${totalLimpeza.toFixed(2)}`;
+            const elEscr = document.getElementById('estoque-total-escritorio');
+            if (elEscr) elEscr.textContent = `R$ ${totalEscritorio.toFixed(2)}`;
         }
 
         function salvarContagemEstoque() {
@@ -4851,6 +4914,10 @@
                 document.getElementById('estoque-hist-detalhe').innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhuma contagem semanal registrada ainda.</div>';
                 document.getElementById('estoque-hist-meta').textContent = '';
                 document.getElementById('estoque-hist-total').textContent = 'R$ 0,00';
+                ['estoque-hist-total-cmv', 'estoque-hist-total-descartaveis', 'estoque-hist-total-limpeza', 'estoque-hist-total-escritorio'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = 'R$ 0,00';
+                });
                 return;
             }
 
@@ -4934,6 +5001,29 @@
             });
 
             container.innerHTML = html;
+
+            let histCMV = 0;
+            let histDesc = 0;
+            let histLimp = 0;
+            let histEscr = 0;
+
+            Object.values(count.itens).forEach(it => {
+                const sub = it.valorTotalItem || 0;
+                const grp = it.grupo || 'cmv';
+                if (grp === 'cmv') histCMV += sub;
+                else if (grp === 'descartaveis') histDesc += sub;
+                else if (grp === 'limpeza') histLimp += sub;
+                else if (grp === 'escritorio') histEscr += sub;
+            });
+
+            const elHistCmv = document.getElementById('estoque-hist-total-cmv');
+            if (elHistCmv) elHistCmv.textContent = `R$ ${histCMV.toFixed(2)}`;
+            const elHistDesc = document.getElementById('estoque-hist-total-descartaveis');
+            if (elHistDesc) elHistDesc.textContent = `R$ ${histDesc.toFixed(2)}`;
+            const elHistLimp = document.getElementById('estoque-hist-total-limpeza');
+            if (elHistLimp) elHistLimp.textContent = `R$ ${histLimp.toFixed(2)}`;
+            const elHistEscr = document.getElementById('estoque-hist-total-escritorio');
+            if (elHistEscr) elHistEscr.textContent = `R$ ${histEscr.toFixed(2)}`;
 
             const dateFormatted = new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR');
             if (metaLabel) metaLabel.textContent = `Por ${count.usuario} em ${dateFormatted}`;
