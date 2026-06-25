@@ -2256,7 +2256,7 @@
                 document.getElementById('h-adm-badge').style.display = 'inline-block';
                 document.getElementById('h-adm-badge').textContent = `ADM: ${admin.toUpperCase()}`;
                 document.getElementById('hist-btn').style.display = 'inline-block';
-                document.getElementById('rank-btn').style.display = 'inline-block';
+                document.getElementById('rank-btn').style.display = (admin === 'Mike') ? 'inline-block' : 'none';
                 
                 const fardaBtn = document.getElementById('farda-btn');
                 if (fardaBtn) fardaBtn.style.display = (admin === 'Marcelo') ? 'inline-block' : 'none';
@@ -2607,7 +2607,7 @@
         }
 
         function openRanking(selectedMonth) {
-            if (!isAdmin()) {
+            if (!isAdmin() || currentAdmin !== 'Mike') {
                 closeRanking();
                 return;
             }
@@ -3062,7 +3062,7 @@
                 document.getElementById('h-adm-badge').textContent = `ADM: ${currentAdmin.toUpperCase()}`;
             }
             document.getElementById('hist-btn').style.display = adminSession ? 'inline-block' : 'none';
-            document.getElementById('rank-btn').style.display = adminSession ? 'inline-block' : 'none';
+            document.getElementById('rank-btn').style.display = (adminSession && currentAdmin === 'Mike') ? 'inline-block' : 'none';
             
             const fardaBtn = document.getElementById('farda-btn');
             if (fardaBtn) {
