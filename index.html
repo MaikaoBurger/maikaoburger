@@ -4751,6 +4751,30 @@
             db.ref('estoque/contagens').set(contagensObj).catch(() => setSyncUI('error'));
         }
 
+        function formatarUnidadePill(unid) {
+            if (!unid) return '';
+            const map = {
+                'unidade': 'un',
+                'unidades': 'un',
+                'kg': 'kg',
+                'caixa': 'cx',
+                'caixas': 'cx',
+                'fardo': 'fd',
+                'fardos': 'fd',
+                'bandeja': 'bd',
+                'bandejas': 'bd',
+                'pacote': 'pct',
+                'pacotes': 'pct',
+                'garrafa': 'gf',
+                'rolo': 'rl',
+                'pote': 'pt',
+                'saco': 'sc',
+                'lata': 'lt',
+                'litro': 'L'
+            };
+            return map[unid.toLowerCase()] || unid;
+        }
+
         function renderEstoqueListaContar() {
             const container = document.getElementById('estoque-lista-contar');
             if (!container) return;
@@ -4779,9 +4803,12 @@
                             <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
                             <input class="gh-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
                                 value="${qtyVal}"
-                                oninput="inputQtyChanged('${id}', this.value)" style="padding: 6px; font-size: 14px; width: 75px; text-align: center; height: 32px;">
+                                oninput="inputQtyChanged('${id}', this.value)" style="padding: 6px; font-size: 14px; width: 55px; text-align: center; height: 32px;">
                             <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
-                            <span style="font-size: 13px; font-weight: 700; min-width: 75px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
+                            <span style="font-size: 9px; font-weight: 800; background: var(--bg-warm); color: var(--text-muted); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; border: 1px solid var(--border); min-width: 28px; text-align: center; display: inline-block;" title="${item.unidade}">
+                                ${formatarUnidadePill(item.unidade)}
+                            </span>
+                            <span style="font-size: 13px; font-weight: 700; min-width: 70px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
                         </div>
                     </div>
                 `;
