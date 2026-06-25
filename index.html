@@ -4888,7 +4888,7 @@
             const map = {
                 'unidade': 'un',
                 'unidades': 'un',
-                'kg': 'kg',
+                'kg': 'g',
                 'caixa': 'cx',
                 'caixas': 'cx',
                 'fardo': 'fd',
@@ -4979,9 +4979,9 @@
             if (!item) return;
 
             let val = parseFloat(input.value) || 0;
-            const step = item.unidade === 'kg' ? 0.5 : 1;
+            const step = item.unidade === 'kg' ? 100 : 1;
             val = Math.max(0, val + delta * step);
-            const valStr = item.unidade === 'kg' ? val.toFixed(1) : Math.round(val).toString();
+            const valStr = Math.round(val).toString();
             input.value = valStr;
             localContagemQty[id] = valStr;
             atualizarEstoqueTotais();
@@ -4999,7 +4999,10 @@
                 
                 const qtyStr = localContagemQty[id] || '';
                 const qty = parseFloat(qtyStr) || 0;
-                const subtotal = qty * item.preco;
+                
+                // If unit is kg, the input qty is in grams, so divide by 1000 for subtotal calculation
+                const qtyKg = item.unidade === 'kg' ? qty / 1000 : qty;
+                const subtotal = qtyKg * item.preco;
                 totalGeral += subtotal;
 
                 const grp = item.grupo || 'cmv';
@@ -5017,7 +5020,7 @@
                 const min = parseFloat(item.estoqueMinimo) || 0;
                 if (row) {
                     if (qtyStr !== '') {
-                        if (qty <= min) {
+                        if (qtyKg <= min) {
                             row.classList.add('low-stock');
                             row.classList.remove('above-min');
                         } else {
@@ -5062,17 +5065,20 @@
                 const qtyStr = localContagemQty[id] || '';
                 const qty = parseFloat(qtyStr) || 0;
                 
+                // Convert grams to kg for saving in database to keep it consistent
+                const finalQty = item.unidade === 'kg' ? qty / 1000 : qty;
+                
                 countItens[id] = {
                     nome: item.nome,
-                    quantidade: qty,
+                    quantidade: finalQty,
                     unidade: item.unidade,
                     precoUnitario: item.preco,
                     estoqueMinimo: item.estoqueMinimo,
-                    valorTotalItem: qty * item.preco,
+                    valorTotalItem: finalQty * item.preco,
                     grupo: item.grupo || 'cmv'
                 };
                 
-                valorTotalGeral += qty * item.preco;
+                valorTotalGeral += finalQty * item.preco;
             });
 
             // Re-load only contagens from local storage to avoid overwriting updated in-memory prices
