@@ -1244,16 +1244,140 @@
             color: var(--green);
             font-weight: 700;
         }
+        .estoque-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
         .estoque-item-name {
             font-size: 14px;
             font-weight: 600;
             color: var(--text);
-            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        .estoque-item-input-wrap {
+        .estoque-item-badges {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .estoque-pill-un {
+            font-size: 9px;
+            font-weight: 800;
+            background: var(--bg-warm);
+            color: var(--text-muted);
+            padding: 3px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            border: 1px solid var(--border);
+            min-width: 26px;
+            text-align: center;
+        }
+        .estoque-pill-min {
+            font-size: 9px;
+            font-weight: 800;
+            background: #FFFBEB;
+            color: #D97706;
+            padding: 3px 5px;
+            border-radius: 4px;
+            border: 1px solid #FEF3C7;
+            min-width: 32px;
+            text-align: center;
+        }
+        .estoque-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .estoque-qty-spinner {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .estoque-qty-spinner .qty-input {
+            padding: 6px;
+            font-size: 14px;
+            width: 50px;
+            text-align: center;
+            height: 32px;
+        }
+        .estoque-price-box {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .estoque-price-box .price-input {
+            padding: 4px;
+            font-size: 13px;
+            width: 55px;
+            text-align: center;
+            height: 32px;
+        }
+        .estoque-currency-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .estoque-subtotal-box {
+            font-size: 13px;
+            font-weight: 700;
+            min-width: 65px;
+            text-align: right;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 600px) {
+            .estoque-item-row {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 8px !important;
+                padding: 10px 12px !important;
+            }
+            .estoque-item-meta {
+                justify-content: space-between !important;
+                width: 100% !important;
+            }
+            .estoque-item-name {
+                white-space: normal !important;
+                font-size: 13px !important;
+                line-height: 1.2 !important;
+            }
+            .estoque-item-controls {
+                width: 100% !important;
+                justify-content: space-between !important;
+                gap: 8px !important;
+                border-top: 1px dashed var(--border) !important;
+                padding-top: 6px !important;
+            }
+            .estoque-qty-spinner {
+                gap: 2px !important;
+            }
+            .estoque-qty-spinner .qty-input {
+                width: 42px !important;
+                height: 30px !important;
+                font-size: 13px !important;
+                padding: 4px !important;
+            }
+            .estoque-qty-spinner .estoque-qty-btn {
+                width: 26px !important;
+                height: 26px !important;
+                font-size: 12px !important;
+            }
+            .estoque-price-box .price-input {
+                width: 48px !important;
+                height: 30px !important;
+                font-size: 12px !important;
+                padding: 4px !important;
+            }
+            .estoque-subtotal-box {
+                font-size: 13px !important;
+                min-width: 60px !important;
+            }
         }
         .estoque-qty-btn {
             width: 28px;
@@ -4802,35 +4926,30 @@
                 const priceVal = item.preco ? item.preco.toFixed(2) : '';
                 return `
                     <div class="estoque-item-row" id="row-contar-${id}">
-                        <div style="flex: 1;">
+                        <div class="estoque-item-meta">
                             <div class="estoque-item-name">${item.nome}</div>
-                            <div style="font-size: 11px; color:#888;">
-                                Mínimo recomendado: <strong>${item.estoqueMinimo} ${item.unidade}</strong>
+                            <div class="estoque-item-badges">
+                                <span class="estoque-pill-un" title="${item.unidade}">${formatarUnidadePill(item.unidade)}</span>
+                                <span class="estoque-pill-min" title="Estoque Mínimo">Mín: ${item.estoqueMinimo}</span>
                             </div>
                         </div>
-                        <div class="estoque-item-input-wrap">
-                            <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
-                            <input class="gh-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
-                                value="${qtyVal}"
-                                oninput="inputQtyChanged('${id}', this.value)" style="padding: 6px; font-size: 14px; width: 50px; text-align: center; height: 32px;">
-                            <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
-                            
-                            <span style="font-size: 9px; font-weight: 800; background: var(--bg-warm); color: var(--text-muted); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; border: 1px solid var(--border); min-width: 26px; text-align: center; display: inline-block;" title="${item.unidade}">
-                                ${formatarUnidadePill(item.unidade)}
-                            </span>
-                            
-                            <span style="font-size: 9px; font-weight: 800; background: #FFFBEB; color: #D97706; padding: 3px 5px; border-radius: 4px; border: 1px solid #FEF3C7; min-width: 32px; text-align: center; display: inline-block;" title="Estoque Mínimo">
-                                Mín: ${item.estoqueMinimo}
-                            </span>
-
-                            <div style="display: flex; align-items: center; gap: 2px;">
-                                <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">R$</span>
-                                <input class="gh-input" id="price-input-${id}" type="number" step="0.01" min="0" placeholder="0.00" 
-                                    value="${priceVal}"
-                                    oninput="inputPriceChanged('${id}', this.value)" style="padding: 4px; font-size: 13px; width: 55px; text-align: center; height: 32px;">
+                        <div class="estoque-item-controls">
+                            <div class="estoque-qty-spinner">
+                                <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
+                                <input class="gh-input qty-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
+                                    value="${qtyVal}"
+                                    oninput="inputQtyChanged('${id}', this.value)">
+                                <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
                             </div>
                             
-                            <span style="font-size: 13px; font-weight: 700; min-width: 65px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
+                            <div class="estoque-price-box">
+                                <span class="estoque-currency-label">R$</span>
+                                <input class="gh-input price-input" id="price-input-${id}" type="number" step="0.01" min="0" placeholder="0.00" 
+                                    value="${priceVal}"
+                                    oninput="inputPriceChanged('${id}', this.value)">
+                            </div>
+                            
+                            <span class="estoque-subtotal-box" id="subtotal-${id}">R$ 0,00</span>
                         </div>
                     </div>
                 `;
