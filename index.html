@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -1268,6 +1268,39 @@
         .estoque-qty-btn:active {
             transform: scale(0.9);
         }
+        /* ── Sub-abas de Grupos de Estoque ── */
+        .estoque-group-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: var(--bg-warm);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+        }
+        .estoque-group-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: none;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .estoque-group-btn:hover {
+            color: var(--primary-light);
+            background: rgba(122, 18, 30, 0.03);
+        }
+        .estoque-group-btn.active {
+            background: var(--white) !important;
+            color: var(--primary-light) !important;
+            box-shadow: var(--shadow-sm);
+        }
     </style>
 </head>
 
@@ -1553,6 +1586,14 @@
                     </div>
                 </div>
 
+                <!-- Sub-abas de grupos de estoque -->
+                <div class="estoque-group-tabs">
+                    <button class="estoque-group-btn active" id="eg-btn-cmv" onclick="switchEstoqueGroup('cmv')">CMV</button>
+                    <button class="estoque-group-btn" id="eg-btn-descartaveis" onclick="switchEstoqueGroup('descartaveis')">Descartáveis</button>
+                    <button class="estoque-group-btn" id="eg-btn-limpeza" onclick="switchEstoqueGroup('limpeza')">Limpeza</button>
+                    <button class="estoque-group-btn" id="eg-btn-escritorio" onclick="switchEstoqueGroup('escritorio')">Escritório</button>
+                </div>
+
                 <!-- Lista de itens para contagem -->
                 <div id="estoque-lista-contar" style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 12px;"></div>
 
@@ -1589,9 +1630,20 @@
                     <h3 id="estoque-form-title" style="font-family: var(--font-title); font-size: 13px; font-weight: 800; color: var(--primary-light); text-transform: uppercase; margin-bottom: 10px;">Novo Item</h3>
                     <input type="hidden" id="estoque-item-edit-id">
                     
-                    <div style="margin-bottom: 8px;">
-                        <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Nome do Produto</label>
-                        <input class="gh-input" id="estoque-item-nome" type="text" placeholder="Ex: Queijo Mussarela" style="padding: 8px 10px; font-size: 13px; text-align: left;">
+                    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Nome do Produto</label>
+                            <input class="gh-input" id="estoque-item-nome" type="text" placeholder="Ex: Queijo Mussarela" style="padding: 8px 10px; font-size: 13px; text-align: left;">
+                        </div>
+                        <div>
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Grupo</label>
+                            <select class="gh-input" id="estoque-item-grupo" style="padding: 8px 10px; font-size: 13px; cursor: pointer; height: 37px;">
+                                <option value="cmv">CMV</option>
+                                <option value="descartaveis">Descartáveis</option>
+                                <option value="limpeza">Limpeza</option>
+                                <option value="escritorio">Escritório</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
@@ -4341,153 +4393,192 @@
         }
 
 
-        // ── Lista Padrão de Itens de Estoque (134 Itens) ──
-        const DEFAULT_ESTOQUE_ITENS = [
-            { nome: "Açúcar 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 5 },
-            { nome: "Água com Gás 500ml", unidade: "unidade", preco: 0, estoqueMinimo: 12 },
-            { nome: "Água Mineral 500ml", unidade: "unidade", preco: 0, estoqueMinimo: 24 },
-            { nome: "Ajinomoto", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Alface", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Alho", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
-            { nome: "Alho Em Pó", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
-            { nome: "Antarctica Lata 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 60 },
-            { nome: "Antarctica Zero 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 60 },
-            { nome: "Antarctica 2 Litros", unidade: "unidade", preco: 0, estoqueMinimo: 6 },
-            { nome: "Bacon Fatiado", unidade: "kg", preco: 0, estoqueMinimo: 10 },
-            { nome: "Bacon Manta Gordo", unidade: "kg", preco: 0, estoqueMinimo: 2 },
-            { nome: "Bacon Manta Magro", unidade: "kg", preco: 0, estoqueMinimo: 2 },
-            { nome: "Barbecue 1.1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Batata Trad Fritas (PFM Frozen/Crinkle) - Pct 2kg", unidade: "unidade", preco: 0, estoqueMinimo: 5 },
-            { nome: "Batata Lambweston 7mm - Pct 2.25kg", unidade: "unidade", preco: 0, estoqueMinimo: 5 },
-            { nome: "Baunilha", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Bolo de Chocolate", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Bolo de Pote Ninho", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Brownie", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Brioche (Pão Liso - Diante)", unidade: "caixa", preco: 0, estoqueMinimo: 28 },
-            { nome: "Calabresa", unidade: "kg", preco: 0, estoqueMinimo: 5 },
-            { nome: "Calda De Chocolate", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Caldo Knorr Frango (1.01kg c/ 56 tabletes)", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Caldo de Legumes/CO2", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Carne", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Carne Moída", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Catchup de Goiaba", unidade: "fardo", preco: 0, estoqueMinimo: 0 },
-            { nome: "Cebola (Geral)", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
-            { nome: "Cebola Caramelizada", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Cebola Em Pó", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
-            { nome: "Cebola Roxa", unidade: "kg", preco: 0, estoqueMinimo: 12 },
-            { nome: "Chantilly - 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Chantilly Branco", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Chantilly Chocolate", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Charque Desfiada", unidade: "kg", preco: 0, estoqueMinimo: 5 },
-            { nome: "Charque Bolinha", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Cheddar Bisnaga - 1.5kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Chicken Supreme Seara - 2.54kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Chocolate em barra (ovomaltine)", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Chocolate ao leite barra 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Chocolate Branco Barra 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Chocolate Em Pó 50% 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Coca Lata 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
-            { nome: "Coca Zero Lata 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
-            { nome: "Coca 2L", unidade: "unidade", preco: 0, estoqueMinimo: 24 },
-            { nome: "Coca KS", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Coentro", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Colorau", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Cream Cheese - 1.5kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Cream Cheese Camponesa - 1.01kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Creme de Avelã - 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Creme de Leite - 200ml", unidade: "unidade", preco: 0, estoqueMinimo: 10 },
-            { nome: "Farinha De Rosca", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Farinha de Trigo 1kg", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Fermento", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Frango", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Geléia de Pimenta", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Goiabada Cremosa - 4.8kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Hambúrguer de Frango", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Ketchup 3.4kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Ketchup Sachê", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Lápis de Cor", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Leite Condensado - 395g", unidade: "unidade", preco: 0, estoqueMinimo: 10 },
-            { nome: "Leite Fermentado Chamyto", unidade: "unidade", preco: 0, estoqueMinimo: 20 },
-            { nome: "Leite Líquido 1L", unidade: "unidade", preco: 0, estoqueMinimo: 12 },
-            { nome: "Leite Ninho - 750g", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Limão", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Maionese 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Maionese de Bacon", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Maionese Defumada", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Maionese Grill - 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Margarina 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Manteiga de Garrafa 900g", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Milho Verde Sachê 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Mostarda", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Molho Shoyu 1L", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Molho Especial", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Morango - Bandeja", unidade: "bandeja", preco: 0, estoqueMinimo: 1 },
-            { nome: "Morango 2L (Balde / Polpa)", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Mostarda 3.2kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Muzzarela Sachê", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Nuggets", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Óleo de Girassol", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Onion Ring - 1.05kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
-            { nome: "Ovo", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
-            { nome: "Parma / Salame", unidade: "kg", preco: 0, estoqueMinimo: 0 },
-            { nome: "Pepino Molho Sachê", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Picles de Pepino em Conserva 3.4kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Pepsi Black 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
-            { nome: "Pepsi Twister 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
-            { nome: "Pepsi 2L", unidade: "unidade", preco: 0, estoqueMinimo: 24 },
-            { nome: "Pepsi KS", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Pão de Brioche 2L", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Pimenta Do Reino", unidade: "kg", preco: 0, estoqueMinimo: 0.1 },
-            { nome: "Porção Coxinha", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Pão de Hambúrguer", unidade: "unidade", preco: 0, estoqueMinimo: 20 },
-            { nome: "Pudim", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
-            { nome: "Queijo Cheddar Fatiado", unidade: "kg", preco: 0, estoqueMinimo: 6 },
-            { nome: "Queijo Coalho", unidade: "kg", preco: 0, estoqueMinimo: 5 },
-            { nome: "Queijo Parmesão", unidade: "kg", preco: 0, estoqueMinimo: 1.5 },
-            { nome: "Queijo Prato", unidade: "kg", preco: 0, estoqueMinimo: 6 },
-            { nome: "Queijo Ralado", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Requeijão - 1.5kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Sachê Açúcar", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
-            { nome: "Sachê Sal", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
-            { nome: "Seleta Plus Morango 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Seleta Chocolate Belga - 1.05kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Shake Blend - Cx 10L", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
-            { nome: "Uva - Bandeja", unidade: "bandeja", preco: 0, estoqueMinimo: 1 },
-            
+        // ── Lista Padrão de Itens de Estoque (159 Itens Compactados) ──
+        const RAW_ESTOQUE_ITENS = [
+            // CMV
+            ["Açúcar 1kg", "unidade", 5, "cmv"],
+            ["Água com Gás 500ml", "unidade", 12, "cmv"],
+            ["Água Mineral 500ml", "unidade", 24, "cmv"],
+            ["Ajinomoto", "unidade", 1, "cmv"],
+            ["Alface", "unidade", 0, "cmv"],
+            ["Alho", "kg", 0.5, "cmv"],
+            ["Alho Em Pó", "kg", 0.5, "cmv"],
+            ["Antarctica Lata 350ml", "unidade", 60, "cmv"],
+            ["Antarctica Zero 350ml", "unidade", 60, "cmv"],
+            ["Antarctica 2 Litros", "unidade", 6, "cmv"],
+            ["Bacon Fatiado", "kg", 10, "cmv"],
+            ["Bacon Manta Gordo", "kg", 2, "cmv"],
+            ["Bacon Manta Magro", "kg", 2, "cmv"],
+            ["Barbecue 1.1kg", "unidade", 1, "cmv"],
+            ["Batata Trad Fritas (PFM Frozen/Crinkle) - Pct 2kg", "unidade", 5, "cmv"],
+            ["Batata Lambweston 7mm - Pct 2.25kg", "unidade", 5, "cmv"],
+            ["Baunilha", "unidade", 1, "cmv"],
+            ["Bolo de Chocolate", "unidade", 0, "cmv"],
+            ["Bolo de Pote Ninho", "unidade", 0, "cmv"],
+            ["Brownie", "unidade", 1, "cmv"],
+            ["Brioche (Pão Liso - Diante)", "caixa", 28, "cmv"],
+            ["Calabresa", "kg", 5, "cmv"],
+            ["Calda De Chocolate", "unidade", 1, "cmv"],
+            ["Caldo Knorr Frango (1.01kg c/ 56 tabletes)", "unidade", 2, "cmv"],
+            ["Caldo de Legumes/CO2", "unidade", 2, "cmv"],
+            ["Carne", "unidade", 0, "cmv"],
+            ["Carne Moída", "unidade", 0, "cmv"],
+            ["Catchup de Goiaba", "fardo", 0, "cmv"],
+            ["Cebola (Geral)", "kg", 0.5, "cmv"],
+            ["Cebola Caramelizada", "kg", 0, "cmv"],
+            ["Cebola Em Pó", "kg", 0.5, "cmv"],
+            ["Cebola Roxa", "kg", 12, "cmv"],
+            ["Chantilly - 1kg", "unidade", 1, "cmv"],
+            ["Chantilly Branco", "kg", 0, "cmv"],
+            ["Chantilly Chocolate", "kg", 0, "cmv"],
+            ["Charque Desfiada", "kg", 5, "cmv"],
+            ["Charque Bolinha", "unidade", 0, "cmv"],
+            ["Cheddar Bisnaga - 1.5kg", "unidade", 2, "cmv"],
+            ["Chicken Supreme Seara - 2.54kg", "unidade", 2, "cmv"],
+            ["Chocolate em barra (ovomaltine)", "unidade", 2, "cmv"],
+            ["Chocolate ao leite barra 1kg", "unidade", 2, "cmv"],
+            ["Chocolate Branco Barra 1kg", "unidade", 2, "cmv"],
+            ["Chocolate Em Pó 50% 1kg", "unidade", 1, "cmv"],
+            ["Coca Lata 350ml", "unidade", 48, "cmv"],
+            ["Coca Zero Lata 350ml", "unidade", 48, "cmv"],
+            ["Coca 2L", "unidade", 24, "cmv"],
+            ["Coca KS", "unidade", 0, "cmv"],
+            ["Coentro", "kg", 1, "cmv"],
+            ["Colorau", "unidade", 1, "cmv"],
+            ["Cream Cheese - 1.5kg", "unidade", 1, "cmv"],
+            ["Cream Cheese Camponesa - 1.01kg", "unidade", 1, "cmv"],
+            ["Creme de Avelã - 3kg", "unidade", 1, "cmv"],
+            ["Creme de Leite - 200ml", "unidade", 10, "cmv"],
+            ["Farinha De Rosca", "kg", 1, "cmv"],
+            ["Farinha de Trigo 1kg", "kg", 1, "cmv"],
+            ["Fermento", "kg", 1, "cmv"],
+            ["Frango", "kg", 0, "cmv"],
+            ["Geléia de Pimenta", "unidade", 0, "cmv"],
+            ["Goiabada Cremosa - 4.8kg", "unidade", 1, "cmv"],
+            ["Hambúrguer de Frango", "unidade", 1, "cmv"],
+            ["Ketchup 3.4kg", "unidade", 1, "cmv"],
+            ["Ketchup Sachê", "unidade", 1, "cmv"],
+            ["Leite Condensado - 395g", "unidade", 10, "cmv"],
+            ["Leite Fermentado Chamyto", "unidade", 20, "cmv"],
+            ["Leite Líquido 1L", "unidade", 12, "cmv"],
+            ["Leite Ninho - 750g", "unidade", 1, "cmv"],
+            ["Limão", "kg", 1, "cmv"],
+            ["Maionese 3kg", "unidade", 1, "cmv"],
+            ["Maionese de Bacon", "kg", 0, "cmv"],
+            ["Maionese Defumada", "kg", 0, "cmv"],
+            ["Maionese Grill - 3kg", "unidade", 1, "cmv"],
+            ["Margarina 3kg", "unidade", 1, "cmv"],
+            ["Manteiga de Garrafa 900g", "unidade", 2, "cmv"],
+            ["Milho Verde Sachê 3kg", "unidade", 1, "cmv"],
+            ["Mostarda", "unidade", 1, "cmv"],
+            ["Molho Shoyu 1L", "kg", 0, "cmv"],
+            ["Molho Especial", "kg", 0, "cmv"],
+            ["Morango - Bandeja", "bandeja", 1, "cmv"],
+            ["Morango 2L (Balde / Polpa)", "unidade", 1, "cmv"],
+            ["Mostarda 3.2kg", "unidade", 1, "cmv"],
+            ["Muzzarela Sachê", "unidade", 1, "cmv"],
+            ["Nuggets", "unidade", 1, "cmv"],
+            ["Óleo de Girassol", "unidade", 0, "cmv"],
+            ["Onion Ring - 1.05kg", "unidade", 2, "cmv"],
+            ["Ovo", "caixa", 1, "cmv"],
+            ["Parma / Salame", "kg", 0, "cmv"],
+            ["Pepino Molho Sachê", "unidade", 1, "cmv"],
+            ["Picles de Pepino em Conserva 3.4kg", "unidade", 1, "cmv"],
+            ["Pepsi Black 350ml", "unidade", 48, "cmv"],
+            ["Pepsi Twister 350ml", "unidade", 48, "cmv"],
+            ["Pepsi 2L", "unidade", 24, "cmv"],
+            ["Pepsi KS", "unidade", 0, "cmv"],
+            ["Pão de Brioche 2L", "unidade", 1, "cmv"],
+            ["Pimenta Do Reino", "kg", 0.1, "cmv"],
+            ["Porção Coxinha", "unidade", 0, "cmv"],
+            ["Pão de Hambúrguer", "unidade", 20, "cmv"],
+            ["Pudim", "unidade", 0, "cmv"],
+            ["Queijo Cheddar Fatiado", "kg", 6, "cmv"],
+            ["Queijo Coalho", "kg", 5, "cmv"],
+            ["Queijo Parmesão", "kg", 1.5, "cmv"],
+            ["Queijo Prato", "kg", 6, "cmv"],
+            ["Queijo Ralado", "unidade", 1, "cmv"],
+            ["Requeijão - 1.5kg", "unidade", 1, "cmv"],
+            ["Sachê Açúcar", "caixa", 1, "cmv"],
+            ["Sachê Sal", "caixa", 1, "cmv"],
+            ["Seleta Plus Morango 1kg", "unidade", 1, "cmv"],
+            ["Seleta Chocolate Belga - 1.05kg", "unidade", 1, "cmv"],
+            ["Shake Blend - Cx 10L", "unidade", 1, "cmv"],
+            ["Uva - Bandeja", "bandeja", 1, "cmv"],
+            ["Sal Marlim 1KG", "unidade", 2, "cmv"],
+            ["Salsa", "kg", 0.2, "cmv"],
+            ["Tomate", "kg", 2, "cmv"],
+            ["Toscana de Frango", "kg", 1, "cmv"],
+            ["Toscana de Frango - Disco 120gr", "unidade", 0, "cmv"],
+            ["Tubinho de chocolate", "unidade", 5, "cmv"],
+            ["Tubinho Morango", "unidade", 5, "cmv"],
+            ["Vinagre de vinho branco", "unidade", 4, "cmv"],
+            ["Vinagre normal", "unidade", 1, "cmv"],
+            ["Xarope de groselha", "unidade", 2, "cmv"],
+
             // DESCARTÁVEIS
-            { nome: "Absorvente com abas", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Bobina Saco G", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Bobina Saco P", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Canudo", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Colher Descartável", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Copo", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Garfo Descartável", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Guardanapo", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
-            { nome: "Luva Nitrílica", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
-            { nome: "Luvas Transparentes", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Papel Alumínio", unidade: "unidades", preco: 0, estoqueMinimo: 1 },
-            { nome: "Papel Manteiga", unidade: "rolo", preco: 0, estoqueMinimo: 1 },
-            { nome: "Papel Higiênico", unidade: "fardo", preco: 0, estoqueMinimo: 1 },
-            { nome: "Papel Recife", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Papel Toalha", unidade: "fardo", preco: 0, estoqueMinimo: 1 },
-            { nome: "Pazinha", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Plástico Filme", unidade: "unidades", preco: 0, estoqueMinimo: 1 },
-            { nome: "Saco à vácuo 15x35", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Saco à vácuo 17x35", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Saco de Confeiteiro", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Saco Lixo 200 Litros", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
-            { nome: "Sacola PP", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Sacola P", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Sacola G", unidade: "kg", preco: 0, estoqueMinimo: 1 },
-            { nome: "Touca", unidade: "caixa", preco: 0, estoqueMinimo: 1 }
+            ["Absorvente com abas", "pacotes", 1, "descartaveis"],
+            ["Bobina Saco G", "kg", 1, "descartaveis"],
+            ["Bobina Saco P", "kg", 1, "descartaveis"],
+            ["Canudo", "pacotes", 1, "descartaveis"],
+            ["Colher Descartável", "pacotes", 1, "descartaveis"],
+            ["Copo", "pacotes", 1, "descartaveis"],
+            ["Garfo Descartável", "pacotes", 1, "descartaveis"],
+            ["Guardanapo", "caixa", 1, "descartaveis"],
+            ["Luva Nitrílica", "caixa", 1, "descartaveis"],
+            ["Luvas Transparentes", "pacotes", 1, "descartaveis"],
+            ["Papel Alumínio", "unidades", 1, "descartaveis"],
+            ["Papel Manteiga", "rolo", 1, "descartaveis"],
+            ["Papel Comanda", "bloco", 1, "descartaveis"],
+            ["Papel Higiênico (Fardo)", "fardo", 1, "descartaveis"],
+            ["Papel Recife", "kg", 1, "descartaveis"],
+            ["Papel Toalha (Fardo)", "fardo", 1, "descartaveis"],
+            ["Pazinha", "pacotes", 1, "descartaveis"],
+            ["Plástico Filme", "unidades", 1, "descartaveis"],
+            ["Saco à vácuo 15x35", "pacotes", 1, "descartaveis"],
+            ["Saco à vácuo 17x35", "kg", 1, "descartaveis"],
+            ["Saco de Confeiteiro", "pacotes", 1, "descartaveis"],
+            ["Saco Lixo 200 Litros", "pacotes", 1, "descartaveis"],
+            ["Sacola PP", "kg", 1, "descartaveis"],
+            ["Sacola P", "kg", 1, "descartaveis"],
+            ["Sacola G", "kg", 1, "descartaveis"],
+            ["Touca", "caixa", 1, "descartaveis"],
+
+            // MATERIAL DE LIMPEZA
+            ["Detergente Clorado CDC 10 5L", "unidade", 0, "limpeza"],
+            ["Bom Ar", "unidade", 0, "limpeza"],
+            ["Detergente 5L", "unidade", 0, "limpeza"],
+            ["Esponja(Multiuso)", "pacotes", 1, "limpeza"],
+            ["Esponja Aço Inoxidável", "unidade", 1, "limpeza"],
+            ["Neopan 1L", "unidade", 0, "limpeza"],
+            ["Papel Toalha", "pacotes", 0, "limpeza"],
+            ["Papel Higiênico", "pacotes", 0, "limpeza"],
+            ["Perfex - 28x300", "unidade", 1, "limpeza"],
+            ["Foaming Caustic 5L", "unidade", 0, "limpeza"],
+            ["Aljet Polidor 5L", "unidade", 0, "limpeza"],
+            ["Pano de chão", "unidade", 0, "limpeza"],
+            ["Alcool 70%", "unidade", 1, "limpeza"],
+
+            // MATERIAL DE ESCRITÓRIO
+            ["Bobina Impressora", "caixa", 1, "escritorio"],
+            ["Caixa Grampo", "caixa", 1, "escritorio"]
         ];
+
+        const DEFAULT_ESTOQUE_ITENS = RAW_ESTOQUE_ITENS.map(([nome, unidade, estoqueMinimo, grupo], idx) => ({
+            nome, unidade, preco: 0, estoqueMinimo, grupo
+        }));
 
         // ── Controle de Estoque ──
         let localEstoqueItens = {};
         let localEstoqueContagens = {};
+        let currentEstoqueGroup = "cmv";
+        let localContagemQty = {};
 
         function openEstoque() {
             loadEstoque();
+            localContagemQty = {};
+            currentEstoqueGroup = "cmv";
+            
             const todayStr = getTodayIsoDate();
             document.getElementById('estoque-data').value = todayStr;
             
@@ -4522,13 +4613,23 @@
             if (panel) panel.style.display = 'flex';
 
             if (tabName === 'contar') {
-                renderEstoqueListaContar();
+                switchEstoqueGroup(currentEstoqueGroup || 'cmv');
             } else if (tabName === 'historico') {
                 carregarEstoqueHistoricoSelect();
             } else if (tabName === 'gerenciar') {
                 renderEstoqueListaGerenciar();
                 cancelarEdicaoEstoqueItem();
             }
+        }
+
+        function switchEstoqueGroup(group) {
+            currentEstoqueGroup = group;
+            document.querySelectorAll('.estoque-group-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.getElementById(`eg-btn-${group}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            renderEstoqueListaContar();
         }
 
         function loadEstoque() {
@@ -4538,12 +4639,53 @@
                 localEstoqueItens = i ? JSON.parse(i) : {};
             } catch(e) { localEstoqueItens = {}; }
 
-            // Se não houver itens, inicia com os padrões
+            // Upgrade ou inicialização
+            let changed = false;
+            
             if (Object.keys(localEstoqueItens).length === 0) {
                 DEFAULT_ESTOQUE_ITENS.forEach((item, idx) => {
                     const id = `item_${Date.now()}_${idx}`;
                     localEstoqueItens[id] = { ...item, ativo: true };
                 });
+                changed = true;
+            } else {
+                // Caso já existam itens, garante que todos os DEFAULT_ESTOQUE_ITENS existam (por nome) e tenham o grupo
+                DEFAULT_ESTOQUE_ITENS.forEach((defaultItem, idx) => {
+                    const existingEntry = Object.entries(localEstoqueItens).find(([_, it]) => it.nome === defaultItem.nome);
+                    if (existingEntry) {
+                        const [id, it] = existingEntry;
+                        if (!it.grupo) {
+                            localEstoqueItens[id].grupo = defaultItem.grupo;
+                            changed = true;
+                        }
+                    } else {
+                        const id = `item_${Date.now()}_new_${idx}`;
+                        localEstoqueItens[id] = { ...defaultItem, ativo: true };
+                        changed = true;
+                    }
+                });
+                
+                // Tratar renomeações e garantir grupos em itens antigos
+                Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                    if (it.nome === "Papel Higiênico" && it.unidade === "fardo") {
+                        it.nome = "Papel Higiênico (Fardo)";
+                        it.grupo = "descartaveis";
+                        changed = true;
+                    }
+                    if (it.nome === "Papel Toalha" && it.unidade === "fardo") {
+                        it.nome = "Papel Toalha (Fardo)";
+                        it.grupo = "descartaveis";
+                        changed = true;
+                    }
+                    if (!it.grupo) {
+                        // Classificação simples por heurística caso não mapeado
+                        it.grupo = "cmv";
+                        changed = true;
+                    }
+                });
+            }
+
+            if (changed) {
                 saveEstoqueItens(localEstoqueItens);
             }
 
@@ -4571,17 +4713,17 @@
             if (!container) return;
 
             const items = Object.entries(localEstoqueItens)
-                .filter(([_, item]) => item.ativo)
+                .filter(([_, item]) => item.ativo && (item.grupo || 'cmv') === currentEstoqueGroup)
                 .sort((a, b) => a[1].nome.localeCompare(b[1].nome));
 
             if (items.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhum produto cadastrado. Adicione produtos na aba "Itens".</div>';
-                document.getElementById('estoque-valor-total').textContent = 'R$ 0,00';
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhum produto neste grupo.</div>';
                 return;
             }
 
             container.innerHTML = items.map(([id, item]) => {
                 const isKg = item.unidade === 'kg';
+                const qtyVal = localContagemQty[id] || '';
                 return `
                     <div class="estoque-item-row" id="row-contar-${id}">
                         <div style="flex: 1;">
@@ -4593,7 +4735,8 @@
                         <div class="estoque-item-input-wrap">
                             <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
                             <input class="gh-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
-                                oninput="atualizarEstoqueTotais()" style="padding: 6px; font-size: 14px; width: 75px; text-align: center; height: 32px;">
+                                value="${qtyVal}"
+                                oninput="inputQtyChanged('${id}', this.value)" style="padding: 6px; font-size: 14px; width: 75px; text-align: center; height: 32px;">
                             <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
                             <span style="font-size: 13px; font-weight: 700; min-width: 75px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
                         </div>
@@ -4601,6 +4744,11 @@
                 `;
             }).join('');
 
+            atualizarEstoqueTotais();
+        }
+
+        function inputQtyChanged(id, value) {
+            localContagemQty[id] = value;
             atualizarEstoqueTotais();
         }
 
@@ -4613,7 +4761,9 @@
             let val = parseFloat(input.value) || 0;
             const step = item.unidade === 'kg' ? 0.5 : 1;
             val = Math.max(0, val + delta * step);
-            input.value = item.unidade === 'kg' ? val.toFixed(1) : Math.round(val);
+            const valStr = item.unidade === 'kg' ? val.toFixed(1) : Math.round(val).toString();
+            input.value = valStr;
+            localContagemQty[id] = valStr;
             atualizarEstoqueTotais();
         }
 
@@ -4621,23 +4771,21 @@
             let totalGeral = 0;
             Object.entries(localEstoqueItens).forEach(([id, item]) => {
                 if (!item.ativo) return;
-                const input = document.getElementById(`qty-input-${id}`);
-                const row = document.getElementById(`row-contar-${id}`);
-                const subtotalLabel = document.getElementById(`subtotal-${id}`);
-                if (!input) return;
-
-                const qty = parseFloat(input.value) || 0;
+                
+                const qtyStr = localContagemQty[id] || '';
+                const qty = parseFloat(qtyStr) || 0;
                 const subtotal = qty * item.preco;
                 totalGeral += subtotal;
 
+                const subtotalLabel = document.getElementById(`subtotal-${id}`);
                 if (subtotalLabel) {
                     subtotalLabel.textContent = `R$ ${subtotal.toFixed(2)}`;
                 }
 
-                // Alerta de estoque mínimo
+                const row = document.getElementById(`row-contar-${id}`);
                 const min = parseFloat(item.estoqueMinimo) || 0;
                 if (row) {
-                    if (input.value !== '' && qty <= min) {
+                    if (qtyStr !== '' && qty <= min) {
                         row.classList.add('low-stock');
                     } else {
                         row.classList.remove('low-stock');
@@ -4661,8 +4809,8 @@
 
             Object.entries(localEstoqueItens).forEach(([id, item]) => {
                 if (!item.ativo) return;
-                const input = document.getElementById(`qty-input-${id}`);
-                const qty = input ? parseFloat(input.value) : 0;
+                const qtyStr = localContagemQty[id] || '';
+                const qty = parseFloat(qtyStr) || 0;
                 
                 countItens[id] = {
                     nome: item.nome,
@@ -4670,7 +4818,8 @@
                     unidade: item.unidade,
                     precoUnitario: item.preco,
                     estoqueMinimo: item.estoqueMinimo,
-                    valorTotalItem: qty * item.preco
+                    valorTotalItem: qty * item.preco,
+                    grupo: item.grupo || 'cmv'
                 };
                 
                 valorTotalGeral += qty * item.preco;
@@ -4726,29 +4875,65 @@
                 return;
             }
 
-            const items = Object.values(count.itens).sort((a, b) => a.nome.localeCompare(b.nome));
+            const gruposMap = {
+                cmv: [],
+                descartaveis: [],
+                limpeza: [],
+                escritorio: []
+            };
 
-            container.innerHTML = items.map(it => {
-                const min = parseFloat(it.estoqueMinimo) || 0;
-                const isLow = it.quantidade <= min;
-                const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row';
-                const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
+            Object.values(count.itens).forEach(it => {
+                const grp = it.grupo || 'cmv';
+                if (!gruposMap[grp]) gruposMap[grp] = [];
+                gruposMap[grp].push(it);
+            });
+
+            Object.keys(gruposMap).forEach(k => {
+                gruposMap[k].sort((a, b) => a.nome.localeCompare(b.nome));
+            });
+
+            const grpLabels = {
+                cmv: '📊 CMV',
+                descartaveis: '📦 Descartáveis',
+                limpeza: '🧼 Material de Limpeza',
+                escritorio: '📝 Material de Escritório'
+            };
+
+            let html = '';
+            Object.entries(gruposMap).forEach(([grpKey, items]) => {
+                if (items.length === 0) return;
                 
-                return `
-                    <div class="${rowClass}">
-                        <div style="flex: 1;">
-                            <div class="estoque-item-name">${it.nome}${alarmTag}</div>
-                            <div style="font-size:11px; color:#888;">
-                                Preço unitário: R$ ${it.precoUnitario.toFixed(2)} | Mín: ${it.estoqueMinimo} ${it.unidade}
-                            </div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:16px;">
-                            <span style="font-size: 14px; font-weight: 700; color:var(--text);">${it.quantidade} ${it.unidade}</span>
-                            <span style="font-size: 14px; font-weight: 800; min-width: 80px; text-align: right; color: ${isLow ? 'var(--primary-light)' : 'var(--green)'};">R$ ${it.valorTotalItem.toFixed(2)}</span>
-                        </div>
+                html += `
+                    <div style="font-family: var(--font-title); font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--primary-light); background: var(--bg-warm); padding: 6px 10px; margin-top: 14px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>${grpLabels[grpKey]}</span>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">(${items.length} itens)</span>
                     </div>
                 `;
-            }).join('');
+
+                html += items.map(it => {
+                    const min = parseFloat(it.estoqueMinimo) || 0;
+                    const isLow = it.quantidade <= min;
+                    const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row';
+                    const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
+                    
+                    return `
+                        <div class="${rowClass}">
+                            <div style="flex: 1;">
+                                <div class="estoque-item-name">${it.nome}${alarmTag}</div>
+                                <div style="font-size:11px; color:#888;">
+                                    Preço unitário: R$ ${it.precoUnitario.toFixed(2)} | Mín: ${it.estoqueMinimo} ${it.unidade}
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:16px;">
+                                <span style="font-size: 14px; font-weight: 700; color:var(--text);">${it.quantidade} ${it.unidade}</span>
+                                <span style="font-size: 14px; font-weight: 800; min-width: 80px; text-align: right; color: ${isLow ? 'var(--primary-light)' : 'var(--green)'};">R$ ${it.valorTotalItem.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+
+            container.innerHTML = html;
 
             const dateFormatted = new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR');
             if (metaLabel) metaLabel.textContent = `Por ${count.usuario} em ${dateFormatted}`;
@@ -4765,15 +4950,28 @@
             const dateFormatted = new Date(select.value + 'T12:00:00').toLocaleDateString('pt-BR');
             
             let t = `CONTAGEM DE ESTOQUE MAIKAO BURGER - ${dateFormatted} (Responsável: ${count.usuario})\n\n`;
-            t += `Produto\tQuantidade\tUnidade\tPreço Unitário (R$)\tEstoque Mínimo\tSubtotal (R$)\tStatus\n`;
+            t += `Produto\tGrupo\tQuantidade\tUnidade\tPreço Unitário (R$)\tEstoque Mínimo\tSubtotal (R$)\tStatus\n`;
 
-            Object.values(count.itens)
-                .sort((a, b) => a.nome.localeCompare(b.nome))
-                .forEach(it => {
-                    const min = parseFloat(it.estoqueMinimo) || 0;
-                    const status = it.quantidade <= min ? 'ABAIXO DO MÍNIMO' : 'OK';
-                    t += `${it.nome}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario.toFixed(2)}\t${it.estoqueMinimo}\t${it.valorTotalItem.toFixed(2)}\t${status}\n`;
-                });
+            const grpLabels = {
+                cmv: 'CMV',
+                descartaveis: 'Descartáveis',
+                limpeza: 'Material de Limpeza',
+                escritorio: 'Material de Escritório'
+            };
+
+            const sortedItens = Object.values(count.itens).sort((a, b) => {
+                const grpA = a.grupo || 'cmv';
+                const grpB = b.grupo || 'cmv';
+                if (grpA !== grpB) return grpA.localeCompare(grpB);
+                return a.nome.localeCompare(b.nome);
+            });
+
+            sortedItens.forEach(it => {
+                const min = parseFloat(it.estoqueMinimo) || 0;
+                const status = it.quantidade <= min ? 'ABAIXO DO MÍNIMO' : 'OK';
+                const grpLabel = grpLabels[it.grupo || 'cmv'] || 'CMV';
+                t += `${it.nome}\t${grpLabel}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario.toFixed(2)}\t${it.estoqueMinimo}\t${it.valorTotalItem.toFixed(2)}\t${status}\n`;
+            });
 
             t += `\nVALOR TOTAL DO ESTOQUE:\tR$ ${count.valorTotalGeral.toFixed(2)}\n`;
 
@@ -4797,14 +4995,22 @@
                 return;
             }
 
+            const grpLabels = {
+                cmv: 'CMV',
+                descartaveis: 'Descartáveis',
+                limpeza: 'Limpeza',
+                escritorio: 'Escritório'
+            };
+
             container.innerHTML = items.map(([id, item]) => {
                 const statusLabel = item.ativo ? '🟢 Ativo' : '🔴 Inativo';
+                const grpName = grpLabels[item.grupo || 'cmv'] || 'CMV';
                 return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: ${item.ativo ? '#fff' : '#f5f5f7'}; text-align: left;">
                         <div style="flex: 1;">
                             <strong style="font-size: 14px; color: ${item.ativo ? 'var(--text)' : '#999'};">${item.nome}</strong>
                             <div style="font-size: 11px; color: #888;">
-                                Preço: R$ ${item.preco.toFixed(2)} por ${item.unidade} | Est. Mín: ${item.estoqueMinimo} | ${statusLabel}
+                                Preço: R$ ${item.preco.toFixed(2)} por ${item.unidade} | Est. Mín: ${item.estoqueMinimo} | Grupo: ${grpName} | ${statusLabel}
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
@@ -4823,6 +5029,7 @@
 
             document.getElementById('estoque-item-edit-id').value = id;
             document.getElementById('estoque-item-nome').value = item.nome;
+            document.getElementById('estoque-item-grupo').value = item.grupo || 'cmv';
             document.getElementById('estoque-item-unidade').value = item.unidade;
             document.getElementById('estoque-item-preco').value = item.preco;
             document.getElementById('estoque-item-minimo').value = item.estoqueMinimo || 0;
@@ -4833,6 +5040,7 @@
         function cancelarEdicaoEstoqueItem() {
             document.getElementById('estoque-item-edit-id').value = '';
             document.getElementById('estoque-item-nome').value = '';
+            document.getElementById('estoque-item-grupo').value = 'cmv';
             document.getElementById('estoque-item-unidade').value = 'unidade';
             document.getElementById('estoque-item-preco').value = '';
             document.getElementById('estoque-item-minimo').value = '';
@@ -4843,6 +5051,7 @@
         function salvarEstoqueItem() {
             const id = document.getElementById('estoque-item-edit-id').value;
             const nome = document.getElementById('estoque-item-nome').value.trim();
+            const grupo = document.getElementById('estoque-item-grupo').value;
             const unidade = document.getElementById('estoque-item-unidade').value;
             const preco = parseFloat(document.getElementById('estoque-item-preco').value) || 0;
             const minimo = parseFloat(document.getElementById('estoque-item-minimo').value) || 0;
@@ -4853,6 +5062,7 @@
             if (id) {
                 if (localEstoqueItens[id]) {
                     localEstoqueItens[id].nome = nome;
+                    localEstoqueItens[id].grupo = grupo;
                     localEstoqueItens[id].unidade = unidade;
                     localEstoqueItens[id].preco = preco;
                     localEstoqueItens[id].estoqueMinimo = minimo;
@@ -4861,6 +5071,7 @@
                 const newId = `item_${Date.now()}`;
                 localEstoqueItens[newId] = {
                     nome: nome,
+                    grupo: grupo,
                     unidade: unidade,
                     preco: preco,
                     estoqueMinimo: minimo,
