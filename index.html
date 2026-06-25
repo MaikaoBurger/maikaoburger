@@ -1210,13 +1210,63 @@
             50% { transform: translateY(-8px); }
         }
 
-        #confetti-canvas {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 9999;
+        /* ── Estilos do Estoque ── */
+        .estoque-tab.active {
+            color: var(--primary-light) !important;
+            border-bottom: 3px solid var(--primary-light) !important;
+        }
+        .estoque-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+            transition: background 0.2s ease;
+            text-align: left;
+        }
+        .estoque-item-row:last-child {
+            border-bottom: none;
+        }
+        .estoque-item-row.low-stock {
+            background: #FEF2F2 !important; /* Fundo vermelho claro */
+            border-left: 4px solid var(--primary-light);
+        }
+        .estoque-item-row.low-stock .estoque-item-name {
+            color: var(--primary-light);
+            font-weight: 700;
+        }
+        .estoque-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            flex: 1;
+        }
+        .estoque-item-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .estoque-qty-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        .estoque-qty-btn:hover {
+            background: #f5f5f7;
+            border-color: #bbb;
+        }
+        .estoque-qty-btn:active {
+            transform: scale(0.9);
         }
     </style>
 </head>
@@ -1392,6 +1442,7 @@
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" id="rank-btn" onclick="openRanking()" style="display:none">🏆</button>
             <button class="header-btn" id="farda-btn" onclick="openFardaControl()" style="display:none" title="Controle de Farda">👕</button>
+            <button class="header-btn" id="estoque-btn" onclick="openEstoque()" title="Controle de Estoque">📦</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
@@ -1469,6 +1520,112 @@
             <!-- Lista de fardas (scrollable) -->
             <div id="farda-list-container" style="flex: 1; overflow-y: auto; margin-top: 8px; padding-right: 4px;">
                 <div id="farda-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Controle de Estoque -->
+    <div class="gh-overlay" id="estoque-overlay" onclick="estoqueOverlayClick(event)">
+        <div class="gh-modal" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; flex-shrink: 0;">
+                <h2 style="font-family: var(--font-title); font-size: 22px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px;">📦 Controle de Estoque</h2>
+                <button onclick="closeEstoque()"
+                    style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#bbb;padding:0 4px">×</button>
+            </div>
+
+            <!-- Navegação por Abas Internas -->
+            <div class="estoque-tabs" style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 16px; flex-shrink: 0;">
+                <button class="estoque-tab active" id="estab-contar" onclick="switchEstoqueTab('contar')" style="flex: 1; padding: 10px; background: none; border: none; font-weight: 700; font-size: 14px; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">📝 Contar</button>
+                <button class="estoque-tab" id="estab-historico" onclick="switchEstoqueTab('historico')" style="flex: 1; padding: 10px; background: none; border: none; font-weight: 700; font-size: 14px; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">📅 Histórico</button>
+                <button class="estoque-tab" id="estab-gerenciar" onclick="switchEstoqueTab('gerenciar')" style="flex: 1; padding: 10px; background: none; border: none; font-weight: 700; font-size: 14px; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">⚙️ Itens</button>
+            </div>
+
+            <!-- Aba 1: Contagem Física -->
+            <div class="estoque-panel active" id="espanel-contar" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Responsável e Data -->
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 12px; flex-shrink: 0;">
+                    <div>
+                        <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Quem está contando?</label>
+                        <select class="gh-input" id="estoque-usuario" style="padding: 10px; font-size: 14px; cursor: pointer;"></select>
+                    </div>
+                    <div>
+                        <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Data da Contagem</label>
+                        <input class="gh-input" id="estoque-data" type="date" style="padding: 10px; font-size: 14px;">
+                    </div>
+                </div>
+
+                <!-- Lista de itens para contagem -->
+                <div id="estoque-lista-contar" style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 12px;"></div>
+
+                <!-- Rodapé da contagem (Valores Totais e Salvar) -->
+                <div style="border-top: 1.5px solid var(--border); padding-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: #fff; gap: 10px;">
+                    <div>
+                        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: left;">VALOR DO ESTOQUE:</div>
+                        <div style="font-size: 20px; font-weight: 900; color: var(--primary-light); text-align: left;" id="estoque-valor-total">R$ 0,00</div>
+                    </div>
+                    <button class="next-btn" onclick="salvarContagemEstoque()" style="padding: 12px 24px; font-size: 14px; width: auto; margin: 0;">Salvar Contagem 💾</button>
+                </div>
+            </div>
+
+            <!-- Aba 2: Histórico -->
+            <div class="estoque-panel" id="espanel-historico" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-shrink: 0; align-items: center;">
+                    <select class="gh-input" id="estoque-hist-select" onchange="renderHistContagem(this.value)" style="flex: 1; padding: 10px; font-size: 14px; cursor: pointer;"></select>
+                    <button class="gh-btn save" onclick="copiarTabelaExcel()" style="padding: 10px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; flex: none; background: linear-gradient(135deg, var(--green), #059669); color: white;">Copiar Excel 📋</button>
+                </div>
+
+                <!-- Detalhes da contagem histórica -->
+                <div id="estoque-hist-detalhe" style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 10px;"></div>
+                
+                <div style="border-top: 1.5px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                    <span id="estoque-hist-meta" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
+                    <strong id="estoque-hist-total" style="font-size: 18px; font-weight: 900; color: var(--green);">R$ 0,00</strong>
+                </div>
+            </div>
+
+            <!-- Aba 3: Gerenciar Itens -->
+            <div class="estoque-panel" id="espanel-gerenciar" style="flex: 1; display: none; flex-direction: column; overflow: hidden;">
+                <!-- Formulário para adicionar/editar item -->
+                <div id="estoque-item-form" style="background: #faf8f5; border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px; flex-shrink: 0; text-align: left;">
+                    <h3 id="estoque-form-title" style="font-family: var(--font-title); font-size: 13px; font-weight: 800; color: var(--primary-light); text-transform: uppercase; margin-bottom: 10px;">Novo Item</h3>
+                    <input type="hidden" id="estoque-item-edit-id">
+                    
+                    <div style="margin-bottom: 8px;">
+                        <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Nome do Produto</label>
+                        <input class="gh-input" id="estoque-item-nome" type="text" placeholder="Ex: Queijo Mussarela" style="padding: 8px 10px; font-size: 13px; text-align: left;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                        <div>
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Unidade</label>
+                            <select class="gh-input" id="estoque-item-unidade" style="padding: 8px 10px; font-size: 13px; cursor: pointer; height: 37px;">
+                                <option value="unidade">Unidade</option>
+                                <option value="kg">KG</option>
+                                <option value="pacotes">Pacotes</option>
+                                <option value="caixa">Caixa</option>
+                                <option value="fardo">Fardo</option>
+                                <option value="rolo">Rolo</option>
+                                <option value="bandeja">Bandeja</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Preço (R$)</label>
+                            <input class="gh-input" id="estoque-item-preco" type="number" step="0.01" min="0" placeholder="0.00" style="padding: 8px 10px; font-size: 13px; text-align: left;">
+                        </div>
+                        <div>
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Est. Mínimo</label>
+                            <input class="gh-input" id="estoque-item-minimo" type="number" step="0.1" min="0" placeholder="0" style="padding: 8px 10px; font-size: 13px; text-align: left;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button class="gh-btn cancel" onclick="cancelarEdicaoEstoqueItem()" style="padding: 8px 14px; font-size: 13px;">Cancelar</button>
+                        <button class="gh-btn save" onclick="salvarEstoqueItem()" style="padding: 8px 14px; font-size: 13px;">Salvar Item</button>
+                    </div>
+                </div>
+
+                <!-- Lista de itens cadastrados para gerenciar -->
+                <div id="estoque-lista-gerenciar" style="flex: 1; overflow-y: auto; padding-right: 4px;"></div>
             </div>
         </div>
     </div>
@@ -1867,6 +2024,25 @@
                     localStorage.setItem('mb_fardas', JSON.stringify(localFardas));
                     if (document.getElementById('farda-overlay')?.classList.contains('open')) {
                         renderFardaList();
+                    }
+                }
+                if (data.estoque) {
+                    let changed = false;
+                    if (data.estoque.itens) {
+                        localEstoqueItens = data.estoque.itens || {};
+                        localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
+                        changed = true;
+                    }
+                    if (data.estoque.contagens) {
+                        localEstoqueContagens = data.estoque.contagens || {};
+                        localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
+                        changed = true;
+                    }
+                    if (changed && document.getElementById('estoque-overlay')?.classList.contains('open')) {
+                        const activeTab = document.querySelector('.estoque-tab.active')?.id;
+                        if (activeTab === 'estab-contar') renderEstoqueListaContar();
+                        else if (activeTab === 'estab-historico') carregarEstoqueHistoricoSelect();
+                        else if (activeTab === 'estab-gerenciar') renderEstoqueListaGerenciar();
                     }
                 }
                 if (document.getElementById('app')?.style.display !== 'none') {
@@ -4159,6 +4335,566 @@
             } else {
                 confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
                 confettiAnimationId = null;
+            }
+        }
+
+            } else {
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                confettiAnimationId = null;
+            }
+        }
+
+        // ── Lista Padrão de Itens de Estoque (134 Itens) ──
+        const DEFAULT_ESTOQUE_ITENS = [
+            { nome: "Açúcar 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 5 },
+            { nome: "Água com Gás 500ml", unidade: "unidade", preco: 0, estoqueMinimo: 12 },
+            { nome: "Água Mineral 500ml", unidade: "unidade", preco: 0, estoqueMinimo: 24 },
+            { nome: "Ajinomoto", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Alface", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Alho", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
+            { nome: "Alho Em Pó", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
+            { nome: "Antarctica Lata 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 60 },
+            { nome: "Antarctica Zero 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 60 },
+            { nome: "Antarctica 2 Litros", unidade: "unidade", preco: 0, estoqueMinimo: 6 },
+            { nome: "Bacon Fatiado", unidade: "kg", preco: 0, estoqueMinimo: 10 },
+            { nome: "Bacon Manta Gordo", unidade: "kg", preco: 0, estoqueMinimo: 2 },
+            { nome: "Bacon Manta Magro", unidade: "kg", preco: 0, estoqueMinimo: 2 },
+            { nome: "Barbecue 1.1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Batata Trad Fritas (PFM Frozen/Crinkle) - Pct 2kg", unidade: "unidade", preco: 0, estoqueMinimo: 5 },
+            { nome: "Batata Lambweston 7mm - Pct 2.25kg", unidade: "unidade", preco: 0, estoqueMinimo: 5 },
+            { nome: "Baunilha", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Bolo de Chocolate", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Bolo de Pote Ninho", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Brownie", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Brioche (Pão Liso - Diante)", unidade: "caixa", preco: 0, estoqueMinimo: 28 },
+            { nome: "Calabresa", unidade: "kg", preco: 0, estoqueMinimo: 5 },
+            { nome: "Calda De Chocolate", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Caldo Knorr Frango (1.01kg c/ 56 tabletes)", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Caldo de Legumes/CO2", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Carne", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Carne Moída", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Catchup de Goiaba", unidade: "fardo", preco: 0, estoqueMinimo: 0 },
+            { nome: "Cebola (Geral)", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
+            { nome: "Cebola Caramelizada", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Cebola Em Pó", unidade: "kg", preco: 0, estoqueMinimo: 0.5 },
+            { nome: "Cebola Roxa", unidade: "kg", preco: 0, estoqueMinimo: 12 },
+            { nome: "Chantilly - 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Chantilly Branco", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Chantilly Chocolate", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Charque Desfiada", unidade: "kg", preco: 0, estoqueMinimo: 5 },
+            { nome: "Charque Bolinha", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Cheddar Bisnaga - 1.5kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Chicken Supreme Seara - 2.54kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Chocolate em barra (ovomaltine)", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Chocolate ao leite barra 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Chocolate Branco Barra 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Chocolate Em Pó 50% 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Coca Lata 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
+            { nome: "Coca Zero Lata 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
+            { nome: "Coca 2L", unidade: "unidade", preco: 0, estoqueMinimo: 24 },
+            { nome: "Coca KS", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Coentro", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Colorau", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Cream Cheese - 1.5kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Cream Cheese Camponesa - 1.01kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Creme de Avelã - 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Creme de Leite - 200ml", unidade: "unidade", preco: 0, estoqueMinimo: 10 },
+            { nome: "Farinha De Rosca", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Farinha de Trigo 1kg", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Fermento", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Frango", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Geléia de Pimenta", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Goiabada Cremosa - 4.8kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Hambúrguer de Frango", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Ketchup 3.4kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Ketchup Sachê", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Lápis de Cor", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Leite Condensado - 395g", unidade: "unidade", preco: 0, estoqueMinimo: 10 },
+            { nome: "Leite Fermentado Chamyto", unidade: "unidade", preco: 0, estoqueMinimo: 20 },
+            { nome: "Leite Líquido 1L", unidade: "unidade", preco: 0, estoqueMinimo: 12 },
+            { nome: "Leite Ninho - 750g", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Limão", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Maionese 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Maionese de Bacon", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Maionese Defumada", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Maionese Grill - 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Margarina 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Manteiga de Garrafa 900g", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Milho Verde Sachê 3kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Mostarda", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Molho Shoyu 1L", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Molho Especial", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Morango - Bandeja", unidade: "bandeja", preco: 0, estoqueMinimo: 1 },
+            { nome: "Morango 2L (Balde / Polpa)", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Mostarda 3.2kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Muzzarela Sachê", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Nuggets", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Óleo de Girassol", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Onion Ring - 1.05kg", unidade: "unidade", preco: 0, estoqueMinimo: 2 },
+            { nome: "Ovo", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
+            { nome: "Parma / Salame", unidade: "kg", preco: 0, estoqueMinimo: 0 },
+            { nome: "Pepino Molho Sachê", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Picles de Pepino em Conserva 3.4kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Pepsi Black 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
+            { nome: "Pepsi Twister 350ml", unidade: "unidade", preco: 0, estoqueMinimo: 48 },
+            { nome: "Pepsi 2L", unidade: "unidade", preco: 0, estoqueMinimo: 24 },
+            { nome: "Pepsi KS", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Pão de Brioche 2L", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Pimenta Do Reino", unidade: "kg", preco: 0, estoqueMinimo: 0.1 },
+            { nome: "Porção Coxinha", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Pão de Hambúrguer", unidade: "unidade", preco: 0, estoqueMinimo: 20 },
+            { nome: "Pudim", unidade: "unidade", preco: 0, estoqueMinimo: 0 },
+            { nome: "Queijo Cheddar Fatiado", unidade: "kg", preco: 0, estoqueMinimo: 6 },
+            { nome: "Queijo Coalho", unidade: "kg", preco: 0, estoqueMinimo: 5 },
+            { nome: "Queijo Parmesão", unidade: "kg", preco: 0, estoqueMinimo: 1.5 },
+            { nome: "Queijo Prato", unidade: "kg", preco: 0, estoqueMinimo: 6 },
+            { nome: "Queijo Ralado", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Requeijão - 1.5kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Sachê Açúcar", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
+            { nome: "Sachê Sal", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
+            { nome: "Seleta Plus Morango 1kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Seleta Chocolate Belga - 1.05kg", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Shake Blend - Cx 10L", unidade: "unidade", preco: 0, estoqueMinimo: 1 },
+            { nome: "Uva - Bandeja", unidade: "bandeja", preco: 0, estoqueMinimo: 1 },
+            
+            // DESCARTÁVEIS
+            { nome: "Absorvente com abas", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Bobina Saco G", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Bobina Saco P", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Canudo", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Colher Descartável", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Copo", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Garfo Descartável", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Guardanapo", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
+            { nome: "Luva Nitrílica", unidade: "caixa", preco: 0, estoqueMinimo: 1 },
+            { nome: "Luvas Transparentes", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Papel Alumínio", unidade: "unidades", preco: 0, estoqueMinimo: 1 },
+            { nome: "Papel Manteiga", unidade: "rolo", preco: 0, estoqueMinimo: 1 },
+            { nome: "Papel Higiênico", unidade: "fardo", preco: 0, estoqueMinimo: 1 },
+            { nome: "Papel Recife", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Papel Toalha", unidade: "fardo", preco: 0, estoqueMinimo: 1 },
+            { nome: "Pazinha", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Plástico Filme", unidade: "unidades", preco: 0, estoqueMinimo: 1 },
+            { nome: "Saco à vácuo 15x35", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Saco à vácuo 17x35", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Saco de Confeiteiro", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Saco Lixo 200 Litros", unidade: "pacotes", preco: 0, estoqueMinimo: 1 },
+            { nome: "Sacola PP", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Sacola P", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Sacola G", unidade: "kg", preco: 0, estoqueMinimo: 1 },
+            { nome: "Touca", unidade: "caixa", preco: 0, estoqueMinimo: 1 }
+        ];
+
+        // ── Controle de Estoque ──
+        let localEstoqueItens = {};
+        let localEstoqueContagens = {};
+
+        function openEstoque() {
+            loadEstoque();
+            const todayStr = getTodayIsoDate();
+            document.getElementById('estoque-data').value = todayStr;
+            
+            // Popula os nomes no select de quem está contando
+            const userSelect = document.getElementById('estoque-usuario');
+            if (userSelect) {
+                userSelect.innerHTML = `<option value="">Selecione...</option>` + 
+                    NOMES.map(n => `<option value="${n}">${n}</option>`).join('');
+                if (currentUser) userSelect.value = currentUser;
+            }
+
+            switchEstoqueTab('contar');
+            document.getElementById('estoque-overlay').classList.add('open');
+        }
+
+        function closeEstoque() {
+            document.getElementById('estoque-overlay').classList.remove('open');
+        }
+
+        function estoqueOverlayClick(e) {
+            if (e.target === document.getElementById('estoque-overlay')) {
+                closeEstoque();
+            }
+        }
+
+        function switchEstoqueTab(tabName) {
+            document.querySelectorAll('.estoque-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.estoque-panel').forEach(p => p.style.display = 'none');
+
+            document.getElementById(`estab-${tabName}`)?.classList.add('active');
+            const panel = document.getElementById(`espanel-${tabName}`);
+            if (panel) panel.style.display = 'flex';
+
+            if (tabName === 'contar') {
+                renderEstoqueListaContar();
+            } else if (tabName === 'historico') {
+                carregarEstoqueHistoricoSelect();
+            } else if (tabName === 'gerenciar') {
+                renderEstoqueListaGerenciar();
+                cancelarEdicaoEstoqueItem();
+            }
+        }
+
+        function loadEstoque() {
+            // Carrega itens
+            try {
+                const i = localStorage.getItem('mb_estoque_itens');
+                localEstoqueItens = i ? JSON.parse(i) : {};
+            } catch(e) { localEstoqueItens = {}; }
+
+            // Se não houver itens, inicia com os padrões
+            if (Object.keys(localEstoqueItens).length === 0) {
+                DEFAULT_ESTOQUE_ITENS.forEach((item, idx) => {
+                    const id = `item_${Date.now()}_${idx}`;
+                    localEstoqueItens[id] = { ...item, ativo: true };
+                });
+                saveEstoqueItens(localEstoqueItens);
+            }
+
+            // Carrega contagens
+            try {
+                const c = localStorage.getItem('mb_estoque_contagens');
+                localEstoqueContagens = c ? JSON.parse(c) : {};
+            } catch(e) { localEstoqueContagens = {}; }
+        }
+
+        function saveEstoqueItens(itensObj) {
+            localEstoqueItens = itensObj;
+            localStorage.setItem('mb_estoque_itens', JSON.stringify(itensObj));
+            db.ref('estoque/itens').set(itensObj).catch(() => setSyncUI('error'));
+        }
+
+        function saveEstoqueContagens(contagensObj) {
+            localEstoqueContagens = contagensObj;
+            localStorage.setItem('mb_estoque_contagens', JSON.stringify(contagensObj));
+            db.ref('estoque/contagens').set(contagensObj).catch(() => setSyncUI('error'));
+        }
+
+        function renderEstoqueListaContar() {
+            const container = document.getElementById('estoque-lista-contar');
+            if (!container) return;
+
+            const items = Object.entries(localEstoqueItens)
+                .filter(([_, item]) => item.ativo)
+                .sort((a, b) => a[1].nome.localeCompare(b[1].nome));
+
+            if (items.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhum produto cadastrado. Adicione produtos na aba "Itens".</div>';
+                document.getElementById('estoque-valor-total').textContent = 'R$ 0,00';
+                return;
+            }
+
+            container.innerHTML = items.map(([id, item]) => {
+                const isKg = item.unidade === 'kg';
+                return `
+                    <div class="estoque-item-row" id="row-contar-${id}">
+                        <div style="flex: 1;">
+                            <div class="estoque-item-name">${item.nome}</div>
+                            <div style="font-size: 11px; color:#888;">
+                                Preço unitário: <strong>R$ ${item.preco.toFixed(2)}</strong> por ${item.unidade} | Mín: ${item.estoqueMinimo} ${item.unidade}
+                            </div>
+                        </div>
+                        <div class="estoque-item-input-wrap">
+                            <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
+                            <input class="gh-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
+                                oninput="atualizarEstoqueTotais()" style="padding: 6px; font-size: 14px; width: 75px; text-align: center; height: 32px;">
+                            <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
+                            <span style="font-size: 13px; font-weight: 700; min-width: 75px; text-align: right; color: var(--text-muted);" id="subtotal-${id}">R$ 0,00</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            atualizarEstoqueTotais();
+        }
+
+        function ajustarContagemQty(id, delta) {
+            const input = document.getElementById(`qty-input-${id}`);
+            if (!input) return;
+            const item = localEstoqueItens[id];
+            if (!item) return;
+
+            let val = parseFloat(input.value) || 0;
+            const step = item.unidade === 'kg' ? 0.5 : 1;
+            val = Math.max(0, val + delta * step);
+            input.value = item.unidade === 'kg' ? val.toFixed(1) : Math.round(val);
+            atualizarEstoqueTotais();
+        }
+
+        function atualizarEstoqueTotais() {
+            let totalGeral = 0;
+            Object.entries(localEstoqueItens).forEach(([id, item]) => {
+                if (!item.ativo) return;
+                const input = document.getElementById(`qty-input-${id}`);
+                const row = document.getElementById(`row-contar-${id}`);
+                const subtotalLabel = document.getElementById(`subtotal-${id}`);
+                if (!input) return;
+
+                const qty = parseFloat(input.value) || 0;
+                const subtotal = qty * item.preco;
+                totalGeral += subtotal;
+
+                if (subtotalLabel) {
+                    subtotalLabel.textContent = `R$ ${subtotal.toFixed(2)}`;
+                }
+
+                // Alerta de estoque mínimo
+                const min = parseFloat(item.estoqueMinimo) || 0;
+                if (row) {
+                    if (input.value !== '' && qty <= min) {
+                        row.classList.add('low-stock');
+                    } else {
+                        row.classList.remove('low-stock');
+                    }
+                }
+            });
+
+            const totalEl = document.getElementById('estoque-valor-total');
+            if (totalEl) totalEl.textContent = `R$ ${totalGeral.toFixed(2)}`;
+        }
+
+        function salvarContagemEstoque() {
+            const user = document.getElementById('estoque-usuario').value;
+            const dateStr = document.getElementById('estoque-data').value;
+
+            if (!user) { alert('Selecione quem está fazendo a contagem.'); return; }
+            if (!dateStr) { alert('Selecione a data da contagem.'); return; }
+
+            const countItens = {};
+            let valorTotalGeral = 0;
+
+            Object.entries(localEstoqueItens).forEach(([id, item]) => {
+                if (!item.ativo) return;
+                const input = document.getElementById(`qty-input-${id}`);
+                const qty = input ? parseFloat(input.value) : 0;
+                
+                countItens[id] = {
+                    nome: item.nome,
+                    quantidade: qty,
+                    unidade: item.unidade,
+                    precoUnitario: item.preco,
+                    estoqueMinimo: item.estoqueMinimo,
+                    valorTotalItem: qty * item.preco
+                };
+                
+                valorTotalGeral += qty * item.preco;
+            });
+
+            loadEstoque();
+            localEstoqueContagens[dateStr] = {
+                data: new Date(dateStr + 'T12:00:00').toISOString(),
+                usuario: user,
+                valorTotalGeral: valorTotalGeral,
+                itens: countItens
+            };
+
+            saveEstoqueContagens(localEstoqueContagens);
+            playVictorySound();
+            triggerConfetti();
+            alert('Contagem de estoque salva com sucesso!');
+            
+            switchEstoqueTab('historico');
+        }
+
+        function carregarEstoqueHistoricoSelect() {
+            const select = document.getElementById('estoque-hist-select');
+            if (!select) return;
+
+            const dates = Object.keys(localEstoqueContagens).sort().reverse();
+            if (dates.length === 0) {
+                select.innerHTML = '<option value="">Nenhuma contagem salva</option>';
+                document.getElementById('estoque-hist-detalhe').innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhuma contagem semanal registrada ainda.</div>';
+                document.getElementById('estoque-hist-meta').textContent = '';
+                document.getElementById('estoque-hist-total').textContent = 'R$ 0,00';
+                return;
+            }
+
+            select.innerHTML = dates.map(d => {
+                const dateObj = new Date(d + 'T12:00:00');
+                const label = dateObj.toLocaleDateString('pt-BR');
+                return `<option value="${d}">${label} - ${localEstoqueContagens[d].usuario}</option>`;
+            }).join('');
+
+            renderHistContagem(dates[0]);
+        }
+
+        function renderHistContagem(dateKey) {
+            const container = document.getElementById('estoque-hist-detalhe');
+            const metaLabel = document.getElementById('estoque-hist-meta');
+            const totalLabel = document.getElementById('estoque-hist-total');
+            if (!container || !dateKey) return;
+
+            const count = localEstoqueContagens[dateKey];
+            if (!count) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Contagem não encontrada.</div>';
+                return;
+            }
+
+            const items = Object.values(count.itens).sort((a, b) => a.nome.localeCompare(b.nome));
+
+            container.innerHTML = items.map(it => {
+                const min = parseFloat(it.estoqueMinimo) || 0;
+                const isLow = it.quantidade <= min;
+                const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row';
+                const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
+                
+                return `
+                    <div class="${rowClass}">
+                        <div style="flex: 1;">
+                            <div class="estoque-item-name">${it.nome}${alarmTag}</div>
+                            <div style="font-size:11px; color:#888;">
+                                Preço unitário: R$ ${it.precoUnitario.toFixed(2)} | Mín: ${it.estoqueMinimo} ${it.unidade}
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <span style="font-size: 14px; font-weight: 700; color:var(--text);">${it.quantidade} ${it.unidade}</span>
+                            <span style="font-size: 14px; font-weight: 800; min-width: 80px; text-align: right; color: ${isLow ? 'var(--primary-light)' : 'var(--green)'};">R$ ${it.valorTotalItem.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const dateFormatted = new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR');
+            if (metaLabel) metaLabel.textContent = `Por ${count.usuario} em ${dateFormatted}`;
+            if (totalLabel) totalLabel.textContent = `R$ ${count.valorTotalGeral.toFixed(2)}`;
+        }
+
+        function copiarTabelaExcel() {
+            const select = document.getElementById('estoque-hist-select');
+            if (!select || !select.value) { alert('Nenhuma contagem selecionada.'); return; }
+
+            const count = localEstoqueContagens[select.value];
+            if (!count) return;
+
+            const dateFormatted = new Date(select.value + 'T12:00:00').toLocaleDateString('pt-BR');
+            
+            let t = `CONTAGEM DE ESTOQUE MAIKAO BURGER - ${dateFormatted} (Responsável: ${count.usuario})\n\n`;
+            t += `Produto\tQuantidade\tUnidade\tPreço Unitário (R$)\tEstoque Mínimo\tSubtotal (R$)\tStatus\n`;
+
+            Object.values(count.itens)
+                .sort((a, b) => a.nome.localeCompare(b.nome))
+                .forEach(it => {
+                    const min = parseFloat(it.estoqueMinimo) || 0;
+                    const status = it.quantidade <= min ? 'ABAIXO DO MÍNIMO' : 'OK';
+                    t += `${it.nome}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario.toFixed(2)}\t${it.estoqueMinimo}\t${it.valorTotalItem.toFixed(2)}\t${status}\n`;
+                });
+
+            t += `\nVALOR TOTAL DO ESTOQUE:\tR$ ${count.valorTotalGeral.toFixed(2)}\n`;
+
+            navigator.clipboard.writeText(t).then(() => {
+                alert('Tabela copiada com sucesso! Agora vá no Excel ou Google Planilhas e dê Ctrl+V.');
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+                alert('Erro ao copiar tabela: ' + err.message);
+            });
+        }
+
+        function renderEstoqueListaGerenciar() {
+            const container = document.getElementById('estoque-lista-gerenciar');
+            if (!container) return;
+
+            const items = Object.entries(localEstoqueItens)
+                .sort((a, b) => a[1].nome.localeCompare(b[1].nome));
+
+            if (items.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhum produto cadastrado.</div>';
+                return;
+            }
+
+            container.innerHTML = items.map(([id, item]) => {
+                const statusLabel = item.ativo ? '🟢 Ativo' : '🔴 Inativo';
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: ${item.ativo ? '#fff' : '#f5f5f7'}; text-align: left;">
+                        <div style="flex: 1;">
+                            <strong style="font-size: 14px; color: ${item.ativo ? 'var(--text)' : '#999'};">${item.nome}</strong>
+                            <div style="font-size: 11px; color: #888;">
+                                Preço: R$ ${item.preco.toFixed(2)} por ${item.unidade} | Est. Mín: ${item.estoqueMinimo} | ${statusLabel}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="editarEstoqueItemClick('${id}')" style="background:none; border:none; font-size:15px; cursor:pointer; padding: 4px;" title="Editar">✏️</button>
+                            <button onclick="toggleEstoqueItemAtivo('${id}')" style="background:none; border:none; font-size:15px; cursor:pointer; padding: 4px;" title="${item.ativo ? 'Desativar' : 'Ativar'}">${item.ativo ? '🚫' : '✅'}</button>
+                            <button onclick="excluirEstoqueItem('${id}')" style="background:none; border:none; font-size:15px; cursor:pointer; padding: 4px;" title="Excluir">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function editarEstoqueItemClick(id) {
+            const item = localEstoqueItens[id];
+            if (!item) return;
+
+            document.getElementById('estoque-item-edit-id').value = id;
+            document.getElementById('estoque-item-nome').value = item.nome;
+            document.getElementById('estoque-item-unidade').value = item.unidade;
+            document.getElementById('estoque-item-preco').value = item.preco;
+            document.getElementById('estoque-item-minimo').value = item.estoqueMinimo || 0;
+
+            document.getElementById('estoque-form-title').textContent = 'Editar Item';
+        }
+
+        function cancelarEdicaoEstoqueItem() {
+            document.getElementById('estoque-item-edit-id').value = '';
+            document.getElementById('estoque-item-nome').value = '';
+            document.getElementById('estoque-item-unidade').value = 'unidade';
+            document.getElementById('estoque-item-preco').value = '';
+            document.getElementById('estoque-item-minimo').value = '';
+
+            document.getElementById('estoque-form-title').textContent = 'Novo Item';
+        }
+
+        function salvarEstoqueItem() {
+            const id = document.getElementById('estoque-item-edit-id').value;
+            const nome = document.getElementById('estoque-item-nome').value.trim();
+            const unidade = document.getElementById('estoque-item-unidade').value;
+            const preco = parseFloat(document.getElementById('estoque-item-preco').value) || 0;
+            const minimo = parseFloat(document.getElementById('estoque-item-minimo').value) || 0;
+
+            if (!nome) { alert('Informe o nome do item.'); return; }
+
+            loadEstoque();
+            if (id) {
+                if (localEstoqueItens[id]) {
+                    localEstoqueItens[id].nome = nome;
+                    localEstoqueItens[id].unidade = unidade;
+                    localEstoqueItens[id].preco = preco;
+                    localEstoqueItens[id].estoqueMinimo = minimo;
+                }
+            } else {
+                const newId = `item_${Date.now()}`;
+                localEstoqueItens[newId] = {
+                    nome: nome,
+                    unidade: unidade,
+                    preco: preco,
+                    estoqueMinimo: minimo,
+                    ativo: true
+                };
+            }
+
+            saveEstoqueItens(localEstoqueItens);
+            cancelarEdicaoEstoqueItem();
+            renderEstoqueListaGerenciar();
+            alert('Produto salvo com sucesso!');
+        }
+
+        function toggleEstoqueItemAtivo(id) {
+            loadEstoque();
+            if (localEstoqueItens[id]) {
+                localEstoqueItens[id].ativo = !localEstoqueItens[id].ativo;
+                saveEstoqueItens(localEstoqueItens);
+                renderEstoqueListaGerenciar();
+            }
+        }
+
+        function excluirEstoqueItem(id) {
+            const item = localEstoqueItens[id];
+            if (!item) return;
+
+            if (confirm(`Excluir permanentemente o item "${item.nome}"?`)) {
+                loadEstoque();
+                delete localEstoqueItens[id];
+                saveEstoqueItens(localEstoqueItens);
+                renderEstoqueListaGerenciar();
             }
         }
 
