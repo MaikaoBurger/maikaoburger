@@ -1442,7 +1442,6 @@
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" id="rank-btn" onclick="openRanking()" style="display:none">🏆</button>
             <button class="header-btn" id="farda-btn" onclick="openFardaControl()" style="display:none" title="Controle de Farda">👕</button>
-            <button class="header-btn" id="estoque-btn" onclick="openEstoque()" title="Controle de Estoque">📦</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
             <button class="header-btn" id="adm-btn" onclick="toggleAdminFromHeader()" title="Admin">🔐</button>
@@ -3127,6 +3126,9 @@
                     <div class="setor-section-header" style="color: var(--secondary-light); font-size: 14px;">Utilitários</div>
                     <button class="sel-btn-abertura" onclick="window.location.href='producao.html'" style="background: linear-gradient(135deg, var(--secondary-light), #B45309); border: none; width: 100%; padding: 18px 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(217, 119, 6, 0.25);">
                         <span>📊</span> Planilha de Produção
+                    </button>
+                    <button class="sel-btn-abertura" onclick="openEstoque()" style="margin-top: 10px; background: linear-gradient(135deg, #10B981, #059669); border: none; width: 100%; padding: 18px 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);">
+                        <span>📦</span> Controle de Estoque
                     </button>
                 </div>
             `;
