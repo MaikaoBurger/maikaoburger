@@ -2278,93 +2278,102 @@
                         renderFardaList();
                     }
                 }
-                if (data.estoque) {
-                    let changed = false;
-                    if (data.estoque.itens) {
-                        localEstoqueItens = data.estoque.itens || {};
-                        
-                        // Garante que todos os itens recebidos tenham os campos novos (estoqueMaximo e qtdPorCaixa) preenchidos
-                        let itemFieldsUpgraded = false;
-                        Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                            if (it.estoqueMaximo === undefined) {
-                                it.estoqueMaximo = 0;
-                                itemFieldsUpgraded = true;
-                            }
-                            if (it.qtdPorCaixa === undefined) {
-                                it.qtdPorCaixa = 1;
-                                itemFieldsUpgraded = true;
-                            }
-                        });
+                // Sincroniza estoque
+                const estoqueData = data.estoque || {};
+                let changed = false;
+                
+                // Se o nó de itens não existir de forma alguma no Firebase, inicializa com a lista padrão
+                if (!estoqueData.itens) {
+                    estoqueData.itens = {};
+                    DEFAULT_ESTOQUE_ITENS.forEach((item, idx) => {
+                        const id = `item_default_${idx}`;
+                        estoqueData.itens[id] = { ...item, ativo: true, estoqueMaximo: 0, qtdPorCaixa: 1 };
+                    });
+                }
 
-                        // Recuperação Automática das edições perdidas (Açúcar, Água, Ajinomoto, Alho, Bom Ar)
-                        let restored = false;
-                        Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                            if (it.nome === "Açúcar 1kg" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                                it.estoqueMaximo = 10;
-                                it.qtdPorCaixa = 10;
-                                restored = true;
-                            }
-                            if (it.nome === "Água com Gás 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                                it.estoqueMaximo = 60;
-                                it.qtdPorCaixa = 12;
-                                restored = true;
-                            }
-                            if (it.nome === "Água Mineral 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                                it.estoqueMaximo = 60;
-                                it.qtdPorCaixa = 12;
-                                restored = true;
-                            }
-                            if (it.nome === "Ajinomoto" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                                it.estoqueMaximo = 5;
-                                it.qtdPorCaixa = 1;
-                                restored = true;
-                            }
-                            if (it.nome === "Alho" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                                it.estoqueMaximo = 1;
-                                restored = true;
-                            }
-                            if (it.nome === "Bom Ar") {
-                                delete localEstoqueItens[id];
-                                restored = true;
-                            }
-                        });
+                localEstoqueItens = estoqueData.itens || {};
+                
+                // Garante que todos os itens recebidos tenham os campos novos (estoqueMaximo e qtdPorCaixa) preenchidos
+                let itemFieldsUpgraded = false;
+                Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                    if (it.estoqueMaximo === undefined) {
+                        it.estoqueMaximo = 0;
+                        itemFieldsUpgraded = true;
+                    }
+                    if (it.qtdPorCaixa === undefined) {
+                        it.qtdPorCaixa = 1;
+                        itemFieldsUpgraded = true;
+                    }
+                });
 
-                        if (itemFieldsUpgraded || restored) {
-                            alert("Restauração detectada! Enviando para o Firebase. Restored: " + restored + ", Upgraded: " + itemFieldsUpgraded);
-                            db.ref('estoque/itens').set(localEstoqueItens)
-                                .then(() => { alert("Firebase gravado com SUCESSO!"); })
-                                .catch(err => { alert("Erro de gravação no Firebase: " + err.message); });
-                        }
+                // Recuperação Automática das edições perdidas (Açúcar, Água, Ajinomoto, Alho, Bom Ar)
+                let restored = false;
+                Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                    if (it.nome === "Açúcar 1kg" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                        it.estoqueMaximo = 10;
+                        it.qtdPorCaixa = 10;
+                        restored = true;
+                    }
+                    if (it.nome === "Água com Gás 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                        it.estoqueMaximo = 60;
+                        it.qtdPorCaixa = 12;
+                        restored = true;
+                    }
+                    if (it.nome === "Água Mineral 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                        it.estoqueMaximo = 60;
+                        it.qtdPorCaixa = 12;
+                        restored = true;
+                    }
+                    if (it.nome === "Ajinomoto" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                        it.estoqueMaximo = 5;
+                        it.qtdPorCaixa = 1;
+                        restored = true;
+                    }
+                    if (it.nome === "Alho" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                        it.estoqueMaximo = 1;
+                        restored = true;
+                    }
+                    if (it.nome === "Bom Ar") {
+                        delete localEstoqueItens[id];
+                        restored = true;
+                    }
+                });
 
-                        localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
-                        changed = true;
-                    }
-                    if (data.estoque.contagens) {
-                        localEstoqueContagens = data.estoque.contagens || {};
-                        localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
-                        changed = true;
-                    }
+                if (itemFieldsUpgraded || restored) {
+                    alert("Restauração detectada! Enviando para o Firebase. Restored: " + restored + ", Upgraded: " + itemFieldsUpgraded);
+                    db.ref('estoque/itens').set(localEstoqueItens)
+                        .then(() => { alert("Firebase gravado com SUCESSO!"); })
+                        .catch(err => { alert("Erro de gravação no Firebase: " + err.message); });
+                }
 
-                    // Sincroniza rascunho de contagem em tempo real
-                    if (data.estoque.rascunho) {
-                        localContagemQty = data.estoque.rascunho.quantidades || {};
-                        localEstoqueNomes = data.estoque.rascunho.nomes || {};
-                    } else {
-                        localContagemQty = {};
-                        localEstoqueNomes = {};
-                    }
-                    
-                    if (document.getElementById('estoque-overlay')?.classList.contains('open')) {
-                        syncEstoqueDraftUI();
-                        renderEstoqueNomes();
-                    }
+                localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
+                changed = true;
 
-                    if (changed && document.getElementById('estoque-overlay')?.classList.contains('open')) {
-                        const activeTab = document.querySelector('.estoque-tab.active')?.id;
-                        if (activeTab === 'estab-contar') renderEstoqueListaContar();
-                        else if (activeTab === 'estab-historico') carregarEstoqueHistoricoSelect();
-                        else if (activeTab === 'estab-gerenciar') renderEstoqueListaGerenciar();
-                    }
+                if (estoqueData.contagens) {
+                    localEstoqueContagens = estoqueData.contagens || {};
+                    localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
+                    changed = true;
+                }
+
+                // Sincroniza rascunho de contagem em tempo real
+                if (estoqueData.rascunho) {
+                    localContagemQty = estoqueData.rascunho.quantidades || {};
+                    localEstoqueNomes = estoqueData.rascunho.nomes || {};
+                } else {
+                    localContagemQty = {};
+                    localEstoqueNomes = {};
+                }
+                
+                if (document.getElementById('estoque-overlay')?.classList.contains('open')) {
+                    syncEstoqueDraftUI();
+                    renderEstoqueNomes();
+                }
+
+                if (changed && document.getElementById('estoque-overlay')?.classList.contains('open')) {
+                    const activeTab = document.querySelector('.estoque-tab.active')?.id;
+                    if (activeTab === 'estab-contar') renderEstoqueListaContar();
+                    else if (activeTab === 'estab-historico') carregarEstoqueHistoricoSelect();
+                    else if (activeTab === 'estab-gerenciar') renderEstoqueListaGerenciar();
                 }
                 if (document.getElementById('app')?.style.display !== 'none') {
                     loadState();
