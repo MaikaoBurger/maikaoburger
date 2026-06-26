@@ -5167,12 +5167,20 @@
                     const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row above-min';
                     const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
                     const minLabel = it.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : `${it.estoqueMinimo} ${it.unidade}`;
+                    
+                    // Buscar item correspondente vivo para exibir Máx e Caixa
+                    let liveItem = Object.values(localEstoqueItens).find(x => x.nome === it.nome);
+                    const max = liveItem ? (parseFloat(liveItem.estoqueMaximo) || 0) : 0;
+                    const packSize = liveItem ? (parseFloat(liveItem.qtdPorCaixa) || 1) : 1;
+                    const maxLabel = max ? ` | Máx: ${max} ${it.unidade}` : '';
+                    const cxLabel = packSize > 1 ? ` | Caixa: ${packSize} un` : '';
+
                     return `
                         <div class="${rowClass}">
                             <div style="flex: 1;">
                                 <div class="estoque-item-name">${it.nome}${alarmTag}</div>
                                 <div style="font-size:11px; color:#888;">
-                                    Mín: ${minLabel}
+                                    Mín: ${minLabel}${maxLabel}${cxLabel}
                                 </div>
                             </div>
                             <div style="display:flex; align-items:center; gap:16px;">
@@ -5212,6 +5220,7 @@
                             grupo: it.grupo || 'cmv',
                             quantidade: it.quantidade,
                             unidade: it.unidade,
+                            minimo: it.estoqueMinimo,
                             maximo: max,
                             caixa: packSize,
                             sugestao: suggestionText
@@ -5263,7 +5272,7 @@
                                 <div style="text-align: left; flex: 1;">
                                     <div class="estoque-item-name" style="font-weight: 700; font-size: 13px;">${s.nome}</div>
                                     <div style="font-size: 10px; color: #888;">
-                                        Atual: ${s.quantidade} ${s.unidade} | Máx: ${s.maximo} ${s.unidade} | Caixa: ${s.caixa} un
+                                        Mín: ${s.minimo === "Produção Diária" ? "Prod. Diária" : s.minimo} | Máx: ${s.maximo} ${s.unidade} | Atual: ${s.quantidade} ${s.unidade} | Caixa: ${s.caixa} un
                                     </div>
                                 </div>
                                 <div style="text-align: right; font-size: 13px; font-weight: 800; color: var(--primary); white-space: nowrap;">
