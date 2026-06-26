@@ -1840,7 +1840,12 @@
                         </div>
                         <div>
                             <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Est. Mínimo</label>
-                            <input class="gh-input" id="estoque-item-minimo" type="number" step="0.1" min="0" placeholder="0" style="padding: 8px 10px; font-size: 13px; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <input class="gh-input" id="estoque-item-minimo" type="number" step="0.1" min="0" placeholder="0" style="padding: 8px 10px; font-size: 13px; text-align: left; flex: 1; height: 37px;">
+                                <label style="font-size: 9px; color: var(--text); display: flex; align-items: center; gap: 3px; cursor: pointer; white-space: nowrap; font-weight: 700; height: 37px; user-select: none;">
+                                    <input type="checkbox" id="estoque-item-minimo-pd" onchange="toggleEstoqueMinimoInput(this.checked)" style="cursor: pointer; width: 13px; height: 13px; margin: 0;"> Prod. Diária
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -4575,7 +4580,7 @@
             ["Água com Gás 500ml", "unidade", 12, "cmv"],
             ["Água Mineral 500ml", "unidade", 24, "cmv"],
             ["Ajinomoto", "unidade", 1, "cmv"],
-            ["Alface", "unidade", 0, "cmv"],
+            ["Alface", "unidade", "Produção Diária", "cmv"],
             ["Alho", "kg", 0.5, "cmv"],
             ["Alho Em Pó", "kg", 0.5, "cmv"],
             ["Antarctica Lata 350ml", "unidade", 60, "cmv"],
@@ -4588,26 +4593,26 @@
             ["Batata Trad Fritas (PFM Frozen/Crinkle) - Pct 2kg", "unidade", 5, "cmv"],
             ["Batata Lambweston 7mm - Pct 2.25kg", "unidade", 5, "cmv"],
             ["Baunilha", "unidade", 1, "cmv"],
-            ["Bolo de Chocolate", "unidade", 0, "cmv"],
-            ["Bolo de Pote Ninho", "unidade", 0, "cmv"],
+            ["Bolo de Chocolate", "unidade", "Produção Diária", "cmv"],
+            ["Bolo de Pote Ninho", "unidade", "Produção Diária", "cmv"],
             ["Brownie", "unidade", 1, "cmv"],
             ["Brioche (Pão Liso - Diante)", "caixa", 28, "cmv"],
             ["Calabresa", "kg", 5, "cmv"],
             ["Calda De Chocolate", "unidade", 1, "cmv"],
             ["Caldo Knorr Frango (1.01kg c/ 56 tabletes)", "unidade", 2, "cmv"],
             ["Caldo de Legumes/CO2", "unidade", 2, "cmv"],
-            ["Carne", "unidade", 0, "cmv"],
-            ["Carne Moída", "unidade", 0, "cmv"],
+            ["Carne", "unidade", "Produção Diária", "cmv"],
+            ["Carne Moída", "unidade", "Produção Diária", "cmv"],
             ["Catchup de Goiaba", "fardo", 0, "cmv"],
             ["Cebola (Geral)", "kg", 0.5, "cmv"],
-            ["Cebola Caramelizada", "kg", 0, "cmv"],
+            ["Cebola Caramelizada", "kg", "Produção Diária", "cmv"],
             ["Cebola Em Pó", "kg", 0.5, "cmv"],
             ["Cebola Roxa", "kg", 12, "cmv"],
             ["Chantilly - 1kg", "unidade", 1, "cmv"],
-            ["Chantilly Branco", "kg", 0, "cmv"],
-            ["Chantilly Chocolate", "kg", 0, "cmv"],
+            ["Chantilly Branco", "kg", "Produção Diária", "cmv"],
+            ["Chantilly Chocolate", "kg", "Produção Diária", "cmv"],
             ["Charque Desfiada", "kg", 5, "cmv"],
-            ["Charque Bolinha", "unidade", 0, "cmv"],
+            ["Charque Bolinha", "unidade", "Produção Diária", "cmv"],
             ["Cheddar Bisnaga - 1.5kg", "unidade", 2, "cmv"],
             ["Chicken Supreme Seara - 2.54kg", "unidade", 2, "cmv"],
             ["Chocolate em barra (ovomaltine)", "unidade", 2, "cmv"],
@@ -4628,7 +4633,7 @@
             ["Farinha de Trigo 1kg", "kg", 1, "cmv"],
             ["Fermento", "kg", 1, "cmv"],
             ["Frango", "kg", 0, "cmv"],
-            ["Geléia de Pimenta", "unidade", 0, "cmv"],
+            ["Geléia de Pimenta", "unidade", "Produção Diária", "cmv"],
             ["Goiabada Cremosa - 4.8kg", "unidade", 1, "cmv"],
             ["Hambúrguer de Frango", "unidade", 1, "cmv"],
             ["Ketchup 3.4kg", "unidade", 1, "cmv"],
@@ -4639,15 +4644,15 @@
             ["Leite Ninho - 750g", "unidade", 1, "cmv"],
             ["Limão", "kg", 1, "cmv"],
             ["Maionese 3kg", "unidade", 1, "cmv"],
-            ["Maionese de Bacon", "kg", 0, "cmv"],
-            ["Maionese Defumada", "kg", 0, "cmv"],
+            ["Maionese de Bacon", "kg", "Produção Diária", "cmv"],
+            ["Maionese Defumada", "kg", "Produção Diária", "cmv"],
             ["Maionese Grill - 3kg", "unidade", 1, "cmv"],
             ["Margarina 3kg", "unidade", 1, "cmv"],
             ["Manteiga de Garrafa 900g", "unidade", 2, "cmv"],
             ["Milho Verde Sachê 3kg", "unidade", 1, "cmv"],
             ["Mostarda", "unidade", 1, "cmv"],
             ["Molho Shoyu 1L", "kg", 0, "cmv"],
-            ["Molho Especial", "kg", 0, "cmv"],
+            ["Molho Especial", "kg", "Produção Diária", "cmv"],
             ["Morango - Bandeja", "bandeja", 1, "cmv"],
             ["Morango 2L (Balde / Polpa)", "unidade", 1, "cmv"],
             ["Mostarda 3.2kg", "unidade", 1, "cmv"],
@@ -4665,9 +4670,9 @@
             ["Pepsi KS", "unidade", 0, "cmv"],
             ["Pão de Brioche 2L", "unidade", 1, "cmv"],
             ["Pimenta Do Reino", "kg", 0.1, "cmv"],
-            ["Porção Coxinha", "unidade", 0, "cmv"],
+            ["Porção Coxinha", "unidade", "Produção Diária", "cmv"],
             ["Pão de Hambúrguer", "unidade", 20, "cmv"],
-            ["Pudim", "unidade", 0, "cmv"],
+            ["Pudim", "unidade", "Produção Diária", "cmv"],
             ["Queijo Cheddar Fatiado", "kg", 6, "cmv"],
             ["Queijo Coalho", "kg", 5, "cmv"],
             ["Queijo Parmesão", "kg", 1.5, "cmv"],
@@ -4684,7 +4689,7 @@
             ["Salsa", "kg", 0.2, "cmv"],
             ["Tomate", "kg", 2, "cmv"],
             ["Toscana de Frango", "kg", 1, "cmv"],
-            ["Toscana de Frango - Disco 120gr", "unidade", 0, "cmv"],
+            ["Toscana de Frango - Disco 120gr", "unidade", "Produção Diária", "cmv"],
             ["Tubinho de chocolate", "unidade", 5, "cmv"],
             ["Tubinho Morango", "unidade", 5, "cmv"],
             ["Vinagre de vinho branco", "unidade", 4, "cmv"],
@@ -4829,10 +4834,16 @@
                     const existingEntry = Object.entries(localEstoqueItens).find(([_, it]) => it.nome === defaultItem.nome);
                     if (existingEntry) {
                         const [id, it] = existingEntry;
+                        let itemChanged = false;
                         if (!it.grupo) {
                             localEstoqueItens[id].grupo = defaultItem.grupo;
-                            changed = true;
+                            itemChanged = true;
                         }
+                        if (defaultItem.estoqueMinimo === "Produção Diária" && it.estoqueMinimo !== "Produção Diária") {
+                            localEstoqueItens[id].estoqueMinimo = "Produção Diária";
+                            itemChanged = true;
+                        }
+                        if (itemChanged) changed = true;
                     } else {
                         const id = `item_${Date.now()}_new_${idx}`;
                         localEstoqueItens[id] = { ...defaultItem, ativo: true };
@@ -4907,6 +4918,20 @@
             return map[unid.toLowerCase()] || unid;
         }
 
+        function formatarMinimoPill(min) {
+            if (min === "Produção Diária") {
+                return "Prod. Diária";
+            }
+            return `Mín: ${min}`;
+        }
+
+        function getMinimoPillStyle(min) {
+            if (min === "Produção Diária") {
+                return "background: #EFF6FF; color: #1D4ED8; border: 1px solid #DBEAFE;";
+            }
+            return "";
+        }
+
         function renderEstoqueListaContar() {
             const container = document.getElementById('estoque-lista-contar');
             if (!container) return;
@@ -4930,7 +4955,7 @@
                             <div class="estoque-item-name">${item.nome}</div>
                             <div class="estoque-item-badges">
                                 <span class="estoque-pill-un" title="${item.unidade}">${formatarUnidadePill(item.unidade)}</span>
-                                <span class="estoque-pill-min" title="Estoque Mínimo">Mín: ${item.estoqueMinimo}</span>
+                                <span class="estoque-pill-min" style="${getMinimoPillStyle(item.estoqueMinimo)}" title="Estoque Mínimo">${formatarMinimoPill(item.estoqueMinimo)}</span>
                             </div>
                         </div>
                         <div class="estoque-item-controls">
@@ -5017,10 +5042,16 @@
                 }
 
                 const row = document.getElementById(`row-contar-${id}`);
-                const min = parseFloat(item.estoqueMinimo) || 0;
                 if (row) {
                     if (qtyStr !== '') {
-                        if (qtyKg <= min) {
+                        let isLow = false;
+                        if (item.estoqueMinimo === "Produção Diária") {
+                            isLow = qtyKg <= 0;
+                        } else {
+                            const min = parseFloat(item.estoqueMinimo) || 0;
+                            isLow = qtyKg <= min;
+                        }
+                        if (isLow) {
                             row.classList.add('low-stock');
                             row.classList.remove('above-min');
                         } else {
@@ -5176,16 +5207,22 @@
                 `;
 
                 html += items.map(it => {
-                    const min = parseFloat(it.estoqueMinimo) || 0;
-                    const isLow = it.quantidade <= min;
+                    let isLow = false;
+                    if (it.estoqueMinimo === "Produção Diária") {
+                        isLow = it.quantidade <= 0;
+                    } else {
+                        const min = parseFloat(it.estoqueMinimo) || 0;
+                        isLow = it.quantidade <= min;
+                    }
                     const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row above-min';
                     const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
+                    const minLabel = it.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : `${it.estoqueMinimo} ${it.unidade}`;
                     return `
                         <div class="${rowClass}">
                             <div style="flex: 1;">
                                 <div class="estoque-item-name">${it.nome}${alarmTag}</div>
                                 <div style="font-size:11px; color:#888;">
-                                    Preço unitário: R$ ${it.precoUnitario.toFixed(2)} | Mín: ${it.estoqueMinimo} ${it.unidade}
+                                    Preço unitário: R$ ${it.precoUnitario.toFixed(2)} | Mín: ${minLabel}
                                 </div>
                             </div>
                             <div style="display:flex; align-items:center; gap:16px;">
@@ -5254,8 +5291,14 @@
             });
 
             sortedItens.forEach(it => {
-                const min = parseFloat(it.estoqueMinimo) || 0;
-                const status = it.quantidade <= min ? 'ABAIXO DO MÍNIMO' : 'OK';
+                let isLow = false;
+                if (it.estoqueMinimo === "Produção Diária") {
+                    isLow = it.quantidade <= 0;
+                } else {
+                    const min = parseFloat(it.estoqueMinimo) || 0;
+                    isLow = it.quantidade <= min;
+                }
+                const status = isLow ? 'ABAIXO DO MÍNIMO' : 'OK';
                 const grpLabel = grpLabels[it.grupo || 'cmv'] || 'CMV';
                 t += `${it.nome}\t${grpLabel}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario.toFixed(2)}\t${it.estoqueMinimo}\t${it.valorTotalItem.toFixed(2)}\t${status}\n`;
             });
@@ -5297,7 +5340,7 @@
                         <div style="flex: 1;">
                             <strong style="font-size: 14px; color: ${item.ativo ? 'var(--text)' : '#999'};">${item.nome}</strong>
                             <div style="font-size: 11px; color: #888;">
-                                Preço: R$ ${item.preco.toFixed(2)} por ${item.unidade} | Est. Mín: ${item.estoqueMinimo} | Grupo: ${grpName} | ${statusLabel}
+                                Preço: R$ ${item.preco.toFixed(2)} por ${item.unidade} | Est. Mín: ${item.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : item.estoqueMinimo} | Grupo: ${grpName} | ${statusLabel}
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
@@ -5310,6 +5353,20 @@
             }).join('');
         }
 
+        function toggleEstoqueMinimoInput(checked) {
+            const input = document.getElementById('estoque-item-minimo');
+            if (input) {
+                if (checked) {
+                    input.value = '';
+                    input.disabled = true;
+                    input.style.backgroundColor = '#e5e7eb';
+                } else {
+                    input.disabled = false;
+                    input.style.backgroundColor = '';
+                }
+            }
+        }
+
         function editarEstoqueItemClick(id) {
             const item = localEstoqueItens[id];
             if (!item) return;
@@ -5319,7 +5376,25 @@
             document.getElementById('estoque-item-grupo').value = item.grupo || 'cmv';
             document.getElementById('estoque-item-unidade').value = item.unidade;
             document.getElementById('estoque-item-preco').value = item.preco;
-            document.getElementById('estoque-item-minimo').value = item.estoqueMinimo || 0;
+            
+            const checkbox = document.getElementById('estoque-item-minimo-pd');
+            const input = document.getElementById('estoque-item-minimo');
+            
+            if (item.estoqueMinimo === "Produção Diária") {
+                if (checkbox) checkbox.checked = true;
+                if (input) {
+                    input.value = '';
+                    input.disabled = true;
+                    input.style.backgroundColor = '#e5e7eb';
+                }
+            } else {
+                if (checkbox) checkbox.checked = false;
+                if (input) {
+                    input.value = item.estoqueMinimo || 0;
+                    input.disabled = false;
+                    input.style.backgroundColor = '';
+                }
+            }
 
             document.getElementById('estoque-form-title').textContent = 'Editar Item';
         }
@@ -5330,7 +5405,15 @@
             document.getElementById('estoque-item-grupo').value = 'cmv';
             document.getElementById('estoque-item-unidade').value = 'unidade';
             document.getElementById('estoque-item-preco').value = '';
-            document.getElementById('estoque-item-minimo').value = '';
+            
+            const checkbox = document.getElementById('estoque-item-minimo-pd');
+            const input = document.getElementById('estoque-item-minimo');
+            if (checkbox) checkbox.checked = false;
+            if (input) {
+                input.value = '';
+                input.disabled = false;
+                input.style.backgroundColor = '';
+            }
 
             document.getElementById('estoque-form-title').textContent = 'Novo Item';
         }
@@ -5341,7 +5424,14 @@
             const grupo = document.getElementById('estoque-item-grupo').value;
             const unidade = document.getElementById('estoque-item-unidade').value;
             const preco = parseFloat(document.getElementById('estoque-item-preco').value) || 0;
-            const minimo = parseFloat(document.getElementById('estoque-item-minimo').value) || 0;
+            
+            const checkbox = document.getElementById('estoque-item-minimo-pd');
+            let minimo;
+            if (checkbox && checkbox.checked) {
+                minimo = "Produção Diária";
+            } else {
+                minimo = parseFloat(document.getElementById('estoque-item-minimo').value) || 0;
+            }
 
             if (!nome) { alert('Informe o nome do item.'); return; }
 
