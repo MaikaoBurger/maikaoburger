@@ -1248,14 +1248,31 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border-bottom: 1px solid var(--border);
             gap: 10px;
-            transition: background 0.2s ease;
+            transition: all 0.2s ease;
             text-align: left;
+            position: relative;
+        }
+        .estoque-item-row:nth-child(even) {
+            background-color: #faf8f5;
         }
         .estoque-item-row:last-child {
             border-bottom: none;
+        }
+        .estoque-item-row:focus-within {
+            background: #fff8e8 !important; /* Dourado bem clarinho */
+            border-left: 5px solid #d97706 !important; /* Borda esquerda dourada chamativa */
+            border-top-color: #fde68a !important;
+            border-bottom-color: #fde68a !important;
+            box-shadow: 0 2px 4px rgba(217, 119, 6, 0.08);
+            z-index: 2;
+        }
+        .estoque-item-row:focus-within .estoque-item-name {
+            font-weight: 800 !important;
+            color: #d97706 !important;
+            transform: translateX(4px);
         }
         .estoque-item-row.low-stock {
             background: #FEF2F2 !important; /* Fundo vermelho claro */
@@ -1287,6 +1304,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: all 0.2s ease;
         }
         .estoque-item-badges {
             display: flex;
