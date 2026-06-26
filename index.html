@@ -1861,7 +1861,7 @@
 
                     <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px;">
                         <div>
-                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Qtd. por Caixa (Fornecedor)</label>
+                            <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Qtd. por Caixa / Fardo (Fornecedor)</label>
                             <input class="gh-input" id="estoque-item-caixa" type="number" step="1" min="1" placeholder="Ex: 12" style="padding: 8px 10px; font-size: 13px; text-align: left; height: 37px;">
                         </div>
                     </div>
@@ -4943,6 +4943,17 @@
             return map[unid.toLowerCase()] || unid;
         }
 
+        function isFardoItem(nome, unidade) {
+            if (!nome) return false;
+            const nameLower = nome.toLowerCase();
+            const unidLower = (unidade || '').toLowerCase();
+            return nameLower.includes('açúcar') || 
+                   nameLower.includes('açucar') || 
+                   nameLower.includes('papel') || 
+                   nameLower.includes('farinha') || 
+                   unidLower === 'fardo';
+        }
+
         function formatarMinimoPill(min, unidade) {
             if (min === "Produção Diária") {
                 return "Prod. Diária";
@@ -5007,12 +5018,11 @@
                                 <span class="estoque-pill-min" style="${getMinimoPillStyle(item.estoqueMinimo)}" title="Estoque Mínimo">${formatarMinimoPill(item.estoqueMinimo, item.unidade)}</span>
                                 ${item.estoqueMaximo ? `<span class="estoque-pill-max" title="Estoque Máximo" style="font-size: 9px; font-weight: 800; background: #ECFDF5; color: #10B981; padding: 3px 5px; border-radius: 4px; border: 1px solid #D1FAE5; min-width: 32px; text-align: center; margin-left: 4px;">${formatarMaximoPill(item.estoqueMaximo, item.unidade)}</span>` : ''}
                                 ${(() => {
-                                    if (item.qtdPorCaixa <= 1) return '';
-                                    const nameLower = item.nome.toLowerCase();
-                                    const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || item.unidade === 'fardo';
-                                    const label = isFardo ? 'Fd' : 'Cx';
-                                    return `<span class="estoque-pill-box" title="Quantidade por ${isFardo ? 'Fardo' : 'Caixa'}" style="font-size: 9px; font-weight: 800; background: #EFF6FF; color: #3B82F6; padding: 3px 5px; border-radius: 4px; border: 1px solid #DBEAFE; min-width: 32px; text-align: center; margin-left: 4px;">${label}: ${item.qtdPorCaixa}</span>`;
-                                })()}
+                                     if (item.qtdPorCaixa <= 1) return '';
+                                     const isFardo = isFardoItem(item.nome, item.unidade);
+                                     const label = isFardo ? 'Fardo c/' : 'Caixa c/';
+                                     return `<span class="estoque-pill-box" title="Quantidade por ${isFardo ? 'Fardo' : 'Caixa'}" style="font-size: 9px; font-weight: 800; background: #EFF6FF; color: #3B82F6; padding: 3px 5px; border-radius: 4px; border: 1px solid #DBEAFE; min-width: 32px; text-align: center; margin-left: 4px;">${label} ${item.qtdPorCaixa}</span>`;
+                                 })()}
                             </div>
                         </div>
                         <div class="estoque-item-controls">
@@ -5270,9 +5280,8 @@
                     const max = liveItem ? (parseFloat(liveItem.estoqueMaximo) || 0) : 0;
                     const packSize = liveItem ? (parseFloat(liveItem.qtdPorCaixa) || 1) : 1;
                     const maxLabel = max ? ` | Máx: ${max} ${it.unidade}` : '';
-                    const nameLower = it.nome.toLowerCase();
-                    const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || it.unidade === 'fardo';
-                    const cxLabel = packSize > 1 ? ` | ${isFardo ? 'Fardo' : 'Caixa'}: ${packSize} un` : '';
+                    const isFardo = isFardoItem(it.nome, it.unidade);
+                    const cxLabel = packSize > 1 ? ` | ${isFardo ? 'Fardo' : 'Caixa'} c/ ${packSize} un` : '';
 
                     return `
                         <div class="${rowClass}">
@@ -5309,9 +5318,8 @@
                         
                         if (packSize > 1) {
                             numBoxes = Math.ceil(missing / packSize);
-                            const nameLower = it.nome.toLowerCase();
-                            const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || it.unidade === 'fardo';
-                            const pUnit = isFardo ? (numBoxes > 1 ? 'fardos' : 'fardo') : 'cx';
+                            const isFardo = isFardoItem(it.nome, it.unidade);
+                            const pUnit = isFardo ? (numBoxes > 1 ? 'fardos' : 'fardo') : (numBoxes > 1 ? 'caixas' : 'caixa');
                             suggestionText = `${numBoxes} ${pUnit} (com ${packSize} un)`;
                         } else {
                             suggestionText = `${missing.toFixed(1).replace('.0', '')} ${it.unidade}`;
@@ -5467,11 +5475,13 @@
                 let sugestao = '-';
                 let tipoCompra = '-';
                 if (max > 0 && it.quantidade < max) {
-                    tipoCompra = packSize > 1 ? 'Caixa Fechada' : 'Unidade';
+                    const isFardo = isFardoItem(it.nome, it.unidade);
+                    tipoCompra = packSize > 1 ? (isFardo ? 'Fardo Fechado' : 'Caixa Fechada') : 'Unidade';
                     const missing = max - it.quantidade;
                     if (packSize > 1) {
                         const boxes = Math.ceil(missing / packSize);
-                        sugestao = `${boxes} cx (com ${packSize} un)`;
+                        const unitLabel = isFardo ? (boxes > 1 ? 'fardos' : 'fardo') : (boxes > 1 ? 'caixas' : 'caixa');
+                        sugestao = `${boxes} ${unitLabel} (com ${packSize} un)`;
                     } else {
                         sugestao = `${missing.toFixed(1).replace('.0', '')} ${it.unidade}`;
                     }
@@ -5514,10 +5524,9 @@
                 const grpName = grpLabels[item.grupo || 'cmv'] || 'CMV';
                 const minLabel = item.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : item.estoqueMinimo;
                 const maxLabel = item.estoqueMaximo || 'Não def.';
-                const nameLower = item.nome.toLowerCase();
-                const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || item.unidade === 'fardo';
+                const isFardo = isFardoItem(item.nome, item.unidade);
                 const labelName = isFardo ? 'Fardo' : 'Caixa';
-                const cxLabel = `${labelName}: ${item.qtdPorCaixa || 1} un`;
+                const cxLabel = `${labelName} c/ ${item.qtdPorCaixa || 1} un`;
                 return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: ${item.ativo ? '#fff' : '#f5f5f7'}; text-align: left;">
                         <div style="flex: 1;">
