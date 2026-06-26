@@ -4879,6 +4879,9 @@
             loadEstoque();
             currentEstoqueGroup = "cmv";
             
+            const debugItem = Object.values(localEstoqueItens).find(x => x.nome.includes('Açúcar') || x.nome.includes('Açucar'));
+            alert("Debug Açúcar: " + JSON.stringify(debugItem));
+            
             const todayStr = getTodayIsoDate();
             document.getElementById('estoque-data').value = todayStr;
             
