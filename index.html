@@ -4838,38 +4838,60 @@
                         changed = true;
                     }
                 });
-                
-                // Garantir campos novos
-                Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    if (it.estoqueMaximo === undefined) {
-                        localEstoqueItens[id].estoqueMaximo = 0;
-                        changed = true;
-                    }
-                    if (it.qtdPorCaixa === undefined) {
-                        localEstoqueItens[id].qtdPorCaixa = 1;
-                        changed = true;
-                    }
-                });
-
-                // Tratar renomeações e garantir grupos em itens antigos
-                Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    if (it.nome === "Papel Higiênico" && it.unidade === "fardo") {
-                        it.nome = "Papel Higiênico (Fardo)";
-                        it.grupo = "descartaveis";
-                        changed = true;
-                    }
-                    if (it.nome === "Papel Toalha" && it.unidade === "fardo") {
-                        it.nome = "Papel Toalha (Fardo)";
-                        it.grupo = "descartaveis";
-                        changed = true;
-                    }
-                    if (!it.grupo) {
-                        // Classificação simples por heurística caso não mapeado
-                        it.grupo = "cmv";
-                        changed = true;
-                    }
-                });
             }
+            
+            // Garantir campos novos e inicializar/sugerir valores inteligentes
+            Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                let minVal = parseFloat(it.estoqueMinimo);
+                if (isNaN(minVal)) minVal = 0;
+
+                // Se não tiver estoqueMaximo definido ou se for 0, e houver um mínimo válido > 0, sugere (mínimo * 3)
+                if (it.estoqueMaximo === undefined || it.estoqueMaximo === 0) {
+                    if (minVal > 0) {
+                        localEstoqueItens[id].estoqueMaximo = Math.ceil(minVal * 3);
+                    } else {
+                        localEstoqueItens[id].estoqueMaximo = 0;
+                    }
+                    changed = true;
+                }
+                
+                // Se não tiver qtdPorCaixa definido ou se for 1, tenta adivinhar pelo nome do produto
+                if (it.qtdPorCaixa === undefined || it.qtdPorCaixa === 1) {
+                    const nomeLower = (it.nome || "").toLowerCase();
+                    let guessedQty = 1;
+                    if (nomeLower.includes("lata") || nomeLower.includes("black 350ml") || nomeLower.includes("twister 350ml") || nomeLower.includes("ks")) {
+                        guessedQty = 24;
+                    } else if (nomeLower.includes("água mineral") || nomeLower.includes("agua mineral") || nomeLower.includes("água com gás") || nomeLower.includes("agua com gas")) {
+                        guessedQty = 12;
+                    } else if (nomeLower.includes("2l") || nomeLower.includes("2 litros")) {
+                        guessedQty = 6;
+                    }
+
+                    if (it.qtdPorCaixa === undefined || (it.qtdPorCaixa === 1 && guessedQty > 1)) {
+                        localEstoqueItens[id].qtdPorCaixa = guessedQty;
+                        changed = true;
+                    }
+                }
+            });
+
+            // Tratar renomeações e garantir grupos em itens antigos
+            Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                if (it.nome === "Papel Higiênico" && it.unidade === "fardo") {
+                    it.nome = "Papel Higiênico (Fardo)";
+                    it.grupo = "descartaveis";
+                    changed = true;
+                }
+                if (it.nome === "Papel Toalha" && it.unidade === "fardo") {
+                    it.nome = "Papel Toalha (Fardo)";
+                    it.grupo = "descartaveis";
+                    changed = true;
+                }
+                if (!it.grupo) {
+                    // Classificação simples por heurística caso não mapeado
+                    it.grupo = "cmv";
+                    changed = true;
+                }
+            });
 
             if (changed) {
                 saveEstoqueItens(localEstoqueItens);
