@@ -5006,7 +5006,13 @@
                                 <span class="estoque-pill-un" title="${item.unidade}">${formatarUnidadePill(item.unidade)}</span>
                                 <span class="estoque-pill-min" style="${getMinimoPillStyle(item.estoqueMinimo)}" title="Estoque Mínimo">${formatarMinimoPill(item.estoqueMinimo, item.unidade)}</span>
                                 ${item.estoqueMaximo ? `<span class="estoque-pill-max" title="Estoque Máximo" style="font-size: 9px; font-weight: 800; background: #ECFDF5; color: #10B981; padding: 3px 5px; border-radius: 4px; border: 1px solid #D1FAE5; min-width: 32px; text-align: center; margin-left: 4px;">${formatarMaximoPill(item.estoqueMaximo, item.unidade)}</span>` : ''}
-                                ${item.qtdPorCaixa > 1 ? `<span class="estoque-pill-box" title="Quantidade por Caixa" style="font-size: 9px; font-weight: 800; background: #EFF6FF; color: #3B82F6; padding: 3px 5px; border-radius: 4px; border: 1px solid #DBEAFE; min-width: 32px; text-align: center; margin-left: 4px;">Cx: ${item.qtdPorCaixa}</span>` : ''}
+                                ${(() => {
+                                    if (item.qtdPorCaixa <= 1) return '';
+                                    const nameLower = item.nome.toLowerCase();
+                                    const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || item.unidade === 'fardo';
+                                    const label = isFardo ? 'Fd' : 'Cx';
+                                    return `<span class="estoque-pill-box" title="Quantidade por ${isFardo ? 'Fardo' : 'Caixa'}" style="font-size: 9px; font-weight: 800; background: #EFF6FF; color: #3B82F6; padding: 3px 5px; border-radius: 4px; border: 1px solid #DBEAFE; min-width: 32px; text-align: center; margin-left: 4px;">${label}: ${item.qtdPorCaixa}</span>`;
+                                })()}
                             </div>
                         </div>
                         <div class="estoque-item-controls">
@@ -5264,7 +5270,9 @@
                     const max = liveItem ? (parseFloat(liveItem.estoqueMaximo) || 0) : 0;
                     const packSize = liveItem ? (parseFloat(liveItem.qtdPorCaixa) || 1) : 1;
                     const maxLabel = max ? ` | Máx: ${max} ${it.unidade}` : '';
-                    const cxLabel = packSize > 1 ? ` | Caixa: ${packSize} un` : '';
+                    const nameLower = it.nome.toLowerCase();
+                    const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || it.unidade === 'fardo';
+                    const cxLabel = packSize > 1 ? ` | ${isFardo ? 'Fardo' : 'Caixa'}: ${packSize} un` : '';
 
                     return `
                         <div class="${rowClass}">
@@ -5506,13 +5514,16 @@
                 const grpName = grpLabels[item.grupo || 'cmv'] || 'CMV';
                 const minLabel = item.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : item.estoqueMinimo;
                 const maxLabel = item.estoqueMaximo || 'Não def.';
-                const cxLabel = item.qtdPorCaixa || 1;
+                const nameLower = item.nome.toLowerCase();
+                const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || item.unidade === 'fardo';
+                const labelName = isFardo ? 'Fardo' : 'Caixa';
+                const cxLabel = `${labelName}: ${item.qtdPorCaixa || 1} un`;
                 return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); background: ${item.ativo ? '#fff' : '#f5f5f7'}; text-align: left;">
                         <div style="flex: 1;">
                             <strong style="font-size: 14px; color: ${item.ativo ? 'var(--text)' : '#999'};">${item.nome}</strong>
                             <div style="font-size: 11px; color: #888;">
-                                Unidade: ${item.unidade} | Mín: ${minLabel} | Máx: ${maxLabel} | Caixa: ${cxLabel} un | Grupo: ${grpName} | ${statusLabel}
+                                Unidade: ${item.unidade} | Mín: ${minLabel} | Máx: ${maxLabel} | ${cxLabel} | Grupo: ${grpName} | ${statusLabel}
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
