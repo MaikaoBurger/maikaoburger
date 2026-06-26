@@ -4899,7 +4899,7 @@
             const map = {
                 'unidade': 'un',
                 'unidades': 'un',
-                'kg': 'g',
+                'kg': 'kg',
                 'caixa': 'cx',
                 'caixas': 'cx',
                 'fardo': 'fd',
@@ -4961,10 +4961,11 @@
                         <div class="estoque-item-controls">
                             <div class="estoque-qty-spinner">
                                 <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
-                                <input class="gh-input qty-input" id="qty-input-${id}" type="number" step="${isKg ? '0.1' : '1'}" min="0" placeholder="0" 
+                                <input class="gh-input qty-input" id="qty-input-${id}" type="number" step="1" min="0" placeholder="0" 
                                     value="${qtyVal}"
                                     oninput="inputQtyChanged('${id}', this.value)">
                                 <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
+                                ${isKg ? '<span style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-left: 2px; align-self: center;">g</span>' : ''}
                             </div>
                             
                             <div class="estoque-price-box">
