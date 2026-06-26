@@ -1457,10 +1457,16 @@
             margin-bottom: 10px;
             flex-shrink: 0;
             border: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .estoque-group-tabs::-webkit-scrollbar {
+            display: none;
         }
         .estoque-group-btn {
-            flex: 1;
-            padding: 8px 4px;
+            flex-shrink: 0;
+            flex-grow: 1;
+            padding: 8px 12px;
             border: none;
             background: none;
             font-size: 11px;
@@ -1470,6 +1476,7 @@
             border-radius: 6px;
             transition: all 0.2s;
             text-align: center;
+            white-space: nowrap;
         }
         .estoque-group-btn:hover {
             color: var(--primary-light);
@@ -1768,6 +1775,8 @@
                 <!-- Sub-abas de grupos de estoque -->
                 <div class="estoque-group-tabs">
                     <button class="estoque-group-btn active" id="eg-btn-cmv" onclick="switchEstoqueGroup('cmv')">CMV</button>
+                    <button class="estoque-group-btn" id="eg-btn-jantar" onclick="switchEstoqueGroup('jantar')">Jantar</button>
+                    <button class="estoque-group-btn" id="eg-btn-embalagens" onclick="switchEstoqueGroup('embalagens')">Embalagens</button>
                     <button class="estoque-group-btn" id="eg-btn-descartaveis" onclick="switchEstoqueGroup('descartaveis')">Descartáveis</button>
                     <button class="estoque-group-btn" id="eg-btn-limpeza" onclick="switchEstoqueGroup('limpeza')">Limpeza</button>
                     <button class="estoque-group-btn" id="eg-btn-escritorio" onclick="switchEstoqueGroup('escritorio')">Escritório</button>
@@ -1813,6 +1822,8 @@
                             <label class="gh-field-label" style="font-size: 10px; margin-bottom: 2px; color: var(--text);">Grupo</label>
                             <select class="gh-input" id="estoque-item-grupo" style="padding: 8px 10px; font-size: 13px; cursor: pointer; height: 37px;">
                                 <option value="cmv">CMV</option>
+                                <option value="jantar">Jantar</option>
+                                <option value="embalagens">Embalagens</option>
                                 <option value="descartaveis">Descartáveis</option>
                                 <option value="limpeza">Limpeza</option>
                                 <option value="escritorio">Escritório</option>
@@ -5136,7 +5147,7 @@
                 document.getElementById('estoque-hist-detalhe').innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhuma contagem semanal registrada ainda.</div>';
                 document.getElementById('estoque-hist-meta').textContent = '';
                 document.getElementById('estoque-hist-total').textContent = 'R$ 0,00';
-                ['estoque-hist-total-cmv', 'estoque-hist-total-descartaveis', 'estoque-hist-total-limpeza', 'estoque-hist-total-escritorio'].forEach(id => {
+                ['estoque-hist-total-cmv', 'estoque-hist-total-jantar', 'estoque-hist-total-embalagens', 'estoque-hist-total-descartaveis', 'estoque-hist-total-limpeza', 'estoque-hist-total-escritorio'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.textContent = 'R$ 0,00';
                 });
@@ -5166,6 +5177,8 @@
 
             const gruposMap = {
                 cmv: [],
+                jantar: [],
+                embalagens: [],
                 descartaveis: [],
                 limpeza: [],
                 escritorio: []
@@ -5183,6 +5196,8 @@
 
             const grpLabels = {
                 cmv: '📊 CMV',
+                jantar: '🍽️ Jantar',
+                embalagens: '📦 Embalagens',
                 descartaveis: '📦 Descartáveis',
                 limpeza: '🧼 Material de Limpeza',
                 escritorio: '📝 Material de Escritório'
@@ -5276,6 +5291,8 @@
             if (suggestions.length > 0) {
                 const sugGrupos = {
                     cmv: [],
+                    jantar: [],
+                    embalagens: [],
                     descartaveis: [],
                     limpeza: [],
                     escritorio: []
@@ -5294,6 +5311,8 @@
                 
                 const grpLabelsSug = {
                     cmv: '🛒 Insumos CMV',
+                    jantar: '🍽️ Jantar',
+                    embalagens: '📦 Embalagens',
                     descartaveis: '📦 Descartáveis',
                     limpeza: '🧼 Material de Limpeza',
                     escritorio: '📝 Material de Escritório'
@@ -5356,6 +5375,8 @@
 
             const grpLabels = {
                 cmv: 'CMV',
+                jantar: 'Jantar',
+                embalagens: 'Embalagens',
                 descartaveis: 'Descartáveis',
                 limpeza: 'Material de Limpeza',
                 escritorio: 'Material de Escritório'
@@ -5420,6 +5441,8 @@
 
             const grpLabels = {
                 cmv: 'CMV',
+                jantar: 'Jantar',
+                embalagens: 'Embalagens',
                 descartaveis: 'Descartáveis',
                 limpeza: 'Limpeza',
                 escritorio: 'Escritório'
