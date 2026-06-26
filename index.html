@@ -4918,11 +4918,36 @@
             return map[unid.toLowerCase()] || unid;
         }
 
-        function formatarMinimoPill(min) {
+        function formatarMinimoPill(min, unidade) {
             if (min === "Produção Diária") {
                 return "Prod. Diária";
             }
+            if (unidade === 'kg') {
+                const val = parseFloat(min);
+                if (!isNaN(val)) {
+                    if (val < 1) {
+                        return `Mín: ${val * 1000}g`;
+                    } else {
+                        return `Mín: ${val}kg`;
+                    }
+                }
+            }
             return `Mín: ${min}`;
+        }
+
+        function formatarMaximoPill(max, unidade) {
+            if (!max) return '';
+            if (unidade === 'kg') {
+                const val = parseFloat(max);
+                if (!isNaN(val)) {
+                    if (val < 1) {
+                        return `Máx: ${val * 1000}g`;
+                    } else {
+                        return `Máx: ${val}kg`;
+                    }
+                }
+            }
+            return `Máx: ${max}`;
         }
 
         function getMinimoPillStyle(min) {
@@ -4954,8 +4979,8 @@
                             <div class="estoque-item-name">${item.nome}</div>
                             <div class="estoque-item-badges">
                                 <span class="estoque-pill-un" title="${item.unidade}">${formatarUnidadePill(item.unidade)}</span>
-                                <span class="estoque-pill-min" style="${getMinimoPillStyle(item.estoqueMinimo)}" title="Estoque Mínimo">${formatarMinimoPill(item.estoqueMinimo)}</span>
-                                ${item.estoqueMaximo ? `<span class="estoque-pill-max" title="Estoque Máximo" style="font-size: 9px; font-weight: 800; background: #ECFDF5; color: #10B981; padding: 3px 5px; border-radius: 4px; border: 1px solid #D1FAE5; min-width: 32px; text-align: center; margin-left: 4px;">Máx: ${item.estoqueMaximo}</span>` : ''}
+                                <span class="estoque-pill-min" style="${getMinimoPillStyle(item.estoqueMinimo)}" title="Estoque Mínimo">${formatarMinimoPill(item.estoqueMinimo, item.unidade)}</span>
+                                ${item.estoqueMaximo ? `<span class="estoque-pill-max" title="Estoque Máximo" style="font-size: 9px; font-weight: 800; background: #ECFDF5; color: #10B981; padding: 3px 5px; border-radius: 4px; border: 1px solid #D1FAE5; min-width: 32px; text-align: center; margin-left: 4px;">${formatarMaximoPill(item.estoqueMaximo, item.unidade)}</span>` : ''}
                                 ${item.qtdPorCaixa > 1 ? `<span class="estoque-pill-box" title="Quantidade por Caixa" style="font-size: 9px; font-weight: 800; background: #EFF6FF; color: #3B82F6; padding: 3px 5px; border-radius: 4px; border: 1px solid #DBEAFE; min-width: 32px; text-align: center; margin-left: 4px;">Cx: ${item.qtdPorCaixa}</span>` : ''}
                             </div>
                         </div>
