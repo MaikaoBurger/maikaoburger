@@ -5012,7 +5012,7 @@
                         <div class="estoque-item-controls">
                             <div class="estoque-qty-spinner">
                                 <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', -1)">-</button>
-                                <input class="gh-input qty-input" id="qty-input-${id}" type="number" step="1" min="0" placeholder="0" 
+                                <input class="gh-input qty-input" id="qty-input-${id}" type="number" step="${isKg ? 'any' : '1'}" min="0" placeholder="0" 
                                     value="${qtyVal}"
                                     oninput="inputQtyChanged('${id}', this.value)">
                                 <button class="estoque-qty-btn" type="button" onclick="ajustarContagemQty('${id}', 1)">+</button>
@@ -5026,6 +5026,22 @@
             atualizarEstoqueTotais();
         }
 
+        function parseInputQtyToGrams(valStr, unidade) {
+            if (!valStr) return 0;
+            const cleanStr = valStr.toString().replace(',', '.').trim();
+            const num = parseFloat(cleanStr);
+            if (isNaN(num)) return 0;
+
+            if (unidade === 'kg') {
+                // Se contiver ponto decimal OU se for um número menor que 50, consideramos como KG e convertemos para gramas
+                if (cleanStr.includes('.') || num < 50) {
+                    return num * 1000;
+                }
+                return num; // Já está em gramas
+            }
+            return num;
+        }
+
         function inputQtyChanged(id, value) {
             localContagemQty[id] = value;
             atualizarEstoqueTotais();
@@ -5037,12 +5053,33 @@
             const item = localEstoqueItens[id];
             if (!item) return;
 
-            let val = parseFloat(input.value) || 0;
-            const step = item.unidade === 'kg' ? 100 : 1;
-            val = Math.max(0, val + delta * step);
-            const valStr = Math.round(val).toString();
-            input.value = valStr;
-            localContagemQty[id] = valStr;
+            const valStr = input.value.trim();
+            if (item.unidade === 'kg') {
+                // Converte valor atual para gramas
+                let grams = parseInputQtyToGrams(valStr, 'kg');
+                // Ajusta de 100 em 100g
+                grams = Math.max(0, grams + delta * 100);
+                
+                // Formatação de volta para o input
+                let outputStr = "";
+                if (valStr.includes('.') || valStr.includes(',') || (parseFloat(valStr.replace(',', '.')) < 50 && parseFloat(valStr.replace(',', '.')) > 0)) {
+                    // Mantém a representação em kg decimal
+                    const separator = valStr.includes(',') ? ',' : '.';
+                    const kgVal = grams / 1000;
+                    outputStr = kgVal.toFixed(1).replace('.', separator);
+                } else {
+                    // Mantém em gramas inteiro
+                    outputStr = Math.round(grams).toString();
+                }
+                
+                input.value = outputStr;
+                localContagemQty[id] = outputStr;
+            } else {
+                let val = parseInt(valStr) || 0;
+                val = Math.max(0, val + delta);
+                input.value = val.toString();
+                localContagemQty[id] = val.toString();
+            }
             atualizarEstoqueTotais();
         }
 
@@ -5051,10 +5088,10 @@
                 if (!item.ativo) return;
                 
                 const qtyStr = localContagemQty[id] || '';
-                const qty = parseFloat(qtyStr) || 0;
+                const qtyGrams = parseInputQtyToGrams(qtyStr, item.unidade);
                 
                 // If unit is kg, the input qty is in grams, so divide by 1000
-                const qtyKg = item.unidade === 'kg' ? qty / 1000 : qty;
+                const qtyKg = item.unidade === 'kg' ? qtyGrams / 1000 : qtyGrams;
 
                 const row = document.getElementById(`row-contar-${id}`);
                 if (row) {
@@ -5096,10 +5133,10 @@
             Object.entries(localEstoqueItens).forEach(([id, item]) => {
                 if (!item.ativo) return;
                 const qtyStr = localContagemQty[id] || '';
-                const qty = parseFloat(qtyStr) || 0;
+                const qtyGrams = parseInputQtyToGrams(qtyStr, item.unidade);
                 
                 // Convert grams to kg for saving in database to keep it consistent
-                const finalQty = item.unidade === 'kg' ? qty / 1000 : qty;
+                const finalQty = item.unidade === 'kg' ? qtyGrams / 1000 : qtyGrams;
                 
                 countItens[id] = {
                     nome: item.nome,
