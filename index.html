@@ -2282,6 +2282,23 @@
                     let changed = false;
                     if (data.estoque.itens) {
                         localEstoqueItens = data.estoque.itens || {};
+                        
+                        // Garante que todos os itens recebidos tenham os campos novos (estoqueMaximo e qtdPorCaixa) preenchidos
+                        let itemFieldsUpgraded = false;
+                        Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                            if (it.estoqueMaximo === undefined) {
+                                it.estoqueMaximo = 0;
+                                itemFieldsUpgraded = true;
+                            }
+                            if (it.qtdPorCaixa === undefined) {
+                                it.qtdPorCaixa = 1;
+                                itemFieldsUpgraded = true;
+                            }
+                        });
+                        if (itemFieldsUpgraded) {
+                            db.ref('estoque/itens').set(localEstoqueItens).catch(() => {});
+                        }
+
                         localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
                         changed = true;
                     }
@@ -4887,68 +4904,18 @@
                 localEstoqueItens = i ? JSON.parse(i) : {};
             } catch(e) { localEstoqueItens = {}; }
 
-            // Upgrade ou inicialização
-            let changed = false;
-            
+            // Se estiver completamente vazio no local (ex: primeira vez ou limpou cache), popula com os defaults em memória
             if (Object.keys(localEstoqueItens).length === 0) {
                 DEFAULT_ESTOQUE_ITENS.forEach((item, idx) => {
-                    const id = `item_${Date.now()}_${idx}`;
-                    localEstoqueItens[id] = { ...item, ativo: true };
+                    const id = `item_default_${idx}`;
+                    localEstoqueItens[id] = { ...item, ativo: true, estoqueMaximo: 0, qtdPorCaixa: 1 };
                 });
-                changed = true;
             } else {
-                // Caso já existam itens, garante que todos os DEFAULT_ESTOQUE_ITENS existam (por nome) e tenham o grupo
-                DEFAULT_ESTOQUE_ITENS.forEach((defaultItem, idx) => {
-                    const existingEntry = Object.entries(localEstoqueItens).find(([_, it]) => it.nome === defaultItem.nome);
-                    if (existingEntry) {
-                        const [id, it] = existingEntry;
-                        let itemChanged = false;
-                        if (!it.grupo) {
-                            localEstoqueItens[id].grupo = defaultItem.grupo;
-                            itemChanged = true;
-                        }
-                        if (defaultItem.estoqueMinimo === "Produção Diária" && it.estoqueMinimo !== "Produção Diária") {
-                            localEstoqueItens[id].estoqueMinimo = "Produção Diária";
-                            itemChanged = true;
-                        }
-                        if (itemChanged) changed = true;
-                    }
-                });
-                
-                // Garantir campos novos
+                // Garante os campos novos apenas em memória para segurança
                 Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    if (it.estoqueMaximo === undefined) {
-                        localEstoqueItens[id].estoqueMaximo = 0;
-                        changed = true;
-                    }
-                    if (it.qtdPorCaixa === undefined) {
-                        localEstoqueItens[id].qtdPorCaixa = 1;
-                        changed = true;
-                    }
+                    if (it.estoqueMaximo === undefined) it.estoqueMaximo = 0;
+                    if (it.qtdPorCaixa === undefined) it.qtdPorCaixa = 1;
                 });
-
-                // Tratar renomeações e garantir grupos em itens antigos
-                Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    if (it.nome === "Papel Higiênico" && it.unidade === "fardo") {
-                        it.nome = "Papel Higiênico (Fardo)";
-                        it.grupo = "descartaveis";
-                        changed = true;
-                    }
-                    if (it.nome === "Papel Toalha" && it.unidade === "fardo") {
-                        it.nome = "Papel Toalha (Fardo)";
-                        it.grupo = "descartaveis";
-                        changed = true;
-                    }
-                    if (!it.grupo) {
-                        // Classificação simples por heurística caso não mapeado
-                        it.grupo = "cmv";
-                        changed = true;
-                    }
-                });
-            }
-
-            if (changed) {
-                saveEstoqueItens(localEstoqueItens);
             }
 
             // Carrega contagens
