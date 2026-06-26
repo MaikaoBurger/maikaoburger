@@ -2330,7 +2330,10 @@
                         });
 
                         if (itemFieldsUpgraded || restored) {
-                            db.ref('estoque/itens').set(localEstoqueItens).catch(() => {});
+                            alert("Restauração detectada! Enviando para o Firebase. Restored: " + restored + ", Upgraded: " + itemFieldsUpgraded);
+                            db.ref('estoque/itens').set(localEstoqueItens)
+                                .then(() => { alert("Firebase gravado com SUCESSO!"); })
+                                .catch(err => { alert("Erro de gravação no Firebase: " + err.message); });
                         }
 
                         localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
