@@ -1939,6 +1939,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
+        // Captura de erros globais para depuração em produção/celular
+        window.addEventListener('error', function(e) {
+            alert("Erro JS: " + e.message + "\nArquivo: " + e.filename + "\nLinha: " + e.lineno);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            alert("Erro Promessa: " + e.reason);
+        });
+
         const SETORES = [
             { id: 'abertura-cozinha',       label: '🍳 Abertura\nCozinha' },
             { id: 'abertura-atendimento',   label: '🛎️ Abertura\nAtendimento' },
@@ -2415,6 +2423,10 @@
                     openRanking(selectedMonth);
                 }
                 setSyncUI('online');
+            }, err => {
+                console.error("Erro Firebase principal:", err);
+                alert("Erro de permissão ou conexão no Firebase: " + err.message);
+                setSyncUI('error');
             });
             db.ref('.info/connected').on('value', snap => {
                 setSyncUI(snap.val() ? 'online' : 'error');
