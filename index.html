@@ -1761,14 +1761,14 @@
             <!-- Aba 1: Contagem Física -->
             <div class="estoque-panel active" id="espanel-contar" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <!-- Responsável e Data -->
-                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 12px; flex-shrink: 0;">
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; flex-shrink: 0;">
                     <div>
-                        <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Quem está contando?</label>
-                        <select class="gh-input" id="estoque-usuario" style="padding: 10px; font-size: 14px; cursor: pointer;"></select>
+                        <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Quem está contando? (Selecione uma ou mais pessoas)</label>
+                        <div id="estoque-nomes-list" style="display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0;"></div>
                     </div>
                     <div>
                         <label class="gh-field-label" style="font-size: 11px; margin-bottom: 4px; color: var(--text);">Data da Contagem</label>
-                        <input class="gh-input" id="estoque-data" type="date" style="padding: 10px; font-size: 14px;">
+                        <input class="gh-input" id="estoque-data" type="date" style="padding: 10px; font-size: 14px; width: 100%; box-sizing: border-box;">
                     </div>
                 </div>
 
@@ -2286,6 +2286,21 @@
                         localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
                         changed = true;
                     }
+
+                    // Sincroniza rascunho de contagem em tempo real
+                    if (data.estoque.rascunho) {
+                        localContagemQty = data.estoque.rascunho.quantidades || {};
+                        localEstoqueNomes = data.estoque.rascunho.nomes || {};
+                    } else {
+                        localContagemQty = {};
+                        localEstoqueNomes = {};
+                    }
+                    
+                    if (document.getElementById('estoque-overlay')?.classList.contains('open')) {
+                        syncEstoqueDraftUI();
+                        renderEstoqueNomes();
+                    }
+
                     if (changed && document.getElementById('estoque-overlay')?.classList.contains('open')) {
                         const activeTab = document.querySelector('.estoque-tab.active')?.id;
                         if (activeTab === 'estab-contar') renderEstoqueListaContar();
@@ -4770,25 +4785,57 @@
         let localEstoqueContagens = {};
         let currentEstoqueGroup = "cmv";
         let localContagemQty = {};
+        let localEstoqueNomes = {};
+
+        function renderEstoqueNomes() {
+            const container = document.getElementById('estoque-nomes-list');
+            if (!container) return;
+            container.innerHTML = NOMES.map(nome => {
+                const isSelected = localEstoqueNomes[nome] ? 'selected' : '';
+                return `<button type="button" class="name-pill-btn ${isSelected}" onclick="toggleEstoqueNome('${nome}')" style="font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: ${isSelected ? 'var(--green)' : '#fff'}; color: ${isSelected ? '#fff' : 'var(--text-muted)'}; border-color: ${isSelected ? 'var(--green)' : 'var(--border)'}; cursor: pointer; transition: all 0.2s; user-select: none;">${nome}</button>`;
+            }).join('');
+        }
+
+        function toggleEstoqueNome(nome) {
+            if (localEstoqueNomes[nome]) {
+                delete localEstoqueNomes[nome];
+                db.ref(`estoque/rascunho/nomes/${nome}`).set(null).catch(() => {});
+            } else {
+                localEstoqueNomes[nome] = true;
+                db.ref(`estoque/rascunho/nomes/${nome}`).set(true).catch(() => {});
+            }
+            renderEstoqueNomes();
+        }
+
+        function syncEstoqueDraftUI() {
+            Object.keys(localEstoqueItens).forEach(id => {
+                const input = document.getElementById(`qty-input-${id}`);
+                if (input && document.activeElement !== input) {
+                    const val = localContagemQty[id] || '';
+                    if (input.value !== val) {
+                        input.value = val;
+                    }
+                }
+            });
+            atualizarEstoqueTotais();
+        }
 
         function openEstoque() {
             loadEstoque();
-            localContagemQty = {};
             currentEstoqueGroup = "cmv";
             
             const todayStr = getTodayIsoDate();
             document.getElementById('estoque-data').value = todayStr;
             
-            // Popula os nomes no select de quem está contando
-            const userSelect = document.getElementById('estoque-usuario');
-            if (userSelect) {
-                userSelect.innerHTML = `<option value="">Selecione...</option>` + 
-                    NOMES.map(n => `<option value="${n}">${n}</option>`).join('');
-                if (currentUser) userSelect.value = currentUser;
+            if (Object.keys(localEstoqueNomes).length === 0 && currentUser) {
+                localEstoqueNomes[currentUser] = true;
+                db.ref(`estoque/rascunho/nomes/${currentUser}`).set(true).catch(() => {});
             }
 
+            renderEstoqueNomes();
             switchEstoqueTab('contar');
             document.getElementById('estoque-overlay').classList.add('open');
+            syncEstoqueDraftUI();
         }
 
         function closeEstoque() {
@@ -5061,6 +5108,7 @@
         function inputQtyChanged(id, value) {
             localContagemQty[id] = value;
             atualizarEstoqueTotais();
+            db.ref(`estoque/rascunho/quantidades/${id}`).set(value === '' ? null : value).catch(() => {});
         }
 
         function ajustarContagemQty(id, delta) {
@@ -5071,30 +5119,27 @@
 
             const valStr = input.value.trim();
             if (item.unidade === 'kg') {
-                // Converte valor atual para gramas
                 let grams = parseInputQtyToGrams(valStr, 'kg');
-                // Ajusta de 100 em 100g
                 grams = Math.max(0, grams + delta * 100);
                 
-                // Formatação de volta para o input
                 let outputStr = "";
                 if (valStr.includes('.') || valStr.includes(',') || (parseFloat(valStr.replace(',', '.')) < 50 && parseFloat(valStr.replace(',', '.')) > 0)) {
-                    // Mantém a representação em kg decimal
                     const separator = valStr.includes(',') ? ',' : '.';
                     const kgVal = grams / 1000;
                     outputStr = kgVal.toFixed(1).replace('.', separator);
                 } else {
-                    // Mantém em gramas inteiro
                     outputStr = Math.round(grams).toString();
                 }
                 
                 input.value = outputStr;
                 localContagemQty[id] = outputStr;
+                db.ref(`estoque/rascunho/quantidades/${id}`).set(outputStr === '' ? null : outputStr).catch(() => {});
             } else {
                 let val = parseInt(valStr) || 0;
                 val = Math.max(0, val + delta);
                 input.value = val.toString();
                 localContagemQty[id] = val.toString();
+                db.ref(`estoque/rascunho/quantidades/${id}`).set(val.toString()).catch(() => {});
             }
             atualizarEstoqueTotais();
         }
@@ -5135,11 +5180,13 @@
         }
 
         function salvarContagemEstoque() {
-            const user = document.getElementById('estoque-usuario').value;
             const dateStr = document.getElementById('estoque-data').value;
 
-            if (!user) { alert('Selecione quem está fazendo a contagem.'); return; }
             if (!dateStr) { alert('Selecione a data da contagem.'); return; }
+
+            const selectedNames = Object.keys(localEstoqueNomes).filter(k => localEstoqueNomes[k]);
+            if (selectedNames.length === 0) { alert('Selecione quem está fazendo a contagem.'); return; }
+            const user = selectedNames.join(', ');
 
             const dataFormatada = dateStr.split('-').reverse().join('/');
             if (!confirm(`Deseja realmente salvar esta contagem de estoque para o dia ${dataFormatada}?`)) {
@@ -5184,6 +5231,12 @@
             };
 
             saveEstoqueContagens(localEstoqueContagens);
+            
+            // Limpa o rascunho no Firebase e variáveis locais
+            localContagemQty = {};
+            localEstoqueNomes = {};
+            db.ref('estoque/rascunho').set(null).catch(() => {});
+            
             playVictorySound();
             triggerConfetti();
             alert('Contagem de estoque salva com sucesso!');
