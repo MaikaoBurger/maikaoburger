@@ -5141,6 +5141,11 @@
             if (!user) { alert('Selecione quem está fazendo a contagem.'); return; }
             if (!dateStr) { alert('Selecione a data da contagem.'); return; }
 
+            const dataFormatada = dateStr.split('-').reverse().join('/');
+            if (!confirm(`Deseja realmente salvar esta contagem de estoque para o dia ${dataFormatada}?`)) {
+                return;
+            }
+
             // Save updated items to Firebase and localStorage
             saveEstoqueItens(localEstoqueItens);
 
