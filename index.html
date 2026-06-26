@@ -4861,10 +4861,6 @@
                             itemChanged = true;
                         }
                         if (itemChanged) changed = true;
-                    } else {
-                        const id = `item_${Date.now()}_new_${idx}`;
-                        localEstoqueItens[id] = { ...defaultItem, ativo: true };
-                        changed = true;
                     }
                 });
                 
