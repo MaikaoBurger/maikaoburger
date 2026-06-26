@@ -2295,7 +2295,41 @@
                                 itemFieldsUpgraded = true;
                             }
                         });
-                        if (itemFieldsUpgraded) {
+
+                        // Recuperação Automática das edições perdidas (Açúcar, Água, Ajinomoto, Alho, Bom Ar)
+                        let restored = false;
+                        Object.entries(localEstoqueItens).forEach(([id, it]) => {
+                            if (it.nome === "Açúcar 1kg" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                                it.estoqueMaximo = 10;
+                                it.qtdPorCaixa = 10;
+                                restored = true;
+                            }
+                            if (it.nome === "Água com Gás 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                                it.estoqueMaximo = 60;
+                                it.qtdPorCaixa = 12;
+                                restored = true;
+                            }
+                            if (it.nome === "Água Mineral 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                                it.estoqueMaximo = 60;
+                                it.qtdPorCaixa = 12;
+                                restored = true;
+                            }
+                            if (it.nome === "Ajinomoto" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                                it.estoqueMaximo = 5;
+                                it.qtdPorCaixa = 1;
+                                restored = true;
+                            }
+                            if (it.nome === "Alho" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                                it.estoqueMaximo = 1;
+                                restored = true;
+                            }
+                            if (it.nome === "Bom Ar") {
+                                delete localEstoqueItens[id];
+                                restored = true;
+                            }
+                        });
+
+                        if (itemFieldsUpgraded || restored) {
                             db.ref('estoque/itens').set(localEstoqueItens).catch(() => {});
                         }
 
