@@ -1294,23 +1294,29 @@
             gap: 12px;
             flex-shrink: 0;
         }
+        /* Hide number input spinners globally to maximize space */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield !important;
+            appearance: none !important;
+        }
+
         .estoque-qty-spinner {
             display: flex;
             align-items: center;
             gap: 4px;
         }
         .estoque-qty-spinner .qty-input {
-            padding: 6px 2px;
+            padding: 6px 4px !important;
+            padding-inline: 4px !important;
             font-size: 14px;
-            width: 62px;
+            width: 76px;
             text-align: center;
             height: 32px;
-            -moz-appearance: textfield;
-        }
-        .estoque-qty-spinner .qty-input::-webkit-outer-spin-button,
-        .estoque-qty-spinner .qty-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
         }
         .estoque-price-box {
             display: flex;
@@ -1318,9 +1324,10 @@
             gap: 2px;
         }
         .estoque-price-box .price-input {
-            padding: 4px;
+            padding: 4px !important;
+            padding-inline: 4px !important;
             font-size: 13px;
-            width: 55px;
+            width: 70px;
             text-align: center;
             height: 32px;
         }
@@ -1338,6 +1345,9 @@
         }
 
         @media (max-width: 600px) {
+            #estoque-overlay .gh-modal {
+                padding: 16px !important;
+            }
             .estoque-item-row {
                 flex-direction: column !important;
                 align-items: stretch !important;
@@ -1364,10 +1374,11 @@
                 gap: 2px !important;
             }
             .estoque-qty-spinner .qty-input {
-                width: 54px !important;
+                width: 64px !important;
                 height: 30px !important;
                 font-size: 13px !important;
                 padding: 4px 2px !important;
+                padding-inline: 2px !important;
             }
             .estoque-qty-spinner .estoque-qty-btn {
                 width: 26px !important;
@@ -1375,14 +1386,15 @@
                 font-size: 12px !important;
             }
             .estoque-price-box .price-input {
-                width: 48px !important;
+                width: 58px !important;
                 height: 30px !important;
                 font-size: 12px !important;
                 padding: 4px !important;
+                padding-inline: 4px !important;
             }
             .estoque-subtotal-box {
                 font-size: 13px !important;
-                min-width: 60px !important;
+                min-width: 55px !important;
             }
         }
         .estoque-qty-btn {
@@ -1696,7 +1708,7 @@
 
     <!-- Modal: Controle de Estoque -->
     <div class="gh-overlay" id="estoque-overlay" onclick="estoqueOverlayClick(event)">
-        <div class="gh-modal" style="max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
+        <div class="gh-modal" style="max-width: 640px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; flex-shrink: 0;">
                 <h2 style="font-family: var(--font-title); font-size: 22px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px;">📦 Controle de Estoque</h2>
                 <button onclick="closeEstoque()"
