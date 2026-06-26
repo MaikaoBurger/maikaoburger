@@ -2309,31 +2309,32 @@
                 // Recuperação Automática das edições perdidas (Açúcar, Água, Ajinomoto, Alho, Bom Ar)
                 let restored = false;
                 Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    if (it.nome === "Açúcar 1kg" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                    const normalizedNome = it.nome ? it.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+                    if (normalizedNome === "acucar 1kg" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
                         it.estoqueMaximo = 10;
                         it.qtdPorCaixa = 10;
                         restored = true;
                     }
-                    if (it.nome === "Água com Gás 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                    if (normalizedNome === "agua com gas 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
                         it.estoqueMaximo = 60;
                         it.qtdPorCaixa = 12;
                         restored = true;
                     }
-                    if (it.nome === "Água Mineral 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                    if (normalizedNome === "agua mineral 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
                         it.estoqueMaximo = 60;
                         it.qtdPorCaixa = 12;
                         restored = true;
                     }
-                    if (it.nome === "Ajinomoto" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                    if (normalizedNome === "ajinomoto" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
                         it.estoqueMaximo = 5;
                         it.qtdPorCaixa = 1;
                         restored = true;
                     }
-                    if (it.nome === "Alho" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
+                    if (normalizedNome === "alho" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
                         it.estoqueMaximo = 1;
                         restored = true;
                     }
-                    if (it.nome === "Bom Ar") {
+                    if (normalizedNome === "bom ar") {
                         delete localEstoqueItens[id];
                         restored = true;
                     }
@@ -4890,9 +4891,6 @@
         function openEstoque() {
             loadEstoque();
             currentEstoqueGroup = "cmv";
-            
-            const debugItem = Object.values(localEstoqueItens).find(x => x.nome.includes('Açúcar') || x.nome.includes('Açucar'));
-            alert("Debug Açúcar: " + JSON.stringify(debugItem));
             
             const todayStr = getTodayIsoDate();
             document.getElementById('estoque-data').value = todayStr;
