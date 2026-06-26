@@ -5301,7 +5301,10 @@
                         
                         if (packSize > 1) {
                             numBoxes = Math.ceil(missing / packSize);
-                            suggestionText = `${numBoxes} cx (com ${packSize} un)`;
+                            const nameLower = it.nome.toLowerCase();
+                            const isFardo = nameLower.includes('açúcar') || nameLower.includes('papel') || nameLower.includes('farinha') || it.unidade === 'fardo';
+                            const pUnit = isFardo ? (numBoxes > 1 ? 'fardos' : 'fardo') : 'cx';
+                            suggestionText = `${numBoxes} ${pUnit} (com ${packSize} un)`;
                         } else {
                             suggestionText = `${missing.toFixed(1).replace('.0', '')} ${it.unidade}`;
                         }
