@@ -1746,7 +1746,10 @@
     <div class="gh-overlay" id="estoque-overlay" onclick="estoqueOverlayClick(event)">
         <div class="gh-modal" style="max-width: 640px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 24px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; flex-shrink: 0;">
-                <h2 style="font-family: var(--font-title); font-size: 22px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px;">📦 Controle de Estoque</h2>
+                <h2 style="font-family: var(--font-title); font-size: 22px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px;">
+                    📦 Controle de Estoque
+                    <span id="estoque-sync-status" onclick="syncRefreshPopup()" style="font-size: 14px; cursor: pointer; user-select: none; display: inline-flex; align-items: center; margin-left: 6px;" title="Status de Sincronização">✅</span>
+                </h2>
                 <button onclick="closeEstoque()"
                     style="background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:#bbb;padding:0 4px">×</button>
             </div>
@@ -2100,8 +2103,9 @@
 
         function setSyncUI(status) {
             const el = document.getElementById('sync-indicator');
-            if (!el) return;
-            el.textContent = status === 'online' ? '✅' : status === 'syncing' ? '🔄' : '⚠️';
+            if (el) el.textContent = status === 'online' ? '✅' : status === 'syncing' ? '🔄' : '⚠️';
+            const elEstoque = document.getElementById('estoque-sync-status');
+            if (elEstoque) elEstoque.textContent = status === 'online' ? '✅' : status === 'syncing' ? '🔄' : '⚠️';
             if (status === 'online') lastSyncTime = new Date();
         }
 
