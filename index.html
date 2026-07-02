@@ -5308,9 +5308,12 @@
             const dates = Object.keys(localEstoqueContagens).sort().reverse();
             if (dates.length === 0) {
                 select.innerHTML = '<option value="">Nenhuma contagem salva</option>';
-                document.getElementById('estoque-hist-detalhe').innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhuma contagem semanal registrada ainda.</div>';
-                document.getElementById('estoque-hist-meta').textContent = '';
-                document.getElementById('estoque-hist-total').textContent = 'R$ 0,00';
+                const detalheEl = document.getElementById('estoque-hist-detalhe');
+                if (detalheEl) detalheEl.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Nenhuma contagem semanal registrada ainda.</div>';
+                const metaEl = document.getElementById('estoque-hist-meta');
+                if (metaEl) metaEl.textContent = '';
+                const totalEl = document.getElementById('estoque-hist-total');
+                if (totalEl) totalEl.textContent = 'R$ 0,00';
                 ['estoque-hist-total-cmv', 'estoque-hist-total-jantar', 'estoque-hist-total-embalagens', 'estoque-hist-total-descartaveis', 'estoque-hist-total-limpeza', 'estoque-hist-total-escritorio'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.textContent = 'R$ 0,00';
