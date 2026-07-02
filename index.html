@@ -1825,6 +1825,7 @@
                 <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-shrink: 0; align-items: center;">
                     <select class="gh-input" id="estoque-hist-select" onchange="renderHistContagem(this.value)" style="flex: 1; padding: 10px; font-size: 14px; cursor: pointer;"></select>
                     <button class="gh-btn save" onclick="copiarTabelaExcel()" style="padding: 10px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; flex: none; background: linear-gradient(135deg, var(--green), #059669); color: white;">Copiar Excel 📋</button>
+                    <button class="gh-btn delete" onclick="excluirEstoqueContagem()" style="padding: 10px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; flex: none; background: linear-gradient(135deg, #EF4444, #DC2626); color: white;">Excluir 🗑️</button>
                 </div>
 
                 <!-- Detalhes da contagem histórica -->
@@ -2385,11 +2386,9 @@
                 localStorage.setItem('mb_estoque_itens', JSON.stringify(localEstoqueItens));
                 changed = true;
 
-                if (estoqueData.contagens) {
-                    localEstoqueContagens = estoqueData.contagens || {};
-                    localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
-                    changed = true;
-                }
+                localEstoqueContagens = estoqueData.contagens || {};
+                localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
+                changed = true;
 
                 // Sincroniza rascunho de contagem em tempo real
                 if (estoqueData.rascunho) {
@@ -5614,6 +5613,32 @@
                 console.error('Erro ao copiar:', err);
                 alert('Erro ao copiar tabela: ' + err.message);
             });
+        }
+
+        function excluirEstoqueContagem() {
+            const select = document.getElementById('estoque-hist-select');
+            if (!select || !select.value) {
+                alert('Nenhuma contagem selecionada.');
+                return;
+            }
+            const dateKey = select.value;
+            const dateFormatted = new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR');
+            if (!confirm(`Tem certeza que deseja excluir a contagem de ${dateFormatted}?`)) {
+                return;
+            }
+
+            delete localEstoqueContagens[dateKey];
+            localStorage.setItem('mb_estoque_contagens', JSON.stringify(localEstoqueContagens));
+
+            db.ref('estoque/contagens').set(localEstoqueContagens)
+                .then(() => {
+                    alert('Contagem excluída com sucesso!');
+                    carregarEstoqueHistoricoSelect();
+                })
+                .catch(err => {
+                    alert('Erro ao excluir contagem: ' + err.message);
+                    carregarEstoqueHistoricoSelect();
+                });
         }
 
         function renderEstoqueListaGerenciar() {
