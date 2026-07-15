@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Maikão Burger — Produção Diária</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ==========================================
+           SISTEMA DE DESIGN PREMIUM: CEREJA & OURO
+           ========================================== */
+        :root {
+            /* Cores Gourmet */
+            --primary: #7A121E;         /* Cereja Escuro / Bordô Deep */
+            --primary-light: #9B1E2E;   /* Carmesim vibrante */
+            --primary-dark: #580B13;    /* Fundo escuro */
+            --secondary: #D97706;       /* Âmbar Dourado */
+            --secondary-light: #F59E0B; /* Dourado vibrante */
+            --green: #10B981;           /* Esmeralda */
+            --green-light: #ECFDF5;
+            --bg-warm: #FAF8F5;         /* Off-white quente gourmet */
+            --white: #FFFFFF;
+            --dark-card: #1E1A1A;
+            --text: #2D2222;            /* Texto terroso escuro */
+            --text-muted: #7E6E6E;      /* Texto suave */
+            --border: #EFEAE6;          /* Borda suave e quente */
+            --border-hover: #D8CECE;
+            
+            /* Efeitos */
+            --glass: rgba(255, 255, 255, 0.85);
+            --shadow-sm: 0 4px 6px -1px rgba(122, 18, 30, 0.05), 0 2px 4px -1px rgba(122, 18, 30, 0.03);
+            --shadow-md: 0 10px 15px -3px rgba(122, 18, 30, 0.08), 0 4px 6px -2px rgba(122, 18, 30, 0.04);
+            --shadow-lg: 0 20px 25px -5px rgba(122, 18, 30, 0.12), 0 10px 10px -5px rgba(122, 18, 30, 0.06);
+            --shadow-premium: 0 30px 60px -15px rgba(88, 11, 19, 0.3), 0 15px 30px -10px rgba(0, 0, 0, 0.2);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            
+            /* Tipografia */
+            --font-title: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* ── Reset Geral ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            overscroll-behavior: none;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+
+        /* Impedir zoom automático no Safari iOS ao focar inputs */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-warm);
+            color: var(--text);
+            height: 100%;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        #app-view {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-warm);
+        }
+
+        /* ── Header Premium ── */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(88, 11, 19, 0.2);
+            color: var(--white);
+        }
+
+        .header-logo {
+            width: 44px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--secondary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        .header-logo:hover {
+            transform: scale(1.08) rotate(4deg);
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .header-name {
+            font-family: var(--font-title);
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-meta {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-sm);
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+            text-decoration: none;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
+        }
+        
+        .header-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ── Filtros / Dias da Semana ── */
+        .day-selector-container {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 76px;
+            z-index: 9;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            padding: 12px 16px;
+        }
+
+        .day-selector {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .day-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .day-pill {
+            background: var(--bg-warm);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 100px;
+            font-family: var(--font-title);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+        }
+
+        .day-pill:hover {
+            border-color: var(--primary-light);
+            color: var(--primary-light);
+            background: rgba(122, 18, 30, 0.02);
+        }
+
+        .day-pill.active {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(122, 18, 30, 0.25);
+        }
+
+
+
+        /* ── Conteúdo Principal ── */
+        .content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 16px 60px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+            overscroll-behavior: none;
+            width: 100%;
+        }
+
+        .page-title-section {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-family: var(--font-title);
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Banner de Folga (Quarta-feira) */
+        .closed-banner {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+            border-radius: var(--radius-md);
+            padding: 32px 24px;
+            text-align: center;
+            color: var(--white);
+            box-shadow: var(--shadow-md);
+            margin-top: 10px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .closed-banner h3 {
+            font-family: var(--font-title);
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .closed-banner p {
+            font-size: 15px;
+            opacity: 0.85;
+        }
+
+        /* ── Lista de Produção (Cards) ── */
+        .prod-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .prod-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.3s ease forwards;
+        }
+
+        .prod-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
+        }
+
+        .prod-info {
+            flex: 1;
+        }
+
+        .prod-name {
+            font-family: var(--font-title);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        .prod-unit {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .prod-qty {
+            font-family: var(--font-title);
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+            background: linear-gradient(135deg, rgba(122, 18, 30, 0.06), rgba(122, 18, 30, 0.02));
+            border: 1.5px solid rgba(122, 18, 30, 0.1);
+            padding: 8px 18px;
+            border-radius: 12px;
+            min-width: 90px;
+            text-align: center;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .prod-card:hover .prod-qty {
+            color: var(--white);
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(122, 18, 30, 0.2);
+            transform: scale(1.04);
+        }
+
+        /* ── Modais / Overlay (Glassmorphism) ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(26, 10, 12, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: var(--shadow-premium);
+            margin: auto;
+            align-self: center;
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+        }
+
+        .modal-title {
+            font-family: var(--font-title);
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.4px;
+            margin-bottom: 6px;
+        }
+
+        .modal-sub {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-family: inherit;
+            font-weight: 600;
+            outline: none;
+            transition: all 0.2s ease;
+            background: var(--bg-warm);
+            margin-bottom: 12px;
+        }
+
+        .modal-input:focus {
+            border-color: var(--primary-light);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(122, 18, 30, 0.15);
+        }
+
+        .modal-btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            font-family: var(--font-title);
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: var(--bg-warm);
+            color: var(--text);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn.secondary:hover {
+            background: var(--border);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: var(--white);
+            box-shadow: 0 4px 14px rgba(122, 18, 30, 0.25);
+        }
+
+        .btn.primary:hover {
+            box-shadow: 0 6px 20px rgba(122, 18, 30, 0.35);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, var(--green), #059669);
+            color: var(--white);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+        }
+
+        /* Toast Notificação */
+        #toast {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2D2222;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 700;
+            z-index: 9999;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        /* ── Tela do Gerente / Configuração ── */
+        .manager-view {
+            position: fixed;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-warm);
+            z-index: 200;
+        }
+
+        .manager-view.active {
+            display: flex;
+        }
+
+        .manager-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .manager-table-wrapper {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .manager-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 700px;
+        }
+
+        .manager-table th, .manager-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .manager-table th {
+            background: var(--bg-warm);
+            font-family: var(--font-title);
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .manager-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .manager-input-text {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--text);
+            outline: none;
+        }
+
+        .manager-input-text:focus {
+            border-color: var(--primary-light);
+        }
+
+        .manager-input-qty {
+            width: 54px;
+            padding: 8px 6px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+        }
+
+        .manager-input-qty:focus {
+            border-color: var(--secondary);
+            background: rgba(245, 158, 11, 0.03);
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #EF4444;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 6px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-delete:hover {
+            background: #FEF2F2;
+            transform: scale(1.1);
+        }
+
+        /* ── Botão de WhatsApp de Rodapé ── */
+        .bottom-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ── Animações ── */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* ── Estilos de Impressão ── */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                font-size: 12px;
+            }
+            .header, .day-selector-container, .bottom-actions, .header-btn, .btn, #toast, .modal-overlay {
+                display: none !important;
+            }
+            .content {
+                padding: 0;
+                max-width: 100%;
+            }
+            .prod-card {
+                box-shadow: none !important;
+                border: none !important;
+                border-bottom: 1px dashed #000 !important;
+                border-radius: 0 !important;
+                padding: 8px 0 !important;
+                page-break-inside: avoid;
+            }
+            .prod-qty {
+                border: none !important;
+                background: none !important;
+                padding: 0 !important;
+                font-size: 16px !important;
+                font-weight: bold !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Modal Login Gerente -->
+    <div class="modal-overlay" id="login-overlay">
+        <div class="modal-card">
+            <div style="font-size: 40px; margin-bottom: 8px;">🔐</div>
+            <div class="modal-title">Área Administrativa</div>
+            <div class="modal-sub" id="login-sub">Digite a senha do administrador para gerenciar a produção.</div>
+            
+            <input class="modal-input" id="admin-pw" type="password" placeholder="Senha de Admin" 
+                   onkeydown="if(event.key==='Enter') submitLogin()">
+            <div style="color: #EF4444; font-size: 13px; font-weight: 600; margin-bottom: 12px;" id="login-error"></div>
+            
+            <div class="modal-btn-row">
+                <button class="btn secondary" onclick="closeLoginModal()">Cancelar</button>
+                <button class="btn primary" onclick="submitLogin()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interface Principal -->
+    <div id="app-view">
+        <!-- Header -->
+        <div class="header">
+            <img class="header-logo" src="a25d29cf-b1c3-49ea-84d8-4b386a2e46e2.jpg" alt="Logo" onclick="openLoginModal()" style="cursor: pointer;" title="Acesso ADM">
+            <div class="header-info">
+                <div class="header-name">
+                    Maikão Burger
+                    <span style="font-size: 10px; font-weight: 800; background: rgba(255,255,255,0.25); color: white; padding: 2px 7px; border-radius: 8px; letter-spacing: 0.5px;">PROD</span>
+                </div>
+                <div class="header-meta">Planilha de Produção Diária</div>
+            </div>
+            <button class="header-btn" onclick="window.location.href='index.html'" style="width: auto; padding: 0 14px; font-size: 14px; font-weight: 700;" title="Voltar para o Checklist">← Voltar</button>
+        </div>
+
+        <!-- Seletor de Dias -->
+        <div class="day-selector-container">
+            <div class="day-selector" id="day-selector">
+                <!-- Preenchido via JS -->
+            </div>
+        </div>
+
+        <!-- Conteúdo do Funcionário -->
+        <div class="content">
+            <div class="page-title-section">
+                <div class="page-title" id="current-day-title">
+                    Produção de Segunda-feira 📅
+                </div>
+            </div>
+
+            <!-- Banner de Folga (Quarta) -->
+            <div class="closed-banner" id="closed-banner" style="display: none;">
+                <h3>Quarta-feira é Folga! 👋</h3>
+                <p>O estabelecimento está fechado hoje. Não há produção configurada para este dia.</p>
+            </div>
+
+            <!-- Lista de Produção -->
+            <div class="prod-list" id="prod-list">
+                <!-- Preenchido via JS -->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Interface do Gerente (Configuração de Metas) -->
+    <div class="manager-view" id="manager-view">
+        <!-- Header Gerente -->
+        <div class="header" style="background: linear-gradient(135deg, var(--secondary), #B45309);">
+            <div class="header-info">
+                <div class="header-name">
+                    Painel do Gerente ⚙️
+                </div>
+                <div class="header-meta">Configuração de Metas de Produção</div>
+            </div>
+            <button class="header-btn" onclick="exitManagerView()" title="Sair do Modo Gerente">✖</button>
+        </div>
+
+        <div class="content" style="max-width: 900px; padding-bottom: 100px;">
+            <div class="manager-header">
+                <h2 style="font-family: var(--font-title); font-size: 20px; font-weight: 800;">Grade de Metas por Item</h2>
+                <button class="btn success" onclick="addNewItem()" style="padding: 8px 14px; font-size: 13px; font-weight: 700; border-radius: 10px;">
+                    ➕ Novo Item
+                </button>
+            </div>
+
+            <!-- Tabela de Edição -->
+            <div class="manager-table-wrapper">
+                <table class="manager-table">
+                    <thead>
+                        <tr>
+                            <th>Item de Produção</th>
+                            <th>Unidade</th>
+                            <th>Seg</th>
+                            <th>Ter</th>
+                            <th>Qui</th>
+                            <th>Sex</th>
+                            <th>Sáb</th>
+                            <th>Dom</th>
+                            <th>Feriado</th>
+                            <th style="width: 50px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manager-table-body">
+                        <!-- Preenchido via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button class="btn secondary" onclick="exitManagerView()">Cancelar</button>
+                <button class="btn primary" onclick="saveManagerSettings()" style="background: linear-gradient(135deg, var(--secondary), #B45309); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);">
+                    💾 Salvar Metas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast">Copiado para a área de transferência!</div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÕES & DADOS INICIAIS
+        // ==========================================
+        const DIAS_SEMANA = [
+            { id: '1', name: 'Segunda', label: 'Segunda-feira', icon: '📅' },
+            { id: '2', name: 'Terça', label: 'Terça-feira', icon: '📅' },
+            { id: '3', name: 'Quarta', label: 'Quarta-feira (Folga)', icon: '💤' },
+            { id: '4', name: 'Quinta', label: 'Quinta-feira', icon: '📅' },
+            { id: '5', name: 'Sexta', label: 'Sexta-feira', icon: '📅' },
+            { id: '6', name: 'Sábado', label: 'Sábado', icon: '📅' },
+            { id: '0', name: 'Domingo', label: 'Domingo', icon: '📅' },
+            { id: 'feriado', name: 'Feriado', label: 'Feriado Nacional', icon: '📅' }
+        ];
+
+        // Dados Iniciais Otimizados com "CARNE" e novos itens
+        const DEFAULT_ITEMS = [
+            {
+                id: '1',
+                name: 'CARNE',
+                unit: 'kg',
+                targets: { '1': 10, '2': 10, '3': 0, '4': 20, '5': 20, '6': 35, '0': 35, 'feriado': 35 }
+            },
+            {
+                id: '2',
+                name: 'BURGER DE TOSCANA CONSERVADOR',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 5, '0': 5, 'feriado': 5 }
+            },
+            {
+                id: '3',
+                name: 'ARTESANAL DE FRANGO CONSERVADOR',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 15 }
+            },
+            {
+                id: '4',
+                name: 'OVO CONSERVADOR',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 15, '0': 20, 'feriado': 20 }
+            },
+            {
+                id: '5',
+                name: 'SHAKE DE MORANGO',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 4, '5': 5, '6': 10, '0': 15, 'feriado': 15 }
+            },
+            {
+                id: '6',
+                name: 'SHAKE DE BROWNIE',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 3, '5': 3, '6': 8, '0': 8, 'feriado': 8 }
+            },
+            {
+                id: '7',
+                name: 'LIMONADA ROSA',
+                unit: 'un',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 3, '0': 6, 'feriado': 6 }
+            },
+            {
+                id: '8',
+                name: 'CALABRESA CONSERVADOR',
+                unit: 'g',
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 300, '0': 300, 'feriado': 300 }
+            },
+            {
+                id: '9',
+                name: 'COXINHA NO BALCÃO REFRIGERADA',
+                unit: 'un',
+                targets: { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 }
+            }
+        ];
+
+        // Estado do App
+        let productionItems = [];
+        let activeDayId = '1'; // Segunda por padrão
+        let tempEditingItems = []; // Para o painel do gerente
+
+        // ==========================================
+        // INICIALIZAÇÃO
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDatabase();
+            detectToday();
+            buildDaySelector();
+            renderEmployeeList();
+        });
+
+        // Carrega dados do LocalStorage ou define padrões
+        function loadDatabase() {
+            const saved = localStorage.getItem('mb_production_items_v12');
+            if (saved) {
+                productionItems = JSON.parse(saved);
+                
+                // Migração/Atualização: Se "CARNE" estiver em minúscula/camelCase, atualiza para maiúscula.
+                let carneItem = productionItems.find(item => item.name === 'Carne');
+                if (carneItem) {
+                    carneItem.name = 'CARNE';
+                }
+
+                // Migração/Atualização: Se "COXINHA NO BALCÃO REFRIGERADA" não existir nos itens salvos, adiciona/atualiza.
+                let coxinhaItem = productionItems.find(item => item.name.toUpperCase().includes('COXINHA'));
+                if (!coxinhaItem) {
+                    coxinhaItem = {
+                        id: '9',
+                        name: 'COXINHA NO BALCÃO REFRIGERADA',
+                        unit: 'un',
+                        targets: { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 }
+                    };
+                    productionItems.push(coxinhaItem);
+                } else {
+                    coxinhaItem.name = 'COXINHA NO BALCÃO REFRIGERADA';
+                    coxinhaItem.targets = { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 };
+                }
+
+                // Migração/Atualização: Atualização dos shakes na Quinta-feira (id '4') e Sexta-feira (id '5')
+                let shakeMorango = productionItems.find(item => item.name.toUpperCase().includes('SHAKE DE MORANGO') || item.id === '5');
+                if (shakeMorango) {
+                    if (!shakeMorango.targets) shakeMorango.targets = {};
+                    shakeMorango.targets['4'] = 4;
+                    shakeMorango.targets['5'] = 5;
+                }
+                let shakeBrownie = productionItems.find(item => item.name.toUpperCase().includes('SHAKE DE BROWNIE') || item.id === '6');
+                if (shakeBrownie) {
+                    if (!shakeBrownie.targets) shakeBrownie.targets = {};
+                    shakeBrownie.targets['4'] = 3;
+                    shakeBrownie.targets['5'] = 3;
+                }
+
+                saveDatabase();
+            } else {
+                productionItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+                saveDatabase();
+            }
+        }
+
+        function saveDatabase() {
+            localStorage.setItem('mb_production_items_v12', JSON.stringify(productionItems));
+        }
+
+        // Detecta dia da semana atual
+        function detectToday() {
+            const today = new Date().getDay();
+            // Se hoje for quarta (dia de folga), deixa quarta ativa, mas exibirá banner de fechado.
+            activeDayId = today.toString();
+        }
+
+        // Constrói abas dos dias da semana
+        function buildDaySelector() {
+            const container = document.getElementById('day-selector');
+            container.innerHTML = DIAS_SEMANA.map(day => {
+                const isToday = day.id.toString() === activeDayId.toString();
+                // Formatação simples do nome do dia
+                const label = day.name;
+                return `<button class="day-pill ${isToday ? 'active' : ''}" 
+                                id="day-pill-${day.id}" 
+                                onclick="selectDay('${day.id}')">
+                            ${day.icon} ${label}
+                        </button>`;
+            }).join('');
+        }
+
+        // Seleciona um dia da semana
+        function selectDay(dayId) {
+            activeDayId = dayId.toString();
+            
+            // Atualiza botões
+            document.querySelectorAll('.day-pill').forEach(btn => btn.classList.remove('active'));
+            const activePill = document.getElementById(`day-pill-${dayId}`);
+            if (activePill) activePill.classList.add('active');
+
+            renderEmployeeList();
+        }
+
+
+
+        // ==========================================
+        // RENDERIZAR VISUALIZAÇÃO DO FUNCIONÁRIO
+        // ==========================================
+        function renderEmployeeList() {
+            const listContainer = document.getElementById('prod-list');
+            const closedBanner = document.getElementById('closed-banner');
+            const dayTitle = document.getElementById('current-day-title');
+            
+            const currentDayDef = DIAS_SEMANA.find(d => d.id === activeDayId);
+            
+            // Título principal
+            dayTitle.innerHTML = `Produção de ${currentDayDef.label} ${currentDayDef.icon}`;
+
+            // Tratamento específico de Quarta-feira (Folga)
+            if (activeDayId === 3) {
+                listContainer.style.display = 'none';
+                closedBanner.style.display = 'block';
+                return;
+            } else {
+                listContainer.style.display = 'flex';
+                closedBanner.style.display = 'none';
+            }
+
+            // Filtra e renderiza itens
+            let html = '';
+            let count = 0;
+
+            productionItems.forEach(item => {
+                let qty = item.targets[activeDayId] || 0;
+
+                // Se a quantidade configurada for maior que 0, exibe na lista do funcionário
+                if (qty > 0) {
+                    count++;
+                    html += `
+                        <div class="prod-card" style="animation-delay: ${count * 0.05}s">
+                            <div class="prod-info">
+                                <div class="prod-name">${item.name}</div>
+                                <div class="prod-unit">Medida: ${item.unit}</div>
+                            </div>
+                            <div class="prod-qty">
+                                ${qty} ${item.unit}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (count === 0) {
+                html = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 30px; font-weight: 600;">
+                        Nenhum item configurado para produzir neste dia.
+                    </div>
+                `;
+            }
+
+            listContainer.innerHTML = html;
+        }
+
+        // ==========================================
+        // COMPARTILHAR WHATSAPP & IMPRIMIR
+        // ==========================================
+        function shareWhatsApp() {
+            const currentDayDef = DIAS_SEMANA.find(d => d.id === activeDayId);
+            const dateStr = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            
+            let title = `🍔 *PRODUÇÃO DIÁRIA - MAIKÃO BURGER*`;
+            let subtitle = `${currentDayDef.icon} *${currentDayDef.label}* (${dateStr})`;
+
+            let msg = `${title}\n${subtitle}\n\n`;
+            let itemsCount = 0;
+
+            productionItems.forEach(item => {
+                let qty = item.targets[activeDayId] || 0;
+                if (qty > 0) {
+                    itemsCount++;
+                    msg += `• *${item.name}:* ${qty} ${item.unit}\n`;
+                }
+            });
+
+            if (itemsCount === 0) {
+                msg += `Nenhum item configurado para produção hoje.`;
+            } else {
+                msg += `\n*Bom trabalho a todos! 💪*`;
+            }
+
+            const encoded = encodeURIComponent(msg);
+            const url = `https://api.whatsapp.com/send?text=${encoded}`;
+            window.open(url, '_blank');
+        }
+
+        // ==========================================
+        // AUTENTICAÇÃO ADM
+        // ==========================================
+        function openLoginModal() {
+            document.getElementById('admin-pw').value = '';
+            document.getElementById('login-error').textContent = '';
+            document.getElementById('login-overlay').classList.add('open');
+            document.getElementById('admin-pw').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-overlay').classList.remove('open');
+        }
+
+        async function submitLogin() {
+            const pw = document.getElementById('admin-pw').value;
+            const errorEl = document.getElementById('login-error');
+            errorEl.textContent = '';
+
+            // Hashing da senha digitada
+            const hashedInput = await sha256(pw);
+            
+            // Busca senha configurada no checklist
+            const savedHash = localStorage.getItem('mb_admin_pw');
+            const savedHashMarcelo = localStorage.getItem('mb_admin_pw_marcelo');
+
+            if (savedHash || savedHashMarcelo) {
+                // Existe senha no checklist
+                if ((savedHash && hashedInput === savedHash) || (savedHashMarcelo && hashedInput === savedHashMarcelo)) {
+                    enterManagerMode();
+                } else {
+                    errorEl.textContent = 'Senha incorreta.';
+                }
+            } else {
+                // Nenhuma senha configurada no app ainda. Permite entrada livre ou com senhas padrões
+                if (pw === '123' || pw === 'marcelo' || pw === '') {
+                    enterManagerMode();
+                } else {
+                    errorEl.textContent = 'Use a senha padrão (123) ou deixe em branco.';
+                }
+            }
+        }
+
+        // Função hash SHA-256 idêntica à do Checklist para integração perfeita
+        async function sha256(str) {
+            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // ==========================================
+        // MODO GERENTE (AÇÕES & CONFIGURAÇÃO)
+        // ==========================================
+        function enterManagerMode() {
+            closeLoginModal();
+            document.getElementById('app-view').style.display = 'none';
+            document.getElementById('manager-view').classList.add('active');
+            
+            // Duplica os itens para edição temporária antes de salvar
+            tempEditingItems = JSON.parse(JSON.stringify(productionItems));
+            renderManagerTable();
+        }
+
+        function exitManagerView() {
+            document.getElementById('manager-view').classList.remove('active');
+            document.getElementById('app-view').style.display = 'flex';
+            renderEmployeeList(); // Atualiza a lista do funcionário com os dados mais recentes
+        }
+
+        function renderManagerTable() {
+            const tbody = document.getElementById('manager-table-body');
+            tbody.innerHTML = tempEditingItems.map((item, idx) => {
+                return `
+                    <tr id="m-row-${idx}">
+                        <td>
+                            <input type="text" class="manager-input-text" value="${item.name}" 
+                                   onchange="updateTempItem(${idx}, 'name', this.value)">
+                        </td>
+                        <td>
+                            <input type="text" class="manager-input-text" style="width: 80px;" value="${item.unit}" 
+                                   onchange="updateTempItem(${idx}, 'unit', this.value)">
+                        </td>
+                        <!-- Dias da semana comuns -->
+                        <td><input type="number" class="manager-input-qty" min="0" value="${item.targets[1] || 0}" onchange="updateTempTarget(${idx}, 1, this.value)"></td>
+                        <td><input type="number" class="manager-input-qty" min="0" value="${item.targets[2] || 0}" onchange="updateTempTarget(${idx}, 2, this.value)"></td>
+                        <td><input type="number" class="manager-input-qty" min="0" value="${item.targets[4] || 0}" onchange="updateTempTarget(${idx}, 4, this.value)"></td>
+                        <td><input type="number" class="manager-input-qty" min="0" value="${item.targets[5] || 0}" onchange="updateTempTarget(${idx}, 5, this.value)"></td>
+                        <td><input type="number" class="manager-input-qty" min="0" value="${item.targets[6] || 0}" onchange="updateTempTarget(${idx}, 6, this.value)"></td>
+                        <td><input type="number" class="manager-input-qty" min="0" value="${item.targets[0] || 0}" onchange="updateTempTarget(${idx}, 0, this.value)"></td>
+                        <!-- Feriado -->
+                        <td><input type="number" class="manager-input-qty" style="border-color: rgba(217, 119, 6, 0.4); background: rgba(217, 119, 6, 0.02);" min="0" value="${item.targets['feriado'] || 0}" onchange="updateTempTarget(${idx}, 'feriado', this.value)"></td>
+                        <!-- Exclusão -->
+                        <td>
+                            <button class="btn-delete" onclick="deleteTempItem(${idx})" title="Remover item">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Atualiza campos de texto dos itens temporários
+        function updateTempItem(idx, field, val) {
+            if (tempEditingItems[idx]) {
+                tempEditingItems[idx][field] = val;
+            }
+        }
+
+        // Atualiza metas numéricas dos itens temporários
+        function updateTempTarget(idx, dayId, val) {
+            if (tempEditingItems[idx]) {
+                tempEditingItems[idx].targets[dayId] = Number(val) || 0;
+            }
+        }
+
+        // Adiciona um novo item vazio na tabela do gerente
+        function addNewItem() {
+            const newItem = {
+                id: Date.now().toString(),
+                name: '',
+                unit: 'un',
+                targets: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0, 'feriado': 0 }
+            };
+            tempEditingItems.push(newItem);
+            renderManagerTable();
+            
+            // Auto-scroll até o novo item
+            setTimeout(() => {
+                const lastRow = document.getElementById(`m-row-${tempEditingItems.length - 1}`);
+                if (lastRow) lastRow.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+
+        // Exclui um item da tabela temporária
+        function deleteTempItem(idx) {
+            if (confirm(`Tem certeza de que deseja remover "${tempEditingItems[idx].name || 'este item'}" da produção?`)) {
+                tempEditingItems.splice(idx, 1);
+                renderManagerTable();
+            }
+        }
+
+        // Salva as configurações editadas no LocalStorage
+        function saveManagerSettings() {
+            // Filtra itens para remover vazios ou sem nome
+            productionItems = tempEditingItems.filter(item => item.name.trim() !== '');
+            saveDatabase();
+            
+            showToast('Metas salvas com sucesso! 🎉');
+            exitManagerView();
+        }
+
+        // Mostra notificação rápida na tela
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2500);
+        }
+    </script>
+</body>
+
+</html>
