@@ -806,7 +806,7 @@
                 id: '3',
                 name: 'ARTESANAL DE FRANGO CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 10, '0': 15, 'feriado': 15 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 8, '0': 12, 'feriado': 12 }
             },
             {
                 id: '4',
@@ -900,6 +900,15 @@
                     if (!shakeBrownie.targets) shakeBrownie.targets = {};
                     shakeBrownie.targets['4'] = 3;
                     shakeBrownie.targets['5'] = 3;
+                }
+
+                // Migração/Atualização: Atualização de Artesanal de Frango (id '3') no Sábado (id '6') e Domingo/Feriado (id '0'/'feriado')
+                let frangoItem = productionItems.find(item => item.name.toUpperCase().includes('ARTESANAL DE FRANGO') || item.id === '3');
+                if (frangoItem) {
+                    if (!frangoItem.targets) frangoItem.targets = {};
+                    frangoItem.targets['6'] = 8;
+                    frangoItem.targets['0'] = 12;
+                    frangoItem.targets['feriado'] = 12;
                 }
 
                 saveDatabase();
