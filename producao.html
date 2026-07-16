@@ -1137,14 +1137,20 @@
                             </div>
                         `;
                     } else {
+                        let displayQty = qty;
+                        let displayUnit = item.unit;
+                        if (item.unit === 'kg' && qty < 1) {
+                            displayQty = qty * 1000;
+                            displayUnit = 'g';
+                        }
                         html += `
                             <div class="prod-card" style="animation-delay: ${count * 0.05}s">
                                 <div class="prod-info">
                                     <div class="prod-name">${item.name}</div>
-                                    <div class="prod-unit">Medida: ${item.unit}</div>
+                                    <div class="prod-unit">Medida: ${displayUnit}</div>
                                 </div>
                                 <div class="prod-qty">
-                                    ${qty} ${item.unit}
+                                    ${displayQty} ${displayUnit}
                                 </div>
                             </div>
                         `;
@@ -1205,7 +1211,13 @@
                 let qty = item.targets[activeDayId] || 0;
                 if (qty > 0) {
                     itemsCount++;
-                    msg += `• *${item.name}:* ${qty} ${item.unit}\n`;
+                    let displayQty = qty;
+                    let displayUnit = item.unit;
+                    if (item.unit === 'kg' && qty < 1) {
+                        displayQty = qty * 1000;
+                        displayUnit = 'g';
+                    }
+                    msg += `• *${item.name}:* ${displayQty} ${displayUnit}\n`;
                 }
             });
 
