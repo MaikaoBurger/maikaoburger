@@ -866,7 +866,7 @@
                 id: '13',
                 name: 'BACON ASSADO',
                 unit: 'g',
-                targets: { '1': 350, '2': 350, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                targets: { '1': 350, '2': 350, '3': 0, '4': 500, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -1011,7 +1011,7 @@
                         id: '13',
                         name: 'BACON ASSADO',
                         unit: 'g',
-                        targets: { '1': 350, '2': 350, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                        targets: { '1': 350, '2': 350, '3': 0, '4': 500, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
                     };
                     productionItems.push(baconItem);
                 } else {
@@ -1020,6 +1020,7 @@
                     if (!baconItem.targets) baconItem.targets = {};
                     baconItem.targets['1'] = 350;
                     baconItem.targets['2'] = 350;
+                    baconItem.targets['4'] = 500;
                 }
 
                 saveDatabase();
