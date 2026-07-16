@@ -861,6 +861,12 @@
                 name: 'TOMATE',
                 unit: 'kg',
                 targets: { '1': 0.5, '2': 0.5, '3': 0, '4': 0.6, '5': 0.8, '6': 1.2, '0': 1.5, 'feriado': 1.5 }
+            },
+            {
+                id: '13',
+                name: 'BACON ASSADO',
+                unit: 'g',
+                targets: { '1': 350, '2': 350, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -998,6 +1004,24 @@
                     tomateItem.targets['feriado'] = 1.5;
                 }
 
+                // Migração/Atualização: Se "BACON ASSADO" não existir nos itens salvos, adiciona/atualiza.
+                let baconItem = productionItems.find(item => item.name.toUpperCase().includes('BACON') || item.id === '13');
+                if (!baconItem) {
+                    baconItem = {
+                        id: '13',
+                        name: 'BACON ASSADO',
+                        unit: 'g',
+                        targets: { '1': 350, '2': 350, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                    };
+                    productionItems.push(baconItem);
+                } else {
+                    baconItem.name = 'BACON ASSADO';
+                    baconItem.unit = 'g';
+                    if (!baconItem.targets) baconItem.targets = {};
+                    baconItem.targets['1'] = 350;
+                    baconItem.targets['2'] = 350;
+                }
+
                 saveDatabase();
             } else {
                 productionItems = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
@@ -1078,17 +1102,52 @@
                 // Se a quantidade configurada for maior que 0, exibe na lista do funcionário
                 if (qty > 0) {
                     count++;
-                    html += `
-                        <div class="prod-card" style="animation-delay: ${count * 0.05}s">
-                            <div class="prod-info">
-                                <div class="prod-name">${item.name}</div>
-                                <div class="prod-unit">Medida: ${item.unit}</div>
+                    const isBacon = item.name.toUpperCase().includes('BACON');
+                    
+                    if (isBacon) {
+                        const defaultRaw = Math.round((qty / 0.45) / 10) * 10;
+                        html += `
+                            <div class="prod-card" style="animation-delay: ${count * 0.05}s; flex-direction: column; align-items: stretch; gap: 14px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                    <div class="prod-info">
+                                        <div class="prod-name">${item.name}</div>
+                                        <div class="prod-unit">Medida: ${item.unit}</div>
+                                    </div>
+                                    <div class="prod-qty">
+                                        ${qty} ${item.unit}
+                                    </div>
+                                </div>
+                                
+                                <div style="border-top: 1px dashed var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 13px; font-weight: 700; color: var(--text-muted);">Sobrou de ontem assado (g):</span>
+                                        <input type="number" class="modal-input" style="width: 120px; padding: 6px 10px; margin-bottom: 0; text-align: center; border-radius: 8px;" 
+                                               placeholder="0" min="0" oninput="updateBaconCalc(this, ${qty}, '${item.id}')">
+                                    </div>
+                                    <div id="bacon-result-${item.id}">
+                                        <div style="margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
+                                            Falta assar: <strong style="color: var(--primary);">${qty}g</strong>
+                                        </div>
+                                        <div style="font-size: 14px; color: var(--secondary); font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                            ⚠️ Pesar Cru hoje: ~${defaultRaw}g
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="prod-qty">
-                                ${qty} ${item.unit}
+                        `;
+                    } else {
+                        html += `
+                            <div class="prod-card" style="animation-delay: ${count * 0.05}s">
+                                <div class="prod-info">
+                                    <div class="prod-name">${item.name}</div>
+                                    <div class="prod-unit">Medida: ${item.unit}</div>
+                                </div>
+                                <div class="prod-qty">
+                                    ${qty} ${item.unit}
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 }
             });
 
@@ -1101,6 +1160,31 @@
             }
 
             listContainer.innerHTML = html;
+        }
+
+        function updateBaconCalc(inputEl, targetQty, itemId) {
+            const leftover = parseFloat(inputEl.value) || 0;
+            const resultBox = document.getElementById(`bacon-result-${itemId}`);
+            if (!resultBox) return;
+
+            if (leftover >= targetQty) {
+                resultBox.innerHTML = `
+                    <div style="color: var(--green); font-weight: 700; margin-top: 10px; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                        ✅ Não precisa produzir hoje! Sobrou o suficiente.
+                    </div>
+                `;
+            } else {
+                const needed = targetQty - leftover;
+                const rawQty = Math.round((needed / 0.45) / 10) * 10;
+                resultBox.innerHTML = `
+                    <div style="margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
+                        Falta assar: <strong style="color: var(--primary);">${needed}g</strong>
+                    </div>
+                    <div style="font-size: 14px; color: var(--secondary); font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                        ⚠️ Pesar Cru hoje: ~${rawQty}g
+                    </div>
+                `;
+            }
         }
 
         // ==========================================
