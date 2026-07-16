@@ -859,8 +859,8 @@
             {
                 id: '12',
                 name: 'TOMATE',
-                unit: 'g',
-                targets: { '1': 500, '2': 500, '3': 0, '4': 600, '5': 800, '6': 0, '0': 0, 'feriado': 0 }
+                unit: 'kg',
+                targets: { '1': 0.5, '2': 0.5, '3': 0, '4': 0.6, '5': 0.8, '6': 1.2, '0': 1.5, 'feriado': 1.5 }
             }
         ];
 
@@ -981,18 +981,21 @@
                     tomateItem = {
                         id: '12',
                         name: 'TOMATE',
-                        unit: 'g',
-                        targets: { '1': 500, '2': 500, '3': 0, '4': 600, '5': 800, '6': 0, '0': 0, 'feriado': 0 }
+                        unit: 'kg',
+                        targets: { '1': 0.5, '2': 0.5, '3': 0, '4': 0.6, '5': 0.8, '6': 1.2, '0': 1.5, 'feriado': 1.5 }
                     };
                     productionItems.push(tomateItem);
                 } else {
                     tomateItem.name = 'TOMATE';
-                    tomateItem.unit = 'g';
+                    tomateItem.unit = 'kg';
                     if (!tomateItem.targets) tomateItem.targets = {};
-                    tomateItem.targets['1'] = 500;
-                    tomateItem.targets['2'] = 500;
-                    tomateItem.targets['4'] = 600;
-                    tomateItem.targets['5'] = 800;
+                    tomateItem.targets['1'] = 0.5;
+                    tomateItem.targets['2'] = 0.5;
+                    tomateItem.targets['4'] = 0.6;
+                    tomateItem.targets['5'] = 0.8;
+                    tomateItem.targets['6'] = 1.2;
+                    tomateItem.targets['0'] = 1.5;
+                    tomateItem.targets['feriado'] = 1.5;
                 }
 
                 saveDatabase();
