@@ -860,7 +860,7 @@
                 id: '12',
                 name: 'TOMATE',
                 unit: 'g',
-                targets: { '1': 500, '2': 500, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                targets: { '1': 500, '2': 500, '3': 0, '4': 600, '5': 800, '6': 0, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -982,7 +982,7 @@
                         id: '12',
                         name: 'TOMATE',
                         unit: 'g',
-                        targets: { '1': 500, '2': 500, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                        targets: { '1': 500, '2': 500, '3': 0, '4': 600, '5': 800, '6': 0, '0': 0, 'feriado': 0 }
                     };
                     productionItems.push(tomateItem);
                 } else {
@@ -991,6 +991,8 @@
                     if (!tomateItem.targets) tomateItem.targets = {};
                     tomateItem.targets['1'] = 500;
                     tomateItem.targets['2'] = 500;
+                    tomateItem.targets['4'] = 600;
+                    tomateItem.targets['5'] = 800;
                 }
 
                 saveDatabase();
