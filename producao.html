@@ -1107,19 +1107,42 @@
                 // Se a quantidade configurada for maior que 0, exibe na lista do funcionário
                 if (qty > 0) {
                     count++;
+                    
+                    let displayQty = qty;
+                    let displayUnit = item.unit;
+                    if (item.unit === 'g' && qty >= 1000) {
+                        displayQty = qty / 1000;
+                        displayUnit = 'kg';
+                    } else if (item.unit === 'kg' && qty < 1) {
+                        displayQty = qty * 1000;
+                        displayUnit = 'g';
+                    }
+
                     const isBacon = item.name.toUpperCase().includes('BACON');
                     
                     if (isBacon) {
                         const defaultRaw = Math.round((qty / 0.45) / 10) * 10;
+                        let displayRawQty = defaultRaw;
+                        let displayRawUnit = 'g';
+                        if (defaultRaw >= 1000) {
+                            displayRawQty = (defaultRaw / 1000).toFixed(2).replace('.', ',');
+                            if (displayRawQty.endsWith(',00')) {
+                                displayRawQty = displayRawQty.substring(0, displayRawQty.length - 3);
+                            } else if (displayRawQty.endsWith('0')) {
+                                displayRawQty = displayRawQty.substring(0, displayRawQty.length - 1);
+                            }
+                            displayRawUnit = 'kg';
+                        }
+                        
                         html += `
                             <div class="prod-card" style="animation-delay: ${count * 0.05}s; flex-direction: column; align-items: stretch; gap: 14px;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                     <div class="prod-info">
                                         <div class="prod-name">${item.name}</div>
-                                        <div class="prod-unit">Medida: ${item.unit}</div>
+                                        <div class="prod-unit">Medida: ${displayUnit}</div>
                                     </div>
                                     <div class="prod-qty">
-                                        ${qty} ${item.unit}
+                                        ${displayQty} ${displayUnit}
                                     </div>
                                 </div>
                                 
@@ -1131,22 +1154,16 @@
                                     </div>
                                     <div id="bacon-result-${item.id}">
                                         <div style="margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
-                                            Falta assar: <strong style="color: var(--primary);">${qty}g</strong>
+                                            Falta assar: <strong style="color: var(--primary);">${displayQty} ${displayUnit}</strong>
                                         </div>
                                         <div style="font-size: 14px; color: var(--secondary); font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                                            ⚠️ Pesar Cru hoje: ~${defaultRaw}g
+                                            ⚠️ Pesar Cru hoje: ~${displayRawQty} ${displayRawUnit}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         `;
                     } else {
-                        let displayQty = qty;
-                        let displayUnit = item.unit;
-                        if (item.unit === 'kg' && qty < 1) {
-                            displayQty = qty * 1000;
-                            displayUnit = 'g';
-                        }
                         html += `
                             <div class="prod-card" style="animation-delay: ${count * 0.05}s">
                                 <div class="prod-info">
@@ -1187,12 +1204,32 @@
             } else {
                 const needed = targetQty - leftover;
                 const rawQty = Math.round((needed / 0.45) / 10) * 10;
+
+                let displayNeededQty = needed;
+                let displayNeededUnit = 'g';
+                if (needed >= 1000) {
+                    displayNeededQty = needed / 1000;
+                    displayNeededUnit = 'kg';
+                }
+
+                let displayRawQty = rawQty;
+                let displayRawUnit = 'g';
+                if (rawQty >= 1000) {
+                    displayRawQty = (rawQty / 1000).toFixed(2).replace('.', ',');
+                    if (displayRawQty.endsWith(',00')) {
+                        displayRawQty = displayRawQty.substring(0, displayRawQty.length - 3);
+                    } else if (displayRawQty.endsWith('0')) {
+                        displayRawQty = displayRawQty.substring(0, displayRawQty.length - 1);
+                    }
+                    displayRawUnit = 'kg';
+                }
+
                 resultBox.innerHTML = `
                     <div style="margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted);">
-                        Falta assar: <strong style="color: var(--primary);">${needed}g</strong>
+                        Falta assar: <strong style="color: var(--primary);">${displayNeededQty} ${displayNeededUnit}</strong>
                     </div>
                     <div style="font-size: 14px; color: var(--secondary); font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                        ⚠️ Pesar Cru hoje: ~${rawQty}g
+                        ⚠️ Pesar Cru hoje: ~${displayRawQty} ${displayRawUnit}
                     </div>
                 `;
             }
@@ -1217,7 +1254,10 @@
                     itemsCount++;
                     let displayQty = qty;
                     let displayUnit = item.unit;
-                    if (item.unit === 'kg' && qty < 1) {
+                    if (item.unit === 'g' && qty >= 1000) {
+                        displayQty = qty / 1000;
+                        displayUnit = 'kg';
+                    } else if (item.unit === 'kg' && qty < 1) {
                         displayQty = qty * 1000;
                         displayUnit = 'g';
                     }
