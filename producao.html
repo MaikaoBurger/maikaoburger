@@ -854,7 +854,7 @@
                 id: '11',
                 name: 'CEBOLA ROXA',
                 unit: 'g',
-                targets: { '1': 250, '2': 250, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                targets: { '1': 250, '2': 250, '3': 0, '4': 300, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -953,7 +953,7 @@
                         id: '11',
                         name: 'CEBOLA ROXA',
                         unit: 'g',
-                        targets: { '1': 250, '2': 250, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                        targets: { '1': 250, '2': 250, '3': 0, '4': 300, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
                     };
                     productionItems.push(cebolaRoxaItem);
                 } else {
@@ -962,6 +962,7 @@
                     if (!cebolaRoxaItem.targets) cebolaRoxaItem.targets = {};
                     cebolaRoxaItem.targets['1'] = 250;
                     cebolaRoxaItem.targets['2'] = 250;
+                    cebolaRoxaItem.targets['4'] = 300;
                 }
 
                 saveDatabase();
