@@ -843,6 +843,12 @@
                 name: 'COXINHA NO BALCÃO REFRIGERADA',
                 unit: 'un',
                 targets: { '1': 7, '2': 7, '3': 0, '4': 15, '5': 20, '6': 20, '0': 25, 'feriado': 25 }
+            },
+            {
+                id: '10',
+                name: 'ALFACE CORTADA',
+                unit: 'kg',
+                targets: { '1': 1, '2': 1, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -909,6 +915,24 @@
                     frangoItem.targets['6'] = 8;
                     frangoItem.targets['0'] = 12;
                     frangoItem.targets['feriado'] = 12;
+                }
+
+                // Migração/Atualização: Se "ALFACE CORTADA" não existir nos itens salvos, adiciona/atualiza.
+                let alfaceItem = productionItems.find(item => item.name.toUpperCase().includes('ALFACE') || item.id === '10');
+                if (!alfaceItem) {
+                    alfaceItem = {
+                        id: '10',
+                        name: 'ALFACE CORTADA',
+                        unit: 'kg',
+                        targets: { '1': 1, '2': 1, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                    };
+                    productionItems.push(alfaceItem);
+                } else {
+                    alfaceItem.name = 'ALFACE CORTADA';
+                    alfaceItem.unit = 'kg';
+                    if (!alfaceItem.targets) alfaceItem.targets = {};
+                    alfaceItem.targets['1'] = 1;
+                    alfaceItem.targets['2'] = 1;
                 }
 
                 saveDatabase();
