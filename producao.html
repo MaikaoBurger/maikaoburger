@@ -855,6 +855,12 @@
                 name: 'CEBOLA ROXA',
                 unit: 'g',
                 targets: { '1': 250, '2': 250, '3': 0, '4': 300, '5': 500, '6': 500, '0': 700, 'feriado': 700 }
+            },
+            {
+                id: '12',
+                name: 'TOMATE',
+                unit: 'g',
+                targets: { '1': 500, '2': 500, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
             }
         ];
 
@@ -967,6 +973,24 @@
                     cebolaRoxaItem.targets['6'] = 500;
                     cebolaRoxaItem.targets['0'] = 700;
                     cebolaRoxaItem.targets['feriado'] = 700;
+                }
+
+                // Migração/Atualização: Se "TOMATE" não existir nos itens salvos, adiciona/atualiza.
+                let tomateItem = productionItems.find(item => item.name.toUpperCase().includes('TOMATE') || item.id === '12');
+                if (!tomateItem) {
+                    tomateItem = {
+                        id: '12',
+                        name: 'TOMATE',
+                        unit: 'g',
+                        targets: { '1': 500, '2': 500, '3': 0, '4': 0, '5': 0, '6': 0, '0': 0, 'feriado': 0 }
+                    };
+                    productionItems.push(tomateItem);
+                } else {
+                    tomateItem.name = 'TOMATE';
+                    tomateItem.unit = 'g';
+                    if (!tomateItem.targets) tomateItem.targets = {};
+                    tomateItem.targets['1'] = 500;
+                    tomateItem.targets['2'] = 500;
                 }
 
                 saveDatabase();
