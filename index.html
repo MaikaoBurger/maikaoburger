@@ -2411,6 +2411,21 @@
                     }
                 });
 
+                // Auto-adiciona novos itens padrão que estejam faltando no Firebase
+                DEFAULT_ESTOQUE_ITENS.forEach((item, idx) => {
+                    const normDefault = item.nome ? item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+                    const exists = Object.values(localEstoqueItens).some(it => {
+                        const normIt = it.nome ? it.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
+                        return normIt === normDefault;
+                    });
+                    if (!exists) {
+                        const newId = `item_default_${idx}`;
+                        const finalId = localEstoqueItens[newId] ? `item_auto_${Date.now()}_${idx}` : newId;
+                        localEstoqueItens[finalId] = { ...item, ativo: true };
+                        itemFieldsUpgraded = true;
+                    }
+                });
+
                 // Recuperação Automática das edições perdidas (Açúcar, Água, Ajinomoto, Alho, Bom Ar)
                 let restored = false;
                 Object.entries(localEstoqueItens).forEach(([id, it]) => {
@@ -5067,7 +5082,6 @@
 
             // MATERIAL DE LIMPEZA
             ["Detergente Clorado CDC 10 5L", "unidade", 0, "limpeza"],
-            ["Bom Ar", "unidade", 0, "limpeza"],
             ["Detergente 5L", "unidade", 0, "limpeza"],
             ["Esponja(Multiuso)", "pacotes", 1, "limpeza"],
             ["Esponja Aço Inoxidável", "unidade", 1, "limpeza"],
@@ -5082,12 +5096,37 @@
 
             // MATERIAL DE ESCRITÓRIO
             ["Bobina Impressora", "caixa", 1, "escritorio"],
-            ["Caixa Grampo", "caixa", 1, "escritorio"]
+            ["Caixa Grampo", "caixa", 1, "escritorio"],
+
+            // EMBALAGENS
+            ["Adesivos", "unidade", 0, "embalagens"],
+            ["Caixa Combo Infantil", "unidade", 0, "embalagens"],
+            ["Caixa Coxinha", "unidade", 0, "embalagens"],
+            ["Copo Milk 400 ml", "unidade", 0, "embalagens"],
+            ["Garrafa de suco 350ml", "unidade", 0, "embalagens"],
+            ["Papel Preto - 500 cx", "caixas", 0, "embalagens"],
+            ["Papel Vermelho - 500 cx", "caixas", 0, "embalagens"],
+            ["Pote 60ml Preto P/ Molhos", "unidade", 0, "embalagens"],
+            ["Pote 250ml Quadrado Bolo Pote", "pacotes", 0, "embalagens"],
+            ["Pote 250ml Redondo Bolo Pote", "pacotes", 0, "embalagens"],
+            ["Saco Delivery C/ Alça", "unidade", 0, "embalagens"],
+            ["Saco Delivery Sem Alça", "unidade", 0, "embalagens"],
+            ["Suporte para Copos (Berço)", "unidade", 0, "embalagens"],
+            ["Tampa C/ Furo G670", "unidade", 0, "embalagens"],
+            ["Saco Batata PP", "saco", 0, "embalagens"],
+            ["Saco Batata P", "saco", 0, "embalagens"],
+            ["Saco Batata G", "saco", 0, "embalagens"]
         ];
 
-        const DEFAULT_ESTOQUE_ITENS = RAW_ESTOQUE_ITENS.map(([nome, unidade, estoqueMinimo, grupo], idx) => ({
-            nome, unidade, preco: 0, estoqueMinimo, estoqueMaximo: 0, qtdPorCaixa: 1, grupo
-        }));
+        const DEFAULT_ESTOQUE_ITENS = RAW_ESTOQUE_ITENS.map(([nome, unidade, estoqueMinimo, grupo], idx) => {
+            let qtdPorCaixa = 1;
+            const normNome = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (normNome === "saco batata pp") qtdPorCaixa = 110;
+            else if (normNome === "saco batata p" || normNome === "saco batata g") qtdPorCaixa = 80;
+            return {
+                nome, unidade, preco: 0, estoqueMinimo, estoqueMaximo: 0, qtdPorCaixa, grupo
+            };
+        });
 
         // ── Controle de Estoque ──
         let localEstoqueItens = {};
