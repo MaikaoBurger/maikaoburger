@@ -1121,7 +1121,7 @@
                     const isBacon = item.name.toUpperCase().includes('BACON');
                     
                     if (isBacon) {
-                        const defaultRaw = Math.round((qty / 0.45) / 10) * 10;
+                        const defaultRaw = Math.ceil((qty / 0.45) / 50) * 50;
                         let displayRawQty = defaultRaw;
                         let displayRawUnit = 'g';
                         if (defaultRaw >= 1000) {
@@ -1203,7 +1203,7 @@
                 `;
             } else {
                 const needed = targetQty - leftover;
-                const rawQty = Math.round((needed / 0.45) / 10) * 10;
+                const rawQty = Math.ceil((needed / 0.45) / 50) * 50;
 
                 let displayNeededQty = needed;
                 let displayNeededUnit = 'g';
