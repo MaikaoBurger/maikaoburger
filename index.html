@@ -2399,73 +2399,10 @@
                 localEstoqueItens = estoqueData.itens || {};
                 
                 // Garante que todos os itens recebidos tenham os campos novos (estoqueMaximo e qtdPorCaixa) preenchidos
-                let itemFieldsUpgraded = false;
                 Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    if (it.estoqueMaximo === undefined) {
-                        it.estoqueMaximo = 0;
-                        itemFieldsUpgraded = true;
-                    }
-                    if (it.qtdPorCaixa === undefined) {
-                        it.qtdPorCaixa = 1;
-                        itemFieldsUpgraded = true;
-                    }
+                    if (it.estoqueMaximo === undefined) it.estoqueMaximo = 0;
+                    if (it.qtdPorCaixa === undefined) it.qtdPorCaixa = 1;
                 });
-
-                // Auto-adiciona novos itens padrão que estejam faltando no Firebase
-                DEFAULT_ESTOQUE_ITENS.forEach((item, idx) => {
-                    const normDefault = item.nome ? item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
-                    const exists = Object.values(localEstoqueItens).some(it => {
-                        const normIt = it.nome ? it.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
-                        return normIt === normDefault;
-                    });
-                    if (!exists) {
-                        const newId = `item_default_${idx}`;
-                        const finalId = localEstoqueItens[newId] ? `item_auto_${Date.now()}_${idx}` : newId;
-                        localEstoqueItens[finalId] = { ...item, ativo: true };
-                        itemFieldsUpgraded = true;
-                    }
-                });
-
-                // Recuperação Automática das edições perdidas (Açúcar, Água, Ajinomoto, Alho, Bom Ar)
-                let restored = false;
-                Object.entries(localEstoqueItens).forEach(([id, it]) => {
-                    const normalizedNome = it.nome ? it.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : "";
-                    if (normalizedNome === "acucar 1kg" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                        it.estoqueMaximo = 10;
-                        it.qtdPorCaixa = 10;
-                        restored = true;
-                    }
-                    if (normalizedNome === "agua com gas 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                        it.estoqueMaximo = 60;
-                        it.qtdPorCaixa = 12;
-                        restored = true;
-                    }
-                    if (normalizedNome === "agua mineral 500ml" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                        it.estoqueMaximo = 60;
-                        it.qtdPorCaixa = 12;
-                        restored = true;
-                    }
-                    if (normalizedNome === "ajinomoto" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                        it.estoqueMaximo = 5;
-                        it.qtdPorCaixa = 1;
-                        restored = true;
-                    }
-                    if (normalizedNome === "alho" && (parseFloat(it.estoqueMaximo) || 0) === 0) {
-                        it.estoqueMaximo = 1;
-                        restored = true;
-                    }
-                    if (normalizedNome === "bom ar") {
-                        delete localEstoqueItens[id];
-                        restored = true;
-                    }
-                });
-
-                if (itemFieldsUpgraded || restored) {
-                    alert("Restauração detectada! Enviando para o Firebase. Restored: " + restored + ", Upgraded: " + itemFieldsUpgraded);
-                    db.ref('estoque/itens').set(localEstoqueItens)
-                        .then(() => { alert("Firebase gravado com SUCESSO!"); })
-                        .catch(err => { alert("Erro de gravação no Firebase: " + err.message); });
-                }
 
                 const nextItensStr = JSON.stringify(localEstoqueItens);
                 if (localStorage.getItem('mb_estoque_itens') !== nextItensStr) {
@@ -5300,8 +5237,14 @@
                    unidLower === 'fardo';
         }
 
+        function isProducaoDiaria(min) {
+            if (!min) return false;
+            const str = String(min).toLowerCase();
+            return str.includes('produ') || str.includes('diaria') || str.includes('diá') || str.includes('ã');
+        }
+
         function formatarMinimoPill(min, unidade) {
-            if (min === "Produção Diária") {
+            if (isProducaoDiaria(min)) {
                 return "Prod. Diária";
             }
             if (unidade === 'kg') {
@@ -5333,7 +5276,7 @@
         }
 
         function getMinimoPillStyle(min) {
-            if (min === "Produção Diária") {
+            if (isProducaoDiaria(min)) {
                 return "background: #EFF6FF; color: #1D4ED8; border: 1px solid #DBEAFE;";
             }
             return "";
@@ -5461,7 +5404,7 @@
                 if (row) {
                     if (qtyStr !== '') {
                         let isLow = false;
-                        if (item.estoqueMinimo === "Produção Diária") {
+                        if (isProducaoDiaria(item.estoqueMinimo)) {
                             isLow = qtyKg <= 0;
                         } else {
                             const min = parseFloat(item.estoqueMinimo) || 0;
