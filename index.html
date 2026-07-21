@@ -5571,7 +5571,7 @@
 
                 html += items.map(it => {
                     let isLow = false;
-                    if (it.estoqueMinimo === "Produção Diária") {
+                    if (isProducaoDiaria(it.estoqueMinimo)) {
                         isLow = it.quantidade <= 0;
                     } else {
                         const min = parseFloat(it.estoqueMinimo) || 0;
@@ -5579,7 +5579,7 @@
                     }
                     const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row above-min';
                     const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
-                    const minLabel = it.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : `${it.estoqueMinimo} ${it.unidade}`;
+                    const minLabel = isProducaoDiaria(it.estoqueMinimo) ? "Prod. Diária" : `${it.estoqueMinimo} ${it.unidade}`;
                     
                     // Buscar item correspondente vivo para exibir Máx e Caixa
                     let liveItem = Object.values(localEstoqueItens).find(x => x.nome === it.nome);
@@ -5707,7 +5707,7 @@
                                         <span style="font-size: 9px; font-weight: 800; background: ${badgeBg}; color: ${badgeColor}; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">${badgeLabel}</span>
                                     </div>
                                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500;">
-                                        Mín: ${s.minimo === "Produção Diária" ? "Prod. Diária" : s.minimo} | Máx: ${s.maximo} ${s.unidade} | Atual: ${s.quantidade} ${s.unidade} ${isBox ? `| Caixa: ${s.caixa} un` : ''}
+                                        Mín: ${isProducaoDiaria(s.minimo) ? "Prod. Diária" : s.minimo} | Máx: ${s.maximo} ${s.unidade} | Atual: ${s.quantidade} ${s.unidade} ${isBox ? `| Caixa: ${s.caixa} un` : ''}
                                     </div>
                                 </div>
                                 <div style="text-align: right; font-size: 13px; font-weight: 800; color: ${pedirColor}; background: ${pedirBg}; border: 1px solid ${pedirBorder}; padding: 6px 12px; border-radius: 8px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
@@ -5770,7 +5770,7 @@
 
             sortedItens.forEach(it => {
                 let isLow = false;
-                if (it.estoqueMinimo === "Produção Diária") {
+                if (isProducaoDiaria(it.estoqueMinimo)) {
                     isLow = it.quantidade <= 0;
                 } else {
                     const min = parseFloat(it.estoqueMinimo) || 0;
@@ -5958,7 +5958,7 @@
             container.innerHTML = items.map(([id, item]) => {
                 const statusLabel = item.ativo ? '🟢 Ativo' : '🔴 Inativo';
                 const grpName = grpLabels[item.grupo || 'cmv'] || 'CMV';
-                const minLabel = item.estoqueMinimo === "Produção Diária" ? "Prod. Diária" : item.estoqueMinimo;
+                const minLabel = isProducaoDiaria(item.estoqueMinimo) ? "Prod. Diária" : item.estoqueMinimo;
                 const maxLabel = item.estoqueMaximo || 'Não def.';
                 const isFardo = isFardoItem(item.nome, item.unidade);
                 const labelName = isFardo ? 'Fardo' : 'Caixa';
@@ -6009,7 +6009,7 @@
             const checkbox = document.getElementById('estoque-item-minimo-pd');
             const input = document.getElementById('estoque-item-minimo');
             
-            if (item.estoqueMinimo === "Produção Diária") {
+            if (isProducaoDiaria(item.estoqueMinimo)) {
                 if (checkbox) checkbox.checked = true;
                 if (input) {
                     input.value = '';
