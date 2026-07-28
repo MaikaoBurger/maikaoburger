@@ -1994,6 +1994,7 @@
                         { text: 'Cortar tomate', pts: 5, skippable: true },
                         { text: 'Lavar laranja', pts: 10, skippable: true },
                         { text: 'Ligar a chapa, fritadeira e a toaster 30min antes de abrir', pts: 1, direct: true },
+                        { text: 'Ligar fritadeira menor', pts: 1, direct: true, days: SAB_DOM, includeHolidays: true },
                         { text: 'Ligar mesa aquecida e a máquina de cebola 30min antes de abrir', pts: 1, direct: true },
                         { text: 'Limpar a coifa', pts: 40, multi: true, skippable: true, weekly: true },
                         { text: 'Limpar atrás dos balcões', pts: 40, multi: true, skippable: true, weekly: true },
@@ -2501,12 +2502,43 @@
 
         function isItemActiveToday(item) {
             if (typeof item === 'string' || !item.days) return true;
+            
+            if (item.includeHolidays) {
+                const now = new Date();
+                const hoje = now.getDay();
+                const d = new Date(now);
+                d.setDate(now.getDate() + (selectedDay - hoje));
+                const dayStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                
+                const feriados = [
+                    '01/01', // Ano Novo
+                    '17/02', // Carnaval 2026
+                    '03/04', // Sexta-Feira Santa 2026
+                    '21/04', // Tiradentes
+                    '01/05', // Dia do Trabalho
+                    '04/06', // Corpus Christi 2026
+                    '07/09', // Independência
+                    '12/10', // Nossa Senhora Aparecida
+                    '02/11', // Finados
+                    '15/11', // Proclamação da República
+                    '20/11', // Dia da Consciência Negra
+                    '25/12', // Natal
+                ];
+                
+                if (feriados.includes(dayStr)) {
+                    return true;
+                }
+            }
+            
             return item.days.includes(selectedDay);
         }
 
         function itemDayTag(item) {
             if (typeof item === 'string' || !item.days) return '';
-            const label = item.days.map(d => DAY_ABBR[d]).join('/');
+            let label = item.days.map(d => DAY_ABBR[d]).join('/');
+            if (item.includeHolidays) {
+                label += '/Feriado';
+            }
             const cls = isItemActiveToday(item) ? 'day-tag-on' : 'day-tag-off';
             return `<span class="day-tag ${cls}">${label}</span>`;
         }
