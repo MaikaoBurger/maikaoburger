@@ -602,6 +602,19 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.05);
         }
 
+        .item.important:not(.checked):not(.iniciado) {
+            border-color: rgba(217, 119, 6, 0.4);
+            background: #FFFBEB;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.08);
+        }
+        .item.important:not(.checked):not(.iniciado) .box {
+            border-color: var(--secondary) !important;
+        }
+        .item.important:not(.checked):not(.iniciado) .item-text {
+            color: #B45309;
+            font-weight: 700;
+        }
+
         .item label {
             display: flex;
             align-items: center;
@@ -2101,8 +2114,8 @@
                         { text: 'Desligar o forno', skippable: true, pts: 1, direct: true },
                         { text: 'Desligar o microondas', pts: 1, direct: true },
                         { text: 'Desligar o registro da chapa', pts: 1, direct: true },
-                        { text: 'Desligar o registro geral do gás da loja', pts: 1, direct: true },
-                        { text: 'Desligar o registro geral do gás do QG', pts: 1, direct: true },
+                        { text: 'Desligar o registro geral do gás da loja', pts: 1, direct: true, important: true },
+                        { text: 'Desligar o registro geral do gás do QG', pts: 1, direct: true, important: true },
                         { text: 'Desligar a toaster', pts: 1, direct: true },
                         { text: 'Guardar os insumos corretamente', pts: 40, multi: true },
                         { text: 'Pesar a carne que sobrou e conferir a reserva', hasInput: true, inputUnit: 'kg', hasSelect: true, pts: 5, direct: true },
@@ -3812,7 +3825,10 @@
                         const editBtn = isActive && isAdmin()
                             ? `<button onclick="openEditItem('${id}',${si},${ii})" style="margin-left:6px;padding:3px 8px;background:none;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;color:#888;white-space:nowrap">✏️ Editar</button>`
                             : '';
-                        const itemClass = (isConcluido || isSkipped) ? 'checked' : isIniciado ? 'iniciado' : '';
+                        let itemClass = (isConcluido || isSkipped) ? 'checked' : isIniciado ? 'iniciado' : '';
+                        if (typeof item === 'object' && item.important) {
+                            itemClass += ' important';
+                        }
                         let meta = getCheckedMeta(id, si, ii);
 
                         const inputKey = `${id}_${si}_${ii}`;
