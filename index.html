@@ -5851,11 +5851,8 @@
                 return a.nome.localeCompare(b.nome);
             });
 
-            const groupsMap = {};
-            const grpKeys = ['cmv', 'jantar', 'embalagens', 'descartaveis', 'limpeza', 'escritorio'];
-            grpKeys.forEach(gk => {
-                groupsMap[gk] = [];
-            });
+            const abaixoItens = [];
+            const normaisItens = [];
 
             sortedItens.forEach(it => {
                 let isLow = false;
@@ -5901,42 +5898,46 @@
                     status: isLow ? 'ABAIXO DO MÍNIMO' : 'OK'
                 };
 
-                const gk = it.grupo || 'cmv';
-                if (!groupsMap[gk]) {
-                    groupsMap[gk] = [];
+                if (isLow) {
+                    abaixoItens.push(itemData);
+                } else {
+                    normaisItens.push(itemData);
                 }
-                groupsMap[gk].push(itemData);
             });
 
-            const globalTotalFormulaParts = [];
+            let firstItemRow = null;
+            let lastItemRow = null;
 
-            Object.keys(groupsMap).forEach(gk => {
-                const items = groupsMap[gk];
-                if (items.length === 0) return;
-
-                const grpName = grpLabels[gk] || gk.toUpperCase();
-                sheetLines.push(grpName.toUpperCase());
+            if (abaixoItens.length > 0) {
+                sheetLines.push(`ITENS ABAIXO OU IGUAL AO MÍNIMO`);
                 sheetLines.push(header);
-
-                const groupStartRow = sheetLines.length + 1;
-
-                items.forEach(it => {
+                abaixoItens.forEach(it => {
                     const nextRowIndex = sheetLines.length + 1;
+                    if (firstItemRow === null) firstItemRow = nextRowIndex;
+                    lastItemRow = nextRowIndex;
                     const formula = `=C${nextRowIndex}*E${nextRowIndex}`;
                     sheetLines.push(`${it.nome}\t${it.grupo}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario}\t${formula}\t${it.estoqueMinimo}\t${it.estoqueMaximo}\t${it.qtdPorCaixa}\t${it.tipoCompra}\t${it.sugestao}\t${it.status}`);
                 });
+            }
 
-                const groupEndRow = sheetLines.length;
-                const groupSumFormula = `=SUM(F${groupStartRow}:F${groupEndRow})`;
-                const totalRowIndex = sheetLines.length + 1;
-                
-                sheetLines.push(`VALOR TOTAL ${grpName.toUpperCase()}:\t\t\t\t\t${groupSumFormula}`);
-                globalTotalFormulaParts.push(`F${totalRowIndex}`);
+            if (normaisItens.length > 0) {
+                if (abaixoItens.length > 0) {
+                    sheetLines.push(``); // Separador
+                }
+                sheetLines.push(`ITENS NORMAIS`);
+                sheetLines.push(header);
+                normaisItens.forEach(it => {
+                    const nextRowIndex = sheetLines.length + 1;
+                    if (firstItemRow === null) firstItemRow = nextRowIndex;
+                    lastItemRow = nextRowIndex;
+                    const formula = `=C${nextRowIndex}*E${nextRowIndex}`;
+                    sheetLines.push(`${it.nome}\t${it.grupo}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario}\t${formula}\t${it.estoqueMinimo}\t${it.estoqueMaximo}\t${it.qtdPorCaixa}\t${it.tipoCompra}\t${it.sugestao}\t${it.status}`);
+                });
+            }
+
+            if (firstItemRow !== null && lastItemRow !== null) {
                 sheetLines.push(``); // Separador
-            });
-
-            if (globalTotalFormulaParts.length > 0) {
-                const globalSumFormula = `=${globalTotalFormulaParts.join('+')}`;
+                const globalSumFormula = `=SUM(F${firstItemRow}:F${lastItemRow})`;
                 sheetLines.push(`VALOR TOTAL DO ESTOQUE:\t\t\t\t\t${globalSumFormula}`);
             }
 
