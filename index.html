@@ -5490,11 +5490,12 @@
                 if (row) {
                     if (qtyStr !== '') {
                         let isLow = false;
+                        const qty = parseFloat(String(qtyKg).replace(',', '.')) || 0;
                         if (isProducaoDiaria(item.estoqueMinimo)) {
-                            isLow = qtyKg <= 0;
+                            isLow = qty <= 0;
                         } else {
-                            const min = parseFloat(item.estoqueMinimo) || 0;
-                            isLow = qtyKg <= min;
+                            const min = parseFloat(String(item.estoqueMinimo).replace(',', '.')) || 0;
+                            isLow = min > 0 && qty <= min;
                         }
                         if (isLow) {
                             row.classList.add('low-stock');
@@ -5657,11 +5658,12 @@
 
                 html += items.map(it => {
                     let isLow = false;
+                    const qty = parseFloat(String(it.quantidade).replace(',', '.')) || 0;
                     if (isProducaoDiaria(it.estoqueMinimo)) {
-                        isLow = it.quantidade <= 0;
+                        isLow = qty <= 0;
                     } else {
-                        const min = parseFloat(it.estoqueMinimo) || 0;
-                        isLow = it.quantidade <= min;
+                        const min = parseFloat(String(it.estoqueMinimo).replace(',', '.')) || 0;
+                        isLow = min > 0 && qty <= min;
                     }
                     const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row above-min';
                     const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
@@ -5851,16 +5853,29 @@
                 return a.nome.localeCompare(b.nome);
             });
 
+            function formatExcelValue(val) {
+                if (val === undefined || val === null) return '';
+                if (typeof val === 'number') {
+                    return val.toString().replace('.', ',');
+                }
+                const strVal = String(val).trim();
+                if (strVal && !isNaN(Number(strVal.replace(',', '.')))) {
+                    return strVal.replace('.', ',');
+                }
+                return val;
+            }
+
             const abaixoItens = [];
             const normaisItens = [];
 
             sortedItens.forEach(it => {
                 let isLow = false;
+                const qty = parseFloat(String(it.quantidade).replace(',', '.')) || 0;
                 if (isProducaoDiaria(it.estoqueMinimo)) {
-                    isLow = it.quantidade <= 0;
+                    isLow = qty <= 0;
                 } else {
-                    const min = parseFloat(it.estoqueMinimo) || 0;
-                    isLow = it.quantidade <= min;
+                    const min = parseFloat(String(it.estoqueMinimo).replace(',', '.')) || 0;
+                    isLow = min > 0 && qty <= min;
                 }
                 
                 // Buscar item vivo correspondente para pegar estoqueMaximo, qtdPorCaixa e preco
@@ -5871,16 +5886,16 @@
                 
                 let sugestao = '-';
                 let tipoCompra = '-';
-                if (max > 0 && it.quantidade < max) {
+                if (max > 0 && qty < max) {
                     const isFardo = isFardoItem(it.nome, it.unidade);
                     tipoCompra = packSize > 1 ? (isFardo ? 'Fardo Fechado' : 'Caixa Fechada') : 'Unidade';
-                    const missing = max - it.quantidade;
+                    const missing = max - qty;
                     if (packSize > 1) {
                         const boxes = Math.ceil(missing / packSize);
                         const unitLabel = isFardo ? (boxes > 1 ? 'fardos' : 'fardo') : (boxes > 1 ? 'caixas' : 'caixa');
                         sugestao = `${boxes} ${unitLabel} (com ${packSize} un)`;
                     } else {
-                        sugestao = `${missing.toFixed(1).replace('.0', '')} ${it.unidade}`;
+                        sugestao = `${missing.toFixed(1).replace('.', ',').replace(',0', '')} ${it.unidade}`;
                     }
                 }
                 
@@ -5916,7 +5931,7 @@
                     if (firstItemRow === null) firstItemRow = nextRowIndex;
                     lastItemRow = nextRowIndex;
                     const formula = `=C${nextRowIndex}*E${nextRowIndex}`;
-                    sheetLines.push(`${it.nome}\t${it.grupo}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario}\t${formula}\t${it.estoqueMinimo}\t${it.estoqueMaximo}\t${it.qtdPorCaixa}\t${it.tipoCompra}\t${it.sugestao}\t${it.status}`);
+                    sheetLines.push(`${it.nome}\t${it.grupo}\t${formatExcelValue(it.quantidade)}\t${it.unidade}\t${formatExcelValue(it.precoUnitario)}\t${formula}\t${formatExcelValue(it.estoqueMinimo)}\t${formatExcelValue(it.estoqueMaximo)}\t${formatExcelValue(it.qtdPorCaixa)}\t${it.tipoCompra}\t${it.sugestao}\t${it.status}`);
                 });
             }
 
@@ -5931,13 +5946,13 @@
                     if (firstItemRow === null) firstItemRow = nextRowIndex;
                     lastItemRow = nextRowIndex;
                     const formula = `=C${nextRowIndex}*E${nextRowIndex}`;
-                    sheetLines.push(`${it.nome}\t${it.grupo}\t${it.quantidade}\t${it.unidade}\t${it.precoUnitario}\t${formula}\t${it.estoqueMinimo}\t${it.estoqueMaximo}\t${it.qtdPorCaixa}\t${it.tipoCompra}\t${it.sugestao}\t${it.status}`);
+                    sheetLines.push(`${it.nome}\t${it.grupo}\t${formatExcelValue(it.quantidade)}\t${it.unidade}\t${formatExcelValue(it.precoUnitario)}\t${formula}\t${formatExcelValue(it.estoqueMinimo)}\t${formatExcelValue(it.estoqueMaximo)}\t${formatExcelValue(it.qtdPorCaixa)}\t${it.tipoCompra}\t${it.sugestao}\t${it.status}`);
                 });
             }
 
             if (firstItemRow !== null && lastItemRow !== null) {
                 sheetLines.push(``); // Separador
-                const globalSumFormula = `=SUM(F${firstItemRow}:F${lastItemRow})`;
+                const globalSumFormula = `=SOMA(F${firstItemRow}:F${lastItemRow})`;
                 sheetLines.push(`VALOR TOTAL DO ESTOQUE:\t\t\t\t\t${globalSumFormula}`);
             }
 
