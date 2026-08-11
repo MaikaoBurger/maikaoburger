@@ -5348,7 +5348,7 @@
                 return;
             }
 
-            container.innerHTML = items.map(([id, item]) => {
+            const renderRow = ([id, item]) => {
                 const isKg = item.unidade === 'kg';
                 const qtyVal = localContagemQty[id] || '';
                 return `
@@ -5380,7 +5380,52 @@
                         </div>
                     </div>
                 `;
-            }).join('');
+            };
+
+            const isSeparated = (nome) => {
+                if (!nome) return false;
+                const n = nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return (
+                    n.includes("pote 30ml") || 
+                    n.includes("pote 30 ml") || 
+                    n.includes("pote 60ml") ||
+                    n.includes("pote 60 ml") ||
+                    n.includes("molhos") ||
+                    n.includes("garrafa de suco") || 
+                    n.includes("garrfa de suco") ||
+                    n.includes("garrafa suco")
+                );
+            };
+
+            let html = '';
+            if (currentEstoqueGroup === 'embalagens') {
+                const separated = items.filter(([_, item]) => isSeparated(item.nome));
+                const normal = items.filter(([_, item]) => !isSeparated(item.nome));
+
+                if (separated.length > 0) {
+                    html += `
+                        <div style="font-family: var(--font-title); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--primary-light); padding: 12px 14px 6px; display: flex; align-items: center; gap: 8px; background: #fff;">
+                            <span>Pote 30ml & Garrafa de Suco</span>
+                            <span style="flex: 1; height: 1.5px; background: linear-gradient(90deg, var(--border), transparent);"></span>
+                        </div>
+                    `;
+                    html += separated.map(renderRow).join('');
+                }
+
+                if (normal.length > 0) {
+                    html += `
+                        <div style="font-family: var(--font-title); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--primary-light); padding: 20px 14px 6px; display: flex; align-items: center; gap: 8px; background: #fff;">
+                            <span>Outras Embalagens</span>
+                            <span style="flex: 1; height: 1.5px; background: linear-gradient(90deg, var(--border), transparent);"></span>
+                        </div>
+                    `;
+                    html += normal.map(renderRow).join('');
+                }
+            } else {
+                html = items.map(renderRow).join('');
+            }
+
+            container.innerHTML = html;
 
             atualizarEstoqueTotais();
         }
