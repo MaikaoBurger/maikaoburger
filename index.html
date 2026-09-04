@@ -5918,7 +5918,7 @@
                     isLow = qty <= 0;
                 } else {
                     const min = parseFloat(String(it.estoqueMinimo).replace(',', '.')) || 0;
-                    isLow = min > 0 && qty <= min;
+                    isLow = qty <= min;
                 }
                 
                 // Buscar item vivo correspondente para pegar estoqueMaximo, qtdPorCaixa e preco
