@@ -1639,33 +1639,43 @@
         }
         .louca-chips-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 8px;
         }
         .louca-chip {
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 700;
+            padding: 8px 6px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
             text-align: center;
             cursor: pointer;
-            border: 1.5px solid #E5E7EB;
-            background: #F3F4F6;
-            color: #9CA3AF;
+            border: 2px dashed #EF4444;
+            background: #FEF2F2;
+            color: #991B1B;
             transition: all 0.2s;
             user-select: none;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            text-decoration: line-through;
+            gap: 4px;
+            min-height: 52px;
         }
         .louca-chip.active {
-            background: rgba(122, 18, 30, 0.08);
-            border-color: var(--primary);
+            background: #FFFFFF;
+            border: 2px solid var(--primary);
             color: var(--primary);
             font-weight: 800;
-            text-decoration: none;
+        }
+        .louca-chip-badge-folga {
+            background: #EF4444;
+            color: #FFFFFF;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
         .louca-wheel-card {
             background: linear-gradient(135deg, #2A1114, #18090B);
@@ -6726,8 +6736,11 @@
                                 const active = loucaAtivos.includes(nome);
                                 return `
                                     <div class="louca-chip ${active ? 'active' : ''}" onclick="toggleLoucaParticipant('${nome}')">
-                                        <span>${active ? '✓' : '💤'}</span>
-                                        <span>${nome}${active ? '' : ' (Folga)'}</span>
+                                        <div style="display: flex; align-items: center; gap: 4px;">
+                                            <span>${active ? '✓' : '💤'}</span>
+                                            <span>${nome}</span>
+                                        </div>
+                                        ${active ? '' : '<span class="louca-chip-badge-folga">FOLGA</span>'}
                                     </div>
                                 `;
                             }).join('')}
