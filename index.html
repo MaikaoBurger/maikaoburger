@@ -1526,6 +1526,269 @@
             color: var(--primary-light) !important;
             box-shadow: var(--shadow-sm);
         }
+
+        /* ── Modal Sorteio da Louça ── */
+        .louca-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(26, 10, 12, 0.72);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-y: auto;
+            animation: fadeIn 0.25s ease;
+        }
+        .louca-overlay.open {
+            display: flex;
+        }
+        .louca-modal {
+            background: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: var(--shadow-premium);
+            margin: auto;
+            align-self: center;
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .louca-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        .louca-title {
+            font-family: var(--font-title);
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .louca-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .louca-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+        .louca-close:hover {
+            color: var(--primary);
+            background: #f5f5f5;
+        }
+        .louca-tabs {
+            display: flex;
+            background: #F3F0EC;
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+        .louca-tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: none;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .louca-tab-btn.active {
+            background: #FFFFFF;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+        .louca-participants-box {
+            margin-bottom: 18px;
+        }
+        .louca-section-label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .louca-chips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+            gap: 8px;
+        }
+        .louca-chip {
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            border: 1.5px solid var(--border);
+            background: #FAFAFA;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .louca-chip.active {
+            background: rgba(122, 18, 30, 0.08);
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 800;
+        }
+        .louca-wheel-card {
+            background: linear-gradient(135deg, #2A1114, #18090B);
+            border: 2px solid var(--secondary);
+            border-radius: 18px;
+            padding: 24px 16px;
+            text-align: center;
+            margin-bottom: 18px;
+            box-shadow: 0 10px 25px rgba(42, 17, 20, 0.35), inset 0 0 20px rgba(217, 119, 6, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .louca-wheel-pointer {
+            font-size: 24px;
+            color: var(--secondary-light);
+            margin-bottom: 4px;
+            animation: bouncePointer 1s infinite alternate ease-in-out;
+        }
+        @keyframes bouncePointer {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(5px); }
+        }
+        .louca-wheel-reel {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 16px;
+            font-family: var(--font-title);
+            font-size: 24px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: 0.5px;
+            min-height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        .louca-wheel-reel.highlight {
+            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.2);
+            border-color: #F59E0B;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .btn-girar-louca {
+            background: linear-gradient(135deg, var(--secondary-light), #B45309);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 14px;
+            padding: 16px;
+            font-family: var(--font-title);
+            font-size: 16px;
+            font-weight: 800;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(217, 119, 6, 0.3);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-girar-louca:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(217, 119, 6, 0.4);
+        }
+        .btn-girar-louca:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .louca-locked-card {
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(240, 253, 244, 0.8));
+            border: 2px solid #10B981;
+            border-radius: 18px;
+            padding: 24px 18px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .louca-locked-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #10B981;
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .louca-winner-name {
+            font-family: var(--font-title);
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 8px 0;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+        .louca-locked-info {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .louca-lock-notice {
+            background: #FFFFFF;
+            border: 1px dashed rgba(16, 185, 129, 0.5);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: #065F46;
+            font-weight: 600;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
     </style>
 </head>
 
@@ -1920,6 +2183,29 @@
 
                 <!-- Lista de itens cadastrados para gerenciar -->
                 <div id="estoque-lista-gerenciar" style="flex: 1; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal Sorteio da Louça -->
+    <div class="louca-overlay" id="louca-overlay" onclick="loucaOverlayClick(event)">
+        <div class="louca-modal">
+            <div class="louca-header">
+                <div>
+                    <div class="louca-title">🍽️ Sorteio da Louça</div>
+                    <div class="louca-sub" id="louca-header-sub">Quem lava os pratos hoje?</div>
+                </div>
+                <button class="louca-close" onclick="closeSorteioLouca()" title="Fechar">×</button>
+            </div>
+
+            <div class="louca-tabs">
+                <button class="louca-tab-btn active" id="louca-tab-sorteio-btn" onclick="switchLoucaTab('sorteio')">🎰 Sorteio de Hoje</button>
+                <button class="louca-tab-btn" id="louca-tab-hist-btn" onclick="switchLoucaTab('historico')">📜 Histórico da Pia</button>
+            </div>
+
+            <div class="louca-body" id="louca-body" style="flex: 1; overflow-y: auto;">
+                <!-- Preenchido via JS -->
             </div>
         </div>
     </div>
@@ -2483,6 +2769,18 @@
                 if (document.getElementById('rank-overlay')?.classList.contains('open')) {
                     const selectedMonth = document.getElementById('rank-month-select')?.value || getYearMonth();
                     openRanking(selectedMonth);
+                }
+                if (data.sorteio_louca !== undefined) {
+                    localStorage.setItem('mb_sorteio_louca', JSON.stringify(data.sorteio_louca || {}));
+                    if (document.getElementById('louca-overlay')?.classList.contains('open')) {
+                        renderSorteioLoucaUI();
+                    }
+                }
+                if (data.sorteio_louca_hist !== undefined) {
+                    localStorage.setItem('mb_sorteio_louca_hist', JSON.stringify(data.sorteio_louca_hist || []));
+                    if (document.getElementById('louca-overlay')?.classList.contains('open') && typeof currentLoucaTab !== 'undefined' && currentLoucaTab === 'historico') {
+                        renderSorteioLoucaUI();
+                    }
                 }
                 setSyncUI('online');
             }, err => {
@@ -3617,6 +3915,9 @@
                     </button>
                     <button class="sel-btn-abertura" onclick="openEstoque()" style="margin-top: 10px; background: linear-gradient(135deg, #10B981, #059669); border: none; width: 100%; padding: 18px 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);">
                         <span>📦</span> Controle de Estoque
+                    </button>
+                    <button class="sel-btn-abertura" onclick="openSorteioLouca()" style="margin-top: 10px; background: linear-gradient(135deg, #7A121E, #9B1E2E); border: none; width: 100%; padding: 18px 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(122, 18, 30, 0.25);">
+                        <span>🍽️</span> Sorteio da Louça
                     </button>
                 </div>
             `;
@@ -6262,6 +6563,278 @@
                 delete localEstoqueItens[id];
                 saveEstoqueItens(localEstoqueItens);
                 renderEstoqueListaGerenciar();
+            }
+        }
+
+        // ==========================================
+        // SISTEMA: SORTEIO DA LOUÇA (TRAVA DIÁRIA)
+        // ==========================================
+        const NOMES_LOUCA = ['Marcelo', 'Vitória', 'Israel', 'Gabriel', 'Wil', 'Daniel', 'Folguista'];
+        let loucaAtivos = [...NOMES_LOUCA];
+        let currentLoucaTab = 'sorteio';
+        let isSpinningLouca = false;
+
+        function loadTodayLoucaData() {
+            try {
+                const raw = localStorage.getItem('mb_sorteio_louca');
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                if (data && data.data === today()) {
+                    return data;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function loadLoucaHistory() {
+            try {
+                const raw = localStorage.getItem('mb_sorteio_louca_hist');
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLoucaHistory(hist) {
+            localStorage.setItem('mb_sorteio_louca_hist', JSON.stringify(hist));
+            db.ref('sorteio_louca_hist').set(hist).catch(() => {});
+        }
+
+        function openSorteioLouca() {
+            currentLoucaTab = 'sorteio';
+            document.getElementById('louca-overlay')?.classList.add('open');
+            renderSorteioLoucaUI();
+        }
+
+        function closeSorteioLouca() {
+            if (isSpinningLouca) return;
+            document.getElementById('louca-overlay')?.classList.remove('open');
+        }
+
+        function loucaOverlayClick(e) {
+            if (isSpinningLouca) return;
+            if (e.target === document.getElementById('louca-overlay')) {
+                closeSorteioLouca();
+            }
+        }
+
+        function switchLoucaTab(tab) {
+            if (isSpinningLouca) return;
+            currentLoucaTab = tab;
+            document.getElementById('louca-tab-sorteio-btn')?.classList.toggle('active', tab === 'sorteio');
+            document.getElementById('louca-tab-hist-btn')?.classList.toggle('active', tab === 'historico');
+            renderSorteioLoucaUI();
+        }
+
+        function toggleLoucaParticipant(name) {
+            if (isSpinningLouca) return;
+            if (loucaAtivos.includes(name)) {
+                if (loucaAtivos.length <= 1) {
+                    alert('Precisa ter pelo menos 1 funcionário selecionado.');
+                    return;
+                }
+                loucaAtivos = loucaAtivos.filter(n => n !== name);
+            } else {
+                loucaAtivos.push(name);
+            }
+            renderSorteioLoucaUI();
+        }
+
+        function renderSorteioLoucaUI() {
+            const body = document.getElementById('louca-body');
+            if (!body) return;
+
+            const todayData = loadTodayLoucaData();
+
+            if (currentLoucaTab === 'historico') {
+                const hist = loadLoucaHistory();
+                if (!hist || hist.length === 0) {
+                    body.innerHTML = `
+                        <div style="text-align: center; color: var(--text-muted); padding: 40px 10px; font-weight: 600;">
+                            <div style="font-size: 38px; margin-bottom: 8px;">🍽️</div>
+                            Nenhum sorteio registrado ainda no histórico.
+                        </div>
+                    `;
+                    return;
+                }
+
+                body.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+                            Últimos Responsáveis pela Louça:
+                        </div>
+                        ${hist.slice().reverse().map(item => `
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #FAF8F5; border: 1px solid var(--border); border-radius: 12px;">
+                                <div>
+                                    <div style="font-weight: 800; font-size: 15px; color: var(--text);">${item.sorteado}</div>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Data: ${item.data} às ${item.horario}</div>
+                                </div>
+                                <span style="font-size: 20px;">🧼</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                return;
+            }
+
+            // Tab Sorteio
+            if (todayData) {
+                // JÁ SORTEOU HOJE - EXIBE A TRAVA
+                body.innerHTML = `
+                    <div class="louca-locked-card">
+                        <div class="louca-locked-badge">
+                            <span>✅</span> Sorteio de Hoje Finalizado
+                        </div>
+                        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                            Responsável da Louça de Hoje:
+                        </div>
+                        <div class="louca-winner-name">${todayData.sorteado}</div>
+                        <div class="louca-locked-info">
+                            📅 Data: <strong>${todayData.data}</strong> às <strong>${todayData.horario}</strong>
+                        </div>
+                        <div class="louca-lock-notice">
+                            <span style="font-size: 18px;">🔒</span>
+                            <div>
+                                <strong>Trava de Segurança Ativa:</strong><br>
+                                O sorteio é único por dia para evitar arengas. Novo sorteio liberado apenas amanhã!
+                            </div>
+                        </div>
+                        ${isAdmin() ? `
+                            <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 12px;">
+                                <button onclick="resetSorteioLoucaAdmin()" style="background: none; border: 1px solid #FCA5A5; color: #DC2626; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
+                                    🔓 Reiniciar Sorteio de Hoje (Admin)
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                // AINDA NÃO SORTEOU HOJE - EXIBE ROLETA E SELETOR DE PRESENTES
+                body.innerHTML = `
+                    <div class="louca-participants-box">
+                        <div class="louca-section-label">
+                            <span>1. Quem está trabalhando hoje?</span>
+                            <span style="font-size: 10px; color: var(--primary); font-weight: 700;">${loucaAtivos.length} presentes</span>
+                        </div>
+                        <div class="louca-chips-grid">
+                            ${NOMES_LOUCA.map(nome => {
+                                const active = loucaAtivos.includes(nome);
+                                return `
+                                    <div class="louca-chip ${active ? 'active' : ''}" onclick="toggleLoucaParticipant('${nome}')">
+                                        <span>${active ? '✓' : '✗'}</span>
+                                        <span>${nome}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: right;">
+                            Toque no nome para desmarcar quem estiver de folga.
+                        </div>
+                    </div>
+
+                    <div class="louca-wheel-card">
+                        <div class="louca-wheel-pointer">▼</div>
+                        <div class="louca-wheel-reel" id="louca-wheel-reel">
+                            ${loucaAtivos.length > 0 ? loucaAtivos[0] : '---'}
+                        </div>
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 8px; font-weight: 600;">
+                            Roleta Oficial Anti-Arenga 🍽️
+                        </div>
+                    </div>
+
+                    <button class="btn-girar-louca" id="btn-girar-louca" onclick="girarRoletaLouca()" ${loucaAtivos.length === 0 ? 'disabled' : ''}>
+                        <span>🎰</span> GIRAR ROLETA DA LOUÇA
+                    </button>
+                `;
+            }
+        }
+
+        function girarRoletaLouca() {
+            if (isSpinningLouca) return;
+            if (loucaAtivos.length === 0) {
+                alert('Selecione pelo menos um funcionário para o sorteio.');
+                return;
+            }
+
+            const todayData = loadTodayLoucaData();
+            if (todayData) {
+                alert('O sorteio de hoje já foi realizado!');
+                renderSorteioLoucaUI();
+                return;
+            }
+
+            isSpinningLouca = true;
+            unlockAudio();
+
+            const reel = document.getElementById('louca-wheel-reel');
+            const btn = document.getElementById('btn-girar-louca');
+            if (btn) btn.disabled = true;
+
+            // Embaralhar para decidir o ganhador
+            const pool = [...loucaAtivos];
+            const winner = pool[Math.floor(Math.random() * pool.length)];
+
+            // Ciclo de rotação animada
+            let speed = 60; // ms
+            let count = 0;
+            const totalTicks = 25 + Math.floor(Math.random() * 8);
+
+            function tick() {
+                count++;
+                const candidate = pool[count % pool.length];
+                if (reel) {
+                    reel.textContent = candidate;
+                    reel.classList.remove('highlight');
+                }
+                playCoinSound();
+
+                if (count < totalTicks) {
+                    if (count > totalTicks - 10) {
+                        speed += 35; // Desacelera no final para suspense
+                    }
+                    setTimeout(tick, speed);
+                } else {
+                    // Parou no ganhador definitivo!
+                    if (reel) {
+                        reel.textContent = winner;
+                        reel.classList.add('highlight');
+                    }
+                    playVictorySound();
+                    triggerConfetti();
+
+                    const drawRecord = {
+                        data: today(),
+                        horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                        sorteado: winner,
+                        participantes: [...loucaAtivos],
+                        timestamp: Date.now()
+                    };
+
+                    // Salva o sorteio do dia no LocalStorage e Firebase
+                    localStorage.setItem('mb_sorteio_louca', JSON.stringify(drawRecord));
+                    db.ref('sorteio_louca').set(drawRecord).catch(() => {});
+
+                    // Atualiza histórico
+                    const hist = loadLoucaHistory();
+                    hist.push(drawRecord);
+                    saveLoucaHistory(hist);
+
+                    setTimeout(() => {
+                        isSpinningLouca = false;
+                        renderSorteioLoucaUI();
+                    }, 2200);
+                }
+            }
+
+            tick();
+        }
+
+        function resetSorteioLoucaAdmin() {
+            if (!isAdmin()) return;
+            if (confirm('Atenção: Deseja realmente reiniciar o sorteio de hoje? Faça isso apenas em caso de emergência.')) {
+                localStorage.removeItem('mb_sorteio_louca');
+                db.ref('sorteio_louca').remove().catch(() => {});
+                renderSorteioLoucaUI();
             }
         }
 
