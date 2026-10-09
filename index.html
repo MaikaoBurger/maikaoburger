@@ -6711,7 +6711,17 @@
                                 O sorteio é realizado uma única vez por dia. Novo sorteio liberado amanhã!
                             </div>
                         </div>
-                        ${isAdmin() ? `
+                        ${today() === '09/10/2026' ? `
+                            <div style="margin-top: 14px;">
+                                <button class="btn-girar-louca" onclick="demoReplayLouca()" style="font-size: 14px; padding: 13px; border-radius: 12px; width: 100%;">
+                                    <span>🔄</span> Girar Novamente (Modo Demonstração)
+                                </button>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; font-weight: 600;">
+                                    *Liberado apenas hoje (09/10) para demonstração com a equipe. A partir de amanhã trava automaticamente.
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${isAdmin() && today() !== '09/10/2026' ? `
                             <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 12px;">
                                 <button onclick="resetSorteioLoucaAdmin()" style="background: none; border: 1px solid #FCA5A5; color: #DC2626; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
                                     🔓 Reiniciar Sorteio de Hoje (Admin)
@@ -6769,7 +6779,7 @@
             }
 
             const todayData = loadTodayLoucaData();
-            if (todayData) {
+            if (todayData && today() !== '09/10/2026') {
                 alert('O sorteio de hoje já foi realizado!');
                 renderSorteioLoucaUI();
                 return;
@@ -6848,6 +6858,12 @@
                 db.ref('sorteio_louca').remove().catch(() => {});
                 renderSorteioLoucaUI();
             }
+        }
+
+        function demoReplayLouca() {
+            localStorage.removeItem('mb_sorteio_louca');
+            db.ref('sorteio_louca').remove().catch(() => {});
+            renderSorteioLoucaUI();
         }
 
         updateSoundBtnUI();
