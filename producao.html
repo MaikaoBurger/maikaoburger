@@ -806,7 +806,7 @@
                 id: '3',
                 name: 'ARTESANAL DE FRANGO CONSERVADOR',
                 unit: 'un',
-                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 8, '0': 12, 'feriado': 12 }
+                targets: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 12, '0': 16, 'feriado': 16 }
             },
             {
                 id: '4',
@@ -930,9 +930,9 @@
                 let frangoItem = productionItems.find(item => item.name.toUpperCase().includes('ARTESANAL DE FRANGO') || item.id === '3');
                 if (frangoItem) {
                     if (!frangoItem.targets) frangoItem.targets = {};
-                    frangoItem.targets['6'] = 8;
-                    frangoItem.targets['0'] = 12;
-                    frangoItem.targets['feriado'] = 12;
+                    frangoItem.targets['6'] = 12;
+                    frangoItem.targets['0'] = 16;
+                    frangoItem.targets['feriado'] = 16;
                 }
 
                 // Migração/Atualização: Se "ALFACE CORTADA" não existir nos itens salvos, adiciona/atualiza.
