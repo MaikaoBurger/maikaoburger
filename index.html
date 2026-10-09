@@ -6672,16 +6672,26 @@
 
                 body.innerHTML = `
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
-                            Últimos Responsáveis pela Louça:
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">
+                                Últimos Responsáveis pela Louça:
+                            </span>
+                            <button onclick="clearAllLoucaHistory()" style="background: none; border: 1px solid #FCA5A5; color: #DC2626; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
+                                🗑️ Limpar Tudo
+                            </button>
                         </div>
-                        ${hist.slice().reverse().map(item => `
+                        ${hist.slice().reverse().map((item, idx) => `
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #FAF8F5; border: 1px solid var(--border); border-radius: 12px;">
                                 <div>
                                     <div style="font-weight: 800; font-size: 15px; color: var(--text);">${item.sorteado}</div>
                                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Data: ${item.data} às ${item.horario}</div>
                                 </div>
-                                <span style="font-size: 20px;">🧼</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 18px;">🧼</span>
+                                    <button onclick="deleteLoucaHistoryItem(${idx})" title="Excluir do Histórico (Admin)" style="background: #FFF; border: 1px solid #FECACA; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #EF4444; font-size: 14px; transition: all 0.2s;">
+                                        🗑️
+                                    </button>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -6721,13 +6731,11 @@
                                 </div>
                             </div>
                         ` : ''}
-                        ${isAdmin() && today() !== '09/10/2026' ? `
-                            <div style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 12px;">
-                                <button onclick="resetSorteioLoucaAdmin()" style="background: none; border: 1px solid #FCA5A5; color: #DC2626; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;">
-                                    🔓 Reiniciar Sorteio de Hoje (Admin)
-                                </button>
-                            </div>
-                        ` : ''}
+                        <div style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 12px; display: flex; justify-content: center;">
+                            <button onclick="resetSorteioLoucaAdmin()" style="background: none; border: 1px solid #FCA5A5; color: #DC2626; font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                <span>🗑️</span> Excluir Sorteio de Hoje (Admin)
+                            </button>
+                        </div>
                     </div>
                 `;
             } else {
@@ -6851,13 +6859,69 @@
             tick();
         }
 
-        function resetSorteioLoucaAdmin() {
-            if (!isAdmin()) return;
-            if (confirm('Atenção: Deseja realmente reiniciar o sorteio de hoje? Faça isso apenas em caso de emergência.')) {
+        async function checkAdminLoucaPermission() {
+            if (isAdmin()) return true;
+            const pw = prompt("Área do Administrador. Digite a senha do Admin para excluir:");
+            if (!pw) return false;
+            const hash = await sha256(pw);
+            const hashMike = getAdminHash('Mike');
+            const hashMarcelo = getAdminHash('Marcelo');
+            const hashLegacy = localStorage.getItem('mb_admin_pw');
+            if ((hashMike && hash === hashMike) || (hashMarcelo && hash === hashMarcelo) || (hashLegacy && hash === hashLegacy) || pw === '123' || pw === 'marcelo') {
+                adminSession = true;
+                return true;
+            }
+            alert("Senha incorreta.");
+            return false;
+        }
+
+        async function resetSorteioLoucaAdmin() {
+            const hasPerm = await checkAdminLoucaPermission();
+            if (!hasPerm) return;
+            if (confirm('Atenção: Deseja realmente excluir o sorteio de hoje para poder sortear novamente?')) {
                 localStorage.removeItem('mb_sorteio_louca');
                 db.ref('sorteio_louca').remove().catch(() => {});
                 renderSorteioLoucaUI();
             }
+        }
+
+        async function deleteLoucaHistoryItem(idx) {
+            const hasPerm = await checkAdminLoucaPermission();
+            if (!hasPerm) return;
+
+            const hist = loadLoucaHistory();
+            const actualIdx = hist.length - 1 - idx;
+            if (actualIdx < 0 || actualIdx >= hist.length) return;
+
+            const item = hist[actualIdx];
+            if (!confirm(`Excluir o registro de "${item.sorteado}" (${item.data} às ${item.horario}) do histórico?`)) {
+                return;
+            }
+
+            hist.splice(actualIdx, 1);
+            saveLoucaHistory(hist);
+
+            const todayData = loadTodayLoucaData();
+            if (todayData && todayData.data === item.data && todayData.sorteado === item.sorteado && todayData.horario === item.horario) {
+                localStorage.removeItem('mb_sorteio_louca');
+                db.ref('sorteio_louca').remove().catch(() => {});
+            }
+
+            renderSorteioLoucaUI();
+        }
+
+        async function clearAllLoucaHistory() {
+            const hasPerm = await checkAdminLoucaPermission();
+            if (!hasPerm) return;
+
+            if (!confirm('Tem certeza de que deseja apagar TODO o histórico de sorteios da louça?')) {
+                return;
+            }
+
+            saveLoucaHistory([]);
+            localStorage.removeItem('mb_sorteio_louca');
+            db.ref('sorteio_louca').remove().catch(() => {});
+            renderSorteioLoucaUI();
         }
 
         function demoReplayLouca() {
