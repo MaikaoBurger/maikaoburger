@@ -1649,21 +1649,23 @@
             font-weight: 700;
             text-align: center;
             cursor: pointer;
-            border: 1.5px solid var(--border);
-            background: #FAFAFA;
-            color: var(--text-muted);
+            border: 1.5px solid #E5E7EB;
+            background: #F3F4F6;
+            color: #9CA3AF;
             transition: all 0.2s;
             user-select: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 5px;
+            text-decoration: line-through;
         }
         .louca-chip.active {
             background: rgba(122, 18, 30, 0.08);
             border-color: var(--primary);
             color: var(--primary);
             font-weight: 800;
+            text-decoration: none;
         }
         .louca-wheel-card {
             background: linear-gradient(135deg, #2A1114, #18090B);
@@ -6713,22 +6715,22 @@
                 body.innerHTML = `
                     <div class="louca-participants-box">
                         <div class="louca-section-label">
-                            <span>1. Quem está trabalhando hoje?</span>
-                            <span style="font-size: 10px; color: var(--primary); font-weight: 700;">${loucaAtivos.length} presentes</span>
+                            <span>Quem vai para o sorteio?</span>
+                            <span style="font-size: 11px; color: var(--primary); font-weight: 800;">${loucaAtivos.length} participantes</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+                            Toque no nome para marcar <strong>Folga</strong>:
                         </div>
                         <div class="louca-chips-grid">
                             ${NOMES_LOUCA.map(nome => {
                                 const active = loucaAtivos.includes(nome);
                                 return `
                                     <div class="louca-chip ${active ? 'active' : ''}" onclick="toggleLoucaParticipant('${nome}')">
-                                        <span>${active ? '✓' : '✗'}</span>
-                                        <span>${nome}</span>
+                                        <span>${active ? '✓' : '💤'}</span>
+                                        <span>${nome}${active ? '' : ' (Folga)'}</span>
                                     </div>
                                 `;
                             }).join('')}
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: right;">
-                            Toque no nome para desmarcar quem estiver de folga.
                         </div>
                     </div>
 
@@ -6736,9 +6738,6 @@
                         <div class="louca-wheel-pointer">▼</div>
                         <div class="louca-wheel-reel" id="louca-wheel-reel">
                             ${loucaAtivos.length > 0 ? loucaAtivos[0] : '---'}
-                        </div>
-                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 8px; font-weight: 600;">
-                            Roleta Oficial Anti-Arenga 🍽️
                         </div>
                     </div>
 
