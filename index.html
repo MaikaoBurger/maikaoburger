@@ -1667,6 +1667,12 @@
             color: var(--primary);
             font-weight: 800;
         }
+        .louca-chip.ja-lavou {
+            background: #ECFDF5;
+            border: 2px solid #10B981;
+            color: #065F46;
+            cursor: pointer;
+        }
         .louca-chip-badge-folga {
             background: #EF4444;
             color: #FFFFFF;
@@ -1676,6 +1682,46 @@
             border-radius: 6px;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+        }
+        .louca-chip-badge-lavou {
+            background: #10B981;
+            color: #FFFFFF;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .louca-chip-badge-concorrendo {
+            background: var(--primary);
+            color: #FFFFFF;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .louca-ciclo-card {
+            background: #FDFBF7;
+            border: 1px solid #FDE68A;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+        .louca-ciclo-bar-bg {
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0 6px 0;
+        }
+        .louca-ciclo-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #059669);
+            border-radius: 4px;
+            transition: width 0.3s ease;
         }
         .louca-wheel-card {
             background: linear-gradient(135deg, #2A1114, #18090B);
@@ -2791,6 +2837,12 @@
                 if (data.sorteio_louca_hist !== undefined) {
                     localStorage.setItem('mb_sorteio_louca_hist', JSON.stringify(data.sorteio_louca_hist || []));
                     if (document.getElementById('louca-overlay')?.classList.contains('open') && typeof currentLoucaTab !== 'undefined' && currentLoucaTab === 'historico') {
+                        renderSorteioLoucaUI();
+                    }
+                }
+                if (data.sorteio_louca_ciclo !== undefined) {
+                    localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(data.sorteio_louca_ciclo || []));
+                    if (document.getElementById('louca-overlay')?.classList.contains('open')) {
                         renderSorteioLoucaUI();
                     }
                 }
@@ -6579,7 +6631,7 @@
         }
 
         // ==========================================
-        // SISTEMA: SORTEIO DA LOUÇA (TRAVA DIÁRIA)
+        // SISTEMA: SORTEIO DA LOUÇA (RODÍZIO SEM REPETIÇÃO)
         // ==========================================
         const NOMES_LOUCA = ['Marcelo', 'Vitória', 'Israel', 'Gabriel', 'Wil', 'Daniel', 'Folguista'];
         let loucaAtivos = [...NOMES_LOUCA];
@@ -6612,6 +6664,62 @@
             db.ref('sorteio_louca_hist').set(hist).catch(() => {});
         }
 
+        function loadLoucaCiclo() {
+            try {
+                const raw = localStorage.getItem('mb_sorteio_louca_ciclo');
+                if (raw !== null) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) return parsed;
+                }
+            } catch (e) {}
+
+            // Dedução automática a partir do histórico recente caso ainda não haja ciclo salvo
+            const hist = loadLoucaHistory();
+            if (!hist || hist.length === 0) return [];
+
+            const cicloDeduzido = [];
+            for (let i = hist.length - 1; i >= 0; i--) {
+                const nome = hist[i].sorteado;
+                if (!nome || !NOMES_LOUCA.includes(nome)) continue;
+                if (cicloDeduzido.includes(nome)) {
+                    // Encontrou repetição, este ponto marcava o início da rodada atual
+                    break;
+                }
+                cicloDeduzido.unshift(nome);
+            }
+            return cicloDeduzido;
+        }
+
+        function saveLoucaCiclo(ciclo) {
+            localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(ciclo));
+            db.ref('sorteio_louca_ciclo').set(ciclo).catch(() => {});
+        }
+
+        function getEffectiveLoucaCiclo() {
+            let ciclo = loadLoucaCiclo();
+            // Se não houver sorteio hoje e todos já tiverem completado o ciclo anterior, reinicia nova rodada
+            if (!loadTodayLoucaData() && ciclo.length >= NOMES_LOUCA.length) {
+                ciclo = [];
+                saveLoucaCiclo([]);
+            }
+            return ciclo;
+        }
+
+        function getLoucaCandidatos() {
+            let ciclo = getEffectiveLoucaCiclo();
+            // Candidatos = funcionários presentes que AINDA NÃO lavaram nesta rodada
+            let candidatos = loucaAtivos.filter(nome => !ciclo.includes(nome));
+
+            // Se todos os presentes hoje já tiverem lavado nesta rodada,
+            // reinicia a rodada para não travar o sorteio do dia
+            if (candidatos.length === 0 && loucaAtivos.length > 0) {
+                ciclo = [];
+                saveLoucaCiclo([]);
+                candidatos = [...loucaAtivos];
+            }
+            return candidatos;
+        }
+
         function openSorteioLouca() {
             currentLoucaTab = 'sorteio';
             document.getElementById('louca-overlay')?.classList.add('open');
@@ -6640,9 +6748,15 @@
 
         function toggleLoucaParticipant(name) {
             if (isSpinningLouca) return;
+            const ciclo = getEffectiveLoucaCiclo();
+            if (ciclo.includes(name)) {
+                alert(`🧼 ${name} já lavou a louça nesta rodada!\n\nEle(a) está livre do sorteio até que todos os outros funcionários completem suas vezes.`);
+                return;
+            }
             if (loucaAtivos.includes(name)) {
-                if (loucaAtivos.length <= 1) {
-                    alert('Precisa ter pelo menos 1 funcionário selecionado.');
+                const candidatos = loucaAtivos.filter(n => !ciclo.includes(n));
+                if (candidatos.length <= 1 && candidatos.includes(name)) {
+                    alert('Precisa ter pelo menos 1 funcionário elegível para o sorteio.');
                     return;
                 }
                 loucaAtivos = loucaAtivos.filter(n => n !== name);
@@ -6657,6 +6771,10 @@
             if (!body) return;
 
             const todayData = loadTodayLoucaData();
+            const ciclo = loadLoucaCiclo();
+            const jaLavaram = ciclo.filter(n => NOMES_LOUCA.includes(n));
+            const faltamLavar = NOMES_LOUCA.filter(n => !ciclo.includes(n));
+            const progressoPct = Math.round((jaLavaram.length / NOMES_LOUCA.length) * 100);
 
             if (currentLoucaTab === 'historico') {
                 const hist = loadLoucaHistory();
@@ -6701,7 +6819,7 @@
 
             // Tab Sorteio
             if (todayData) {
-                // JÁ SORTEOU HOJE - EXIBE A TRAVA
+                // JÁ SORTEOU HOJE - EXIBE A TRAVA E O STATUS DA RODADA
                 body.innerHTML = `
                     <div class="louca-locked-card">
                         <div class="louca-locked-badge">
@@ -6721,6 +6839,30 @@
                                 O sorteio é realizado uma única vez por dia. Novo sorteio liberado amanhã!
                             </div>
                         </div>
+
+                        <!-- Card de Status do Rodízio Sem Repetição -->
+                        <div class="louca-ciclo-card" style="margin-top: 14px; text-align: left;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 12px; font-weight: 800; color: var(--text);">
+                                    🔄 Rodízio: ${jaLavaram.length} de ${NOMES_LOUCA.length} já lavaram
+                                </span>
+                                <span style="font-size: 11px; font-weight: 800; color: #059669;">${progressoPct}%</span>
+                            </div>
+                            <div class="louca-ciclo-bar-bg">
+                                <div class="louca-ciclo-bar-fill" style="width: ${progressoPct}%;"></div>
+                            </div>
+                            ${faltamLavar.length === 0 ? `
+                                <div style="font-size: 11px; font-weight: 700; color: #059669; margin-top: 4px;">
+                                    🎉 Rodada completa! Todos já lavaram. Amanhã começará uma nova rodada do zero!
+                                </div>
+                            ` : `
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                                    <strong style="color: #065F46;">🧼 Já lavaram nesta rodada:</strong> ${jaLavaram.join(', ')}<br>
+                                    <strong style="color: #92400E;">⏳ Faltam lavar:</strong> ${faltamLavar.join(', ')}
+                                </div>
+                            `}
+                        </div>
+
                         ${today() === '09/10/2026' ? `
                             <div style="margin-top: 14px;">
                                 <button class="btn-girar-louca" onclick="demoReplayLouca()" style="font-size: 14px; padding: 13px; border-radius: 12px; width: 100%;">
@@ -6731,34 +6873,74 @@
                                 </div>
                             </div>
                         ` : ''}
-                        <div style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 12px; display: flex; justify-content: center;">
+
+                        <div style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; align-items: center;">
                             <button onclick="resetSorteioLoucaAdmin()" style="background: none; border: 1px solid #FCA5A5; color: #DC2626; font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
                                 <span>🗑️</span> Excluir Sorteio de Hoje (Admin)
+                            </button>
+                            <button onclick="resetLoucaCicloAdmin()" style="background: none; border: 1px solid #E5E7EB; color: var(--text-muted); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                                🔄 Reiniciar Rodada Inteira (Admin)
                             </button>
                         </div>
                     </div>
                 `;
             } else {
-                // AINDA NÃO SORTEOU HOJE - EXIBE ROLETA E SELETOR DE PRESENTES
+                // AINDA NÃO SORTEOU HOJE - EXIBE CICLO, ROLETA E SELETOR DE PRESENTES
+                const candidatos = getLoucaCandidatos();
+                const effectiveCiclo = getEffectiveLoucaCiclo();
+
                 body.innerHTML = `
+                    <!-- Card de Progresso da Rodada -->
+                    <div class="louca-ciclo-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 12px; font-weight: 800; color: var(--text);">
+                                🔄 Rodízio: ${jaLavaram.length} de ${NOMES_LOUCA.length} já lavaram
+                            </span>
+                            <span style="font-size: 11px; font-weight: 800; color: #059669;">${progressoPct}%</span>
+                        </div>
+                        <div class="louca-ciclo-bar-bg">
+                            <div class="louca-ciclo-bar-fill" style="width: ${progressoPct}%;"></div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+                            <span>${faltamLavar.length === 0 ? '🎉 Todos já lavaram! Nova rodada pronta.' : `Faltam lavar: <strong>${faltamLavar.join(', ')}</strong>`}</span>
+                            <button onclick="resetLoucaCicloAdmin()" title="Zerar rodada manualmente" style="background: none; border: none; color: var(--text-muted); font-size: 10px; font-weight: 700; cursor: pointer; text-decoration: underline;">
+                                Zerar rodada
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="louca-participants-box">
                         <div class="louca-section-label">
-                            <span>Quem vai para o sorteio?</span>
-                            <span style="font-size: 11px; color: var(--primary); font-weight: 800;">${loucaAtivos.length} participantes</span>
+                            <span>Participantes do Sorteio</span>
+                            <span style="font-size: 11px; color: var(--primary); font-weight: 800;">${candidatos.length} concorrendo</span>
                         </div>
                         <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
-                            Toque no nome para marcar <strong>Folga</strong>:
+                            Toque para marcar <strong>Folga</strong> (quem já lavou está dispensado):
                         </div>
                         <div class="louca-chips-grid">
                             ${NOMES_LOUCA.map(nome => {
+                                const jaLavou = effectiveCiclo.includes(nome);
                                 const active = loucaAtivos.includes(nome);
+
+                                if (jaLavou) {
+                                    return `
+                                        <div class="louca-chip ja-lavou" onclick="toggleLoucaParticipant('${nome}')" title="${nome} já lavou nesta rodada">
+                                            <div style="display: flex; align-items: center; gap: 4px;">
+                                                <span>🧼</span>
+                                                <span>${nome}</span>
+                                            </div>
+                                            <span class="louca-chip-badge-lavou">JÁ LAVOU</span>
+                                        </div>
+                                    `;
+                                }
+
                                 return `
                                     <div class="louca-chip ${active ? 'active' : ''}" onclick="toggleLoucaParticipant('${nome}')">
                                         <div style="display: flex; align-items: center; gap: 4px;">
-                                            <span>${active ? '✓' : '💤'}</span>
+                                            <span>${active ? '🎯' : '💤'}</span>
                                             <span>${nome}</span>
                                         </div>
-                                        ${active ? '' : '<span class="louca-chip-badge-folga">FOLGA</span>'}
+                                        ${active ? '<span class="louca-chip-badge-concorrendo">NO SORTEIO</span>' : '<span class="louca-chip-badge-folga">FOLGA</span>'}
                                     </div>
                                 `;
                             }).join('')}
@@ -6768,11 +6950,14 @@
                     <div class="louca-wheel-card">
                         <div class="louca-wheel-pointer">▼</div>
                         <div class="louca-wheel-reel" id="louca-wheel-reel">
-                            ${loucaAtivos.length > 0 ? loucaAtivos[0] : '---'}
+                            ${candidatos.length > 0 ? candidatos[0] : '---'}
+                        </div>
+                        <div style="font-size: 11px; color: var(--secondary-light); margin-top: 8px; font-weight: 700;">
+                            ${candidatos.length > 0 ? `🎯 Concorrendo hoje: ${candidatos.join(', ')}` : '⚠️ Nenhum participante disponível hoje'}
                         </div>
                     </div>
 
-                    <button class="btn-girar-louca" id="btn-girar-louca" onclick="girarRoletaLouca()" ${loucaAtivos.length === 0 ? 'disabled' : ''}>
+                    <button class="btn-girar-louca" id="btn-girar-louca" onclick="girarRoletaLouca()" ${candidatos.length === 0 ? 'disabled' : ''}>
                         <span>🎰</span> GIRAR ROLETA DA LOUÇA
                     </button>
                 `;
@@ -6781,8 +6966,9 @@
 
         function girarRoletaLouca() {
             if (isSpinningLouca) return;
-            if (loucaAtivos.length === 0) {
-                alert('Selecione pelo menos um funcionário para o sorteio.');
+            const candidatos = getLoucaCandidatos();
+            if (candidatos.length === 0) {
+                alert('Selecione pelo menos um funcionário que ainda não lavou nesta rodada.');
                 return;
             }
 
@@ -6800,11 +6986,11 @@
             const btn = document.getElementById('btn-girar-louca');
             if (btn) btn.disabled = true;
 
-            // Embaralhar para decidir o ganhador
-            const pool = [...loucaAtivos];
+            // Embaralhar para decidir o ganhador APENAS entre os candidatos elegíveis (sem repetição)
+            const pool = [...candidatos];
             const winner = pool[Math.floor(Math.random() * pool.length)];
 
-            // Ciclo de rotação animada
+            // Ciclo de rotação animada passando pelos candidatos
             let speed = 60; // ms
             let count = 0;
             const totalTicks = 25 + Math.floor(Math.random() * 8);
@@ -6832,11 +7018,20 @@
                     playVictorySound();
                     triggerConfetti();
 
+                    // Registra o ganhador na rodada (ciclo sem repetição)
+                    const ciclo = getEffectiveLoucaCiclo();
+                    if (!ciclo.includes(winner)) {
+                        ciclo.push(winner);
+                    }
+                    saveLoucaCiclo(ciclo);
+
                     const drawRecord = {
                         data: today(),
                         horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                         sorteado: winner,
                         participantes: [...loucaAtivos],
+                        candidatos: [...candidatos],
+                        cicloSorteados: [...ciclo],
                         timestamp: Date.now()
                     };
 
@@ -6861,7 +7056,7 @@
 
         async function checkAdminLoucaPermission() {
             if (isAdmin()) return true;
-            const pw = prompt("Área do Administrador. Digite a senha do Admin para excluir:");
+            const pw = prompt("Área do Administrador. Digite a senha do Admin para continuar:");
             if (!pw) return false;
             const hash = await sha256(pw);
             const hashMike = getAdminHash('Mike');
@@ -6879,9 +7074,28 @@
             const hasPerm = await checkAdminLoucaPermission();
             if (!hasPerm) return;
             if (confirm('Atenção: Deseja realmente excluir o sorteio de hoje para poder sortear novamente?')) {
+                const todayData = loadTodayLoucaData();
+                if (todayData && todayData.sorteado) {
+                    const ciclo = loadLoucaCiclo();
+                    const idx = ciclo.lastIndexOf(todayData.sorteado);
+                    if (idx !== -1) {
+                        ciclo.splice(idx, 1);
+                        saveLoucaCiclo(ciclo);
+                    }
+                }
                 localStorage.removeItem('mb_sorteio_louca');
                 db.ref('sorteio_louca').remove().catch(() => {});
                 renderSorteioLoucaUI();
+            }
+        }
+
+        async function resetLoucaCicloAdmin() {
+            const hasPerm = await checkAdminLoucaPermission();
+            if (!hasPerm) return;
+            if (confirm('Deseja zerar a rodada atual da louça?\n\nTodos os funcionários voltarão a ficar disponíveis para serem sorteados.')) {
+                saveLoucaCiclo([]);
+                renderSorteioLoucaUI();
+                alert('Rodada reiniciada com sucesso!');
             }
         }
 
@@ -6907,6 +7121,14 @@
                 db.ref('sorteio_louca').remove().catch(() => {});
             }
 
+            // Remove o funcionário do ciclo se constar nele
+            const ciclo = loadLoucaCiclo();
+            const cIdx = ciclo.lastIndexOf(item.sorteado);
+            if (cIdx !== -1) {
+                ciclo.splice(cIdx, 1);
+                saveLoucaCiclo(ciclo);
+            }
+
             renderSorteioLoucaUI();
         }
 
@@ -6914,17 +7136,27 @@
             const hasPerm = await checkAdminLoucaPermission();
             if (!hasPerm) return;
 
-            if (!confirm('Tem certeza de que deseja apagar TODO o histórico de sorteios da louça?')) {
+            if (!confirm('Tem certeza de que deseja apagar TODO o histórico de sorteios da louça e zerar a rodada?')) {
                 return;
             }
 
             saveLoucaHistory([]);
+            saveLoucaCiclo([]);
             localStorage.removeItem('mb_sorteio_louca');
             db.ref('sorteio_louca').remove().catch(() => {});
             renderSorteioLoucaUI();
         }
 
         function demoReplayLouca() {
+            const todayData = loadTodayLoucaData();
+            if (todayData && todayData.sorteado) {
+                const ciclo = loadLoucaCiclo();
+                const idx = ciclo.lastIndexOf(todayData.sorteado);
+                if (idx !== -1) {
+                    ciclo.splice(idx, 1);
+                    saveLoucaCiclo(ciclo);
+                }
+            }
             localStorage.removeItem('mb_sorteio_louca');
             db.ref('sorteio_louca').remove().catch(() => {});
             renderSorteioLoucaUI();
