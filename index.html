@@ -2021,6 +2021,7 @@
             </div>
             <button class="header-btn" id="hist-btn" onclick="openHistorico()" style="display:none">📅</button>
             <button class="header-btn" id="rank-btn" onclick="openRanking()" style="display:none">🏆</button>
+            <button class="header-btn" id="equipe-btn" onclick="openEquipeModal()" style="display:none" title="Gerenciar Equipe">👥</button>
             <button class="header-btn" id="farda-btn" onclick="openFardaControl()" style="display:none" title="Controle de Farda">👕</button>
             <span class="sync-indicator" id="sync-indicator" title="Status da conexão" onclick="syncRefreshPopup()">☁️</span>
             <button class="header-btn" id="sound-btn" onclick="toggleSound()" title="Ativar/Desativar Som">🔊</button>
@@ -2260,9 +2261,26 @@
             <div class="louca-tabs">
                 <button class="louca-tab-btn active" id="louca-tab-sorteio-btn" onclick="switchLoucaTab('sorteio')">🎰 Sorteio de Hoje</button>
                 <button class="louca-tab-btn" id="louca-tab-hist-btn" onclick="switchLoucaTab('historico')">📜 Histórico da Pia</button>
+                <button class="louca-tab-btn" onclick="openEquipeModal()" style="flex:0.65;">👥 Equipe</button>
             </div>
 
             <div class="louca-body" id="louca-body" style="flex: 1; overflow-y: auto;">
+                <!-- Preenchido via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gerenciar Equipe & Folguistas -->
+    <div class="louca-overlay" id="equipe-overlay" onclick="equipeOverlayClick(event)">
+        <div class="louca-modal" style="max-width: 460px;">
+            <div class="louca-header">
+                <div>
+                    <div class="louca-title">👥 Gerenciar Equipe</div>
+                    <div class="louca-sub">Funcionários, Folguistas do Dia e Louça</div>
+                </div>
+                <button class="louca-close" onclick="closeEquipeModal()" title="Fechar">×</button>
+            </div>
+            <div class="louca-body" id="equipe-body" style="flex: 1; overflow-y: auto;">
                 <!-- Preenchido via JS -->
             </div>
         </div>
@@ -2316,7 +2334,22 @@
             { id: 'fechamento-caixa',       label: '💰 Fechamento\nCaixa' },
         ];
 
-        const NOMES = ['Marcelo', 'Mike', 'Vitoria', 'Ketilen', 'Israel', 'Gabriel', 'Wil', 'Daniel'];
+        const DEFAULT_EQUIPE_CONFIG = [
+            { nome: 'Marcelo', ativo: true, louca: true, isFolguista: false },
+            { nome: 'Vitória', ativo: true, louca: true, isFolguista: false },
+            { nome: 'Israel', ativo: true, louca: true, isFolguista: false },
+            { nome: 'Gabriel', ativo: true, louca: true, isFolguista: false },
+            { nome: 'Wil', ativo: true, louca: true, isFolguista: false },
+            { nome: 'Daniel', ativo: true, louca: true, isFolguista: false },
+            { nome: 'Folguista 1', ativo: true, louca: true, isFolguista: true },
+            { nome: 'Folguista 2', ativo: true, louca: false, isFolguista: true }
+        ];
+
+        let NOMES = ['Marcelo', 'Vitória', 'Israel', 'Gabriel', 'Wil', 'Daniel', 'Folguista 1', 'Folguista 2'];
+        let NOMES_LOUCA = ['Marcelo', 'Vitória', 'Israel', 'Gabriel', 'Wil', 'Daniel', 'Folguista 1'];
+        let loucaAtivos = [...NOMES_LOUCA];
+        let currentLoucaTab = 'sorteio';
+        let isSpinningLouca = false;
 
         // items podem ser string (todos os dias) ou { text, days: [0-6] } (0=dom,1=seg...6=sab)
         const QUI_DOM = [4, 5, 6, 0]; // quinta a domingo
@@ -2829,6 +2862,20 @@
                     const selectedMonth = document.getElementById('rank-month-select')?.value || getYearMonth();
                     openRanking(selectedMonth);
                 }
+                if (data.equipe_config !== undefined && Array.isArray(data.equipe_config)) {
+                    localStorage.setItem('mb_equipe_config', JSON.stringify(data.equipe_config));
+                    syncEquipeArrays();
+                }
+                if (data.folguistas_dia !== undefined) {
+                    localStorage.setItem('mb_folguistas_dia', JSON.stringify(data.folguistas_dia || {}));
+                    renderQuemFezGrid();
+                    if (document.getElementById('estoque-overlay')?.classList.contains('open')) {
+                        renderEstoqueNomes();
+                    }
+                    if (document.getElementById('equipe-overlay')?.classList.contains('open')) {
+                        renderEquipeModalUI();
+                    }
+                }
                 if (data.sorteio_louca !== undefined) {
                     localStorage.setItem('mb_sorteio_louca', JSON.stringify(data.sorteio_louca || {}));
                 } else {
@@ -2849,6 +2896,9 @@
                 }
                 if (document.getElementById('louca-overlay')?.classList.contains('open')) {
                     renderSorteioLoucaUI();
+                }
+                if (document.getElementById('equipe-overlay')?.classList.contains('open')) {
+                    renderEquipeModalUI();
                 }
                 setSyncUI('online');
             }, err => {
@@ -2942,7 +2992,14 @@
                 'mb_fardas', 
                 'mb_sound_enabled', 
                 'mb_reset_token', 
-                'mb_last_reset_at'
+                'mb_last_reset_at',
+                'mb_equipe_config',
+                'mb_folguistas_dia',
+                'mb_sorteio_louca',
+                'mb_sorteio_louca_hist',
+                'mb_sorteio_louca_ciclo',
+                'mb_estoque_itens',
+                'mb_estoque_contagens'
             ]);
             const entries = {};
 
@@ -3262,6 +3319,8 @@
                 document.getElementById('h-adm-badge').textContent = `ADM: ${admin.toUpperCase()}`;
                 document.getElementById('hist-btn').style.display = 'inline-block';
                 document.getElementById('rank-btn').style.display = (admin === 'Mike') ? 'inline-block' : 'none';
+                const equipeBtn = document.getElementById('equipe-btn');
+                if (equipeBtn) equipeBtn.style.display = 'inline-block';
                 
                 const fardaBtn = document.getElementById('farda-btn');
                 if (fardaBtn) fardaBtn.style.display = (admin === 'Marcelo') ? 'inline-block' : 'none';
@@ -3322,6 +3381,8 @@
             document.getElementById('h-adm-badge').style.display = 'none';
             document.getElementById('hist-btn').style.display = 'none';
             document.getElementById('rank-btn').style.display = 'none';
+            const equipeBtn = document.getElementById('equipe-btn');
+            if (equipeBtn) equipeBtn.style.display = 'none';
             
             const fardaBtn = document.getElementById('farda-btn');
             if (fardaBtn) fardaBtn.style.display = 'none';
@@ -3987,13 +4048,13 @@
                     <button class="sel-btn-abertura" onclick="openSorteioLouca()" style="margin-top: 10px; background: linear-gradient(135deg, #7A121E, #9B1E2E); border: none; width: 100%; padding: 18px 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(122, 18, 30, 0.25);">
                         <span>🍽️</span> Sorteio da Louça
                     </button>
+                    <button class="sel-btn-abertura" onclick="openEquipeModal()" style="margin-top: 10px; background: rgba(255, 255, 255, 0.14); border: 1.5px solid rgba(255, 255, 255, 0.3); width: 100%; padding: 13px 12px; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span>👥</span> Gerenciar Equipe (Admin)
+                    </button>
                 </div>
             `;
 
-            const quemGrid = document.getElementById('quem-fez-grid');
-            quemGrid.innerHTML = NOMES.map(n =>
-                `<button onclick="confirmItem('${n}')" style="padding:12px 8px;background:#f5f5f7;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${n}</button>`
-            ).join('');
+            renderQuemFezGrid();
         }
 
         const DIAS = [
@@ -4099,6 +4160,10 @@
             }
             document.getElementById('hist-btn').style.display = adminSession ? 'inline-block' : 'none';
             document.getElementById('rank-btn').style.display = (adminSession && currentAdmin === 'Mike') ? 'inline-block' : 'none';
+            const equipeBtn = document.getElementById('equipe-btn');
+            if (equipeBtn) {
+                equipeBtn.style.display = adminSession ? 'inline-block' : 'none';
+            }
             
             const fardaBtn = document.getElementById('farda-btn');
             if (fardaBtn) {
@@ -4321,6 +4386,7 @@
                 document.getElementById('quem-fez-item-label').textContent = text;
                 const isSkippable = typeof itemDef === 'object' && itemDef.skippable;
                 document.getElementById('skip-item-btn').style.display = isSkippable ? 'block' : 'none';
+                renderQuemFezGrid();
                 document.getElementById('quem-fez-overlay').classList.add('open');
             } else {
                 if (status === 'iniciado') {
@@ -4349,7 +4415,9 @@
         let pendingUserForItem = null;
         let pendingSkip = false;
 
-        function confirmItem(name) {
+        function confirmItem(rawName) {
+            const name = resolveEmployeeForTask(rawName);
+            if (!name) return;
             if (pendingSkip) { doSkipWithUser(name); return; }
             document.getElementById('quem-fez-overlay').classList.remove('open');
             if (!pendingItemMeta) return;
@@ -4615,6 +4683,7 @@
             const itemDef = CHECKLISTS[setorId].sections[si].items[ii];
             document.getElementById('quem-fez-item-label').textContent = itemDef.text;
             document.getElementById('skip-item-btn').style.display = itemDef.skippable ? 'block' : 'none';
+            renderQuemFezGrid();
             document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
@@ -4637,23 +4706,29 @@
                 const users = (meta && meta.multi) ? (meta.users || {}) : {};
                 document.getElementById('edit-item-current').textContent =
                     Object.keys(users).length > 0 ? `Participantes: ${Object.keys(users).join(', ')}` : 'Sem participantes';
-                document.getElementById('edit-item-grid').innerHTML = NOMES.map(n =>
-                    `<button onclick="doEditMultiParticipant('${n}')" style="padding:12px 8px;background:${users[n] ? '#e8f8ef' : '#f5f5f7'};border:${users[n] ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${users[n] ? '✓ ' : ''}${n}</button>`
-                ).join('');
+                document.getElementById('edit-item-grid').innerHTML = NOMES.map(n => {
+                    const resolvedLabel = getDisplayEmployeeLabel(n);
+                    const isMarked = !!(users[resolvedLabel] || users[n]);
+                    return `<button onclick="doEditMultiParticipant('${n}')" style="padding:12px 8px;background:${isMarked ? '#e8f8ef' : '#f5f5f7'};border:${isMarked ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${isMarked ? '✓ ' : ''}${resolvedLabel}</button>`;
+                }).join('');
                 document.getElementById('edit-item-overlay').classList.add('open');
                 return;
             }
 
             const meta = getCheckedMeta(setorId, si, ii);
             document.getElementById('edit-item-current').textContent = meta ? `Feito por: ${meta.user}` : '';
-            document.getElementById('edit-item-grid').innerHTML = NOMES.map(n =>
-                `<button onclick="doReassignItem('${n}')" style="padding:12px 8px;background:${meta && meta.user === n ? '#e8f8ef' : '#f5f5f7'};border:${meta && meta.user === n ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${n}</button>`
-            ).join('');
+            document.getElementById('edit-item-grid').innerHTML = NOMES.map(n => {
+                const resolvedLabel = getDisplayEmployeeLabel(n);
+                const isSelected = meta && (meta.user === resolvedLabel || meta.user === n);
+                return `<button onclick="doReassignItem('${n}')" style="padding:12px 8px;background:${isSelected ? '#e8f8ef' : '#f5f5f7'};border:${isSelected ? '2px solid var(--green)' : 'none'};border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${resolvedLabel}</button>`;
+            }).join('');
             document.getElementById('edit-item-overlay').classList.add('open');
         }
 
-        function doEditMultiParticipant(name) {
+        function doEditMultiParticipant(rawName) {
             if (!pendingItemMeta) return;
+            const name = resolveEmployeeForTask(rawName);
+            if (!name) return;
             const { setorId, si, ii } = pendingItemMeta;
             const item = CHECKLISTS[setorId].sections[si].items[ii];
             const meta = getCheckedMeta(setorId, si, ii);
@@ -4666,7 +4741,9 @@
             openEditItem(setorId, si, ii);
         }
 
-        function doReassignItem(name) {
+        function doReassignItem(rawName) {
+            const name = resolveEmployeeForTask(rawName);
+            if (!name) return;
             document.getElementById('edit-item-overlay').classList.remove('open');
             if (!pendingItemMeta) return;
             const { setorId, si, ii } = pendingItemMeta;
@@ -4797,6 +4874,7 @@
             document.getElementById('quem-fez-item-label').textContent =
                 CHECKLISTS[setorId].sections[si].items[ii].text;
             document.getElementById('skip-item-btn').style.display = 'none';
+            renderQuemFezGrid();
             document.getElementById('quem-fez-overlay').classList.add('open');
         }
 
@@ -5497,19 +5575,25 @@
         function renderEstoqueNomes() {
             const container = document.getElementById('estoque-nomes-list');
             if (!container) return;
-            container.innerHTML = NOMES.map(nome => {
-                const isSelected = localEstoqueNomes[nome] ? 'selected' : '';
-                return `<button type="button" class="name-pill-btn ${isSelected}" onclick="toggleEstoqueNome('${nome}')" style="font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: ${isSelected ? 'var(--green)' : '#fff'}; color: ${isSelected ? '#fff' : 'var(--text-muted)'}; border-color: ${isSelected ? 'var(--green)' : 'var(--border)'}; cursor: pointer; transition: all 0.2s; user-select: none;">${nome}</button>`;
+            container.innerHTML = NOMES.map(rawNome => {
+                const displayNome = getDisplayEmployeeLabel(rawNome);
+                const isSelected = (localEstoqueNomes[displayNome] || localEstoqueNomes[rawNome]) ? 'selected' : '';
+                return `<button type="button" class="name-pill-btn ${isSelected}" onclick="toggleEstoqueNome('${rawNome}')" style="font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: ${isSelected ? 'var(--green)' : '#fff'}; color: ${isSelected ? '#fff' : 'var(--text-muted)'}; border-color: ${isSelected ? 'var(--green)' : 'var(--border)'}; cursor: pointer; transition: all 0.2s; user-select: none;">${displayNome}</button>`;
             }).join('');
         }
 
-        function toggleEstoqueNome(nome) {
-            if (localEstoqueNomes[nome]) {
-                delete localEstoqueNomes[nome];
-                db.ref(`estoque/rascunho/nomes/${nome}`).set(null).catch(() => {});
+        function toggleEstoqueNome(rawNome) {
+            const currentLabel = getDisplayEmployeeLabel(rawNome);
+            if (localEstoqueNomes[currentLabel] || localEstoqueNomes[rawNome]) {
+                delete localEstoqueNomes[currentLabel];
+                delete localEstoqueNomes[rawNome];
+                db.ref(`estoque/rascunho/nomes/${currentLabel}`).set(null).catch(() => {});
+                db.ref(`estoque/rascunho/nomes/${rawNome}`).set(null).catch(() => {});
             } else {
-                localEstoqueNomes[nome] = true;
-                db.ref(`estoque/rascunho/nomes/${nome}`).set(true).catch(() => {});
+                const resolved = resolveEmployeeForTask(rawNome);
+                if (!resolved) return;
+                localEstoqueNomes[resolved] = true;
+                db.ref(`estoque/rascunho/nomes/${resolved}`).set(true).catch(() => {});
             }
             renderEstoqueNomes();
         }
@@ -6635,12 +6719,307 @@
         }
 
         // ==========================================
+        // SISTEMA: GERENCIAR EQUIPE & FOLGUISTAS DO DIA
+        // ==========================================
+        function loadEquipeConfig() {
+            try {
+                const raw = localStorage.getItem('mb_equipe_config');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        // Nunca permite "Mike" na lista operacional de tarefas/louça
+                        return parsed.filter(m => m && m.nome && m.nome.toLowerCase() !== 'mike');
+                    }
+                }
+            } catch (e) {}
+            return JSON.parse(JSON.stringify(DEFAULT_EQUIPE_CONFIG));
+        }
+
+        function saveEquipeConfig(config) {
+            const clean = (config || []).filter(m => m && m.nome && m.nome.trim() && m.nome.trim().toLowerCase() !== 'mike');
+            localStorage.setItem('mb_equipe_config', JSON.stringify(clean));
+            db.ref('equipe_config').set(clean).catch(() => {});
+            syncEquipeArrays();
+        }
+
+        function loadFolguistasDia() {
+            try {
+                const raw = localStorage.getItem('mb_folguistas_dia');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.data === today() && parsed.nomes && typeof parsed.nomes === 'object') {
+                        return parsed.nomes;
+                    }
+                }
+            } catch (e) {}
+            return {};
+        }
+
+        function saveFolguistasDia(nomesObj) {
+            const payload = { data: today(), nomes: nomesObj || {} };
+            localStorage.setItem('mb_folguistas_dia', JSON.stringify(payload));
+            db.ref('folguistas_dia').set(payload).catch(() => {});
+            renderQuemFezGrid();
+            if (document.getElementById('estoque-overlay')?.classList.contains('open')) {
+                renderEstoqueNomes();
+            }
+            if (document.getElementById('louca-overlay')?.classList.contains('open')) {
+                renderSorteioLoucaUI();
+            }
+            if (document.getElementById('equipe-overlay')?.classList.contains('open')) {
+                renderEquipeModalUI();
+            }
+        }
+
+        function isFolguistaSlot(slotName) {
+            if (!slotName) return false;
+            const cfg = loadEquipeConfig();
+            const found = cfg.find(m => m.nome === slotName);
+            if (found && found.isFolguista) return true;
+            return slotName.toLowerCase().startsWith('folguista');
+        }
+
+        function getFolguistaSavedName(slotName) {
+            const map = loadFolguistasDia();
+            if (map[slotName]) return map[slotName].trim();
+            if (slotName === 'Folguista' && map['Folguista 1']) return map['Folguista 1'].trim();
+            return '';
+        }
+
+        function getDisplayEmployeeLabel(slotName) {
+            if (isFolguistaSlot(slotName)) {
+                const saved = getFolguistaSavedName(slotName);
+                if (saved) return `${saved} (Folguista)`;
+            }
+            return slotName;
+        }
+
+        function getDisplayLoucaLabel(slotName) {
+            if (isFolguistaSlot(slotName)) {
+                const saved = getFolguistaSavedName(slotName);
+                if (saved) return `${slotName} (${saved})`;
+            }
+            return slotName;
+        }
+
+        function resolveEmployeeForTask(slotName) {
+            if (!isFolguistaSlot(slotName)) return slotName;
+            let saved = getFolguistaSavedName(slotName);
+            if (!saved) {
+                const input = prompt(`👤 Qual o seu nome hoje?\n\n(Ele ficará salvo no botão "${slotName}" até o final do dia para você não precisar digitar novamente):`);
+                if (!input || !input.trim()) return null;
+                saved = input.trim();
+                const map = loadFolguistasDia();
+                map[slotName] = saved;
+                saveFolguistasDia(map);
+            }
+            return `${saved} (Folguista)`;
+        }
+
+        function editFolguistaNameToday(slotName, ev) {
+            if (ev) ev.stopPropagation();
+            const atual = getFolguistaSavedName(slotName);
+            const input = prompt(`✏️ Nome do ${slotName} para hoje (${today()}):\n(Deixe em branco para limpar)`, atual || '');
+            if (input === null) return;
+            const map = loadFolguistasDia();
+            if (input.trim()) {
+                map[slotName] = input.trim();
+            } else {
+                delete map[slotName];
+            }
+            saveFolguistasDia(map);
+        }
+
+        function syncEquipeArrays() {
+            const cfg = loadEquipeConfig();
+            NOMES = cfg.filter(m => m.ativo).map(m => m.nome);
+            const nextLouca = cfg.filter(m => m.louca).map(m => m.nome);
+
+            // Migra 'Folguista' legado no ciclo para 'Folguista 1' se necessário
+            try {
+                const rawCiclo = localStorage.getItem('mb_sorteio_louca_ciclo');
+                if (rawCiclo) {
+                    const parsed = JSON.parse(rawCiclo);
+                    if (Array.isArray(parsed) && parsed.includes('Folguista') && !nextLouca.includes('Folguista') && nextLouca.includes('Folguista 1')) {
+                        const migrated = parsed.map(n => n === 'Folguista' ? 'Folguista 1' : n);
+                        localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(migrated));
+                    }
+                }
+            } catch (e) {}
+
+            const oldLouca = [...NOMES_LOUCA];
+            NOMES_LOUCA = nextLouca;
+            // Mantém quem estava ativo e adiciona novos integrantes da louça
+            loucaAtivos = NOMES_LOUCA.filter(n => loucaAtivos.includes(n) || !oldLouca.includes(n));
+            if (loucaAtivos.length === 0 && NOMES_LOUCA.length > 0) {
+                loucaAtivos = [...NOMES_LOUCA];
+            }
+
+            renderQuemFezGrid();
+            if (document.getElementById('nome-grid')) buildNomeScreen();
+            if (document.getElementById('estoque-overlay')?.classList.contains('open')) renderEstoqueNomes();
+            if (document.getElementById('louca-overlay')?.classList.contains('open')) renderSorteioLoucaUI();
+            if (document.getElementById('equipe-overlay')?.classList.contains('open')) renderEquipeModalUI();
+        }
+
+        function renderQuemFezGrid() {
+            const quemGrid = document.getElementById('quem-fez-grid');
+            if (!quemGrid) return;
+            quemGrid.innerHTML = NOMES.map(n => {
+                if (isFolguistaSlot(n)) {
+                    const saved = getFolguistaSavedName(n);
+                    if (saved) {
+                        return `
+                            <div style="position:relative;display:flex;">
+                                <button onclick="confirmItem('${n}')" style="width:100%;padding:12px 28px 12px 8px;background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;color:#92400E;">
+                                    👤 ${saved} <span style="display:block;font-size:10px;font-weight:600;opacity:0.85;">(${n})</span>
+                                </button>
+                                <button onclick="editFolguistaNameToday('${n}', event)" title="Trocar nome do folguista de hoje" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.8);border:1px solid #FCD34D;border-radius:8px;width:24px;height:24px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <button onclick="confirmItem('${n}')" style="padding:10px 8px;background:#FFFBEB;border:1.5px dashed #F59E0B;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;color:#92400E;">
+                            👤 ${n}
+                            <span style="display:block;font-size:10px;font-weight:600;color:#B45309;">Toque p/ pôr nome</span>
+                        </button>
+                    `;
+                }
+                return `<button onclick="confirmItem('${n}')" style="padding:12px 8px;background:#f5f5f7;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:#1a1a1a">${n}</button>`;
+            }).join('');
+        }
+
+        async function openEquipeModal() {
+            const hasPerm = await checkAdminLoucaPermission();
+            if (!hasPerm) return;
+            document.getElementById('equipe-overlay')?.classList.add('open');
+            renderEquipeModalUI();
+        }
+
+        function closeEquipeModal() {
+            document.getElementById('equipe-overlay')?.classList.remove('open');
+        }
+
+        function equipeOverlayClick(e) {
+            if (e.target === document.getElementById('equipe-overlay')) {
+                closeEquipeModal();
+            }
+        }
+
+        function toggleEquipeMemberField(idx, field) {
+            const cfg = loadEquipeConfig();
+            if (!cfg[idx]) return;
+            cfg[idx][field] = !cfg[idx][field];
+            saveEquipeConfig(cfg);
+        }
+
+        function addEquipeMember() {
+            const input = document.getElementById('novo-membro-equipe-input');
+            if (!input) return;
+            const nome = input.value.trim();
+            if (!nome) {
+                alert('Digite o nome para adicionar.');
+                return;
+            }
+            if (nome.toLowerCase() === 'mike') {
+                alert('O perfil Mike é exclusivo de Administrador (cadeado 🔐) e não pode ser adicionado nas tarefas.');
+                return;
+            }
+            const cfg = loadEquipeConfig();
+            if (cfg.some(m => m.nome.toLowerCase() === nome.toLowerCase())) {
+                alert('Esse nome já está na lista da equipe.');
+                return;
+            }
+            const isFolg = nome.toLowerCase().startsWith('folguista');
+            cfg.push({ nome, ativo: true, louca: true, isFolguista: isFolg });
+            input.value = '';
+            saveEquipeConfig(cfg);
+        }
+
+        function removeEquipeMember(idx) {
+            const cfg = loadEquipeConfig();
+            const item = cfg[idx];
+            if (!item) return;
+            if (!confirm(`Remover "${item.nome}" da equipe?`)) return;
+            cfg.splice(idx, 1);
+            saveEquipeConfig(cfg);
+        }
+
+        function renderEquipeModalUI() {
+            const body = document.getElementById('equipe-body');
+            if (!body) return;
+            const cfg = loadEquipeConfig();
+            const folgSlots = cfg.filter(m => m.isFolguista);
+
+            body.innerHTML = `
+                <!-- Folguistas do Dia -->
+                <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:12px 14px;margin-bottom:16px;">
+                    <div style="font-size:12px;font-weight:800;color:#92400E;text-transform:uppercase;margin-bottom:4px;">
+                        👤 Nomes dos Folguistas de Hoje (${today()})
+                    </div>
+                    <div style="font-size:11px;color:#B45309;margin-bottom:10px;">
+                        Salvo automaticamente até o fim do dia quando o folguista marca a 1ª tarefa:
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        ${folgSlots.map(f => {
+                            const saved = getFolguistaSavedName(f.nome);
+                            return `
+                                <div style="display:flex;align-items:center;justify-content:space-between;background:#FFF;padding:8px 12px;border-radius:10px;border:1px solid #FCD34D;">
+                                    <div>
+                                        <div style="font-size:12px;font-weight:800;color:var(--text);">${f.nome}</div>
+                                        <div style="font-size:12px;color:${saved ? '#059669' : 'var(--text-muted)'};font-weight:700;">
+                                            ${saved ? `✅ Hoje: ${saved} (Folguista)` : '⏳ Ainda não preenchido hoje'}
+                                        </div>
+                                    </div>
+                                    <button onclick="editFolguistaNameToday('${f.nome}', event)" style="background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;cursor:pointer;">
+                                        ✏️ ${saved ? 'Trocar / Limpar' : 'Definir Nome'}
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- Adicionar Novo Nome -->
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <input id="novo-membro-equipe-input" type="text" placeholder="Novo nome (ex: Lucas ou Folguista 3)" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;">
+                    <button onclick="addEquipeMember()" style="background:var(--primary);color:#FFF;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">
+                        + Adicionar
+                    </button>
+                </div>
+
+                <!-- Lista da Equipe -->
+                <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+                    Integrantes (Tarefas & Roleta da Louça)
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    ${cfg.map((m, idx) => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#FAF8F5;border:1px solid var(--border);border-radius:12px;gap:8px;">
+                            <div style="font-weight:800;font-size:14px;color:var(--text);flex:1;">
+                                ${m.nome}
+                                ${m.isFolguista ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:6px;margin-left:4px;">Pede nome 1x/dia</span>' : ''}
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button onclick="toggleEquipeMemberField(${idx}, 'ativo')" title="Mostrar nas tarefas e estoque" style="padding:5px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid ${m.ativo ? '#10B981' : '#D1D5DB'};background:${m.ativo ? '#ECFDF5' : '#F3F4F6'};color:${m.ativo ? '#065F46' : '#6B7280'};">
+                                    📋 ${m.ativo ? 'Tarefas: SIM' : 'Tarefas: NÃO'}
+                                </button>
+                                <button onclick="toggleEquipeMemberField(${idx}, 'louca')" title="Participar da Roleta da Louça" style="padding:5px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid ${m.louca ? 'var(--primary)' : '#D1D5DB'};background:${m.louca ? '#FFF1F2' : '#F3F4F6'};color:${m.louca ? 'var(--primary)' : '#6B7280'};">
+                                    🍽️ ${m.louca ? 'Louça: SIM' : 'Louça: NÃO'}
+                                </button>
+                                <button onclick="removeEquipeMember(${idx})" title="Remover da equipe" style="background:#FFF;border:1px solid #FECACA;border-radius:8px;width:28px;height:28px;cursor:pointer;color:#EF4444;font-size:12px;display:flex;align-items:center;justify-content:center;">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // ==========================================
         // SISTEMA: SORTEIO DA LOUÇA (RODÍZIO SEM REPETIÇÃO)
         // ==========================================
-        const NOMES_LOUCA = ['Marcelo', 'Vitória', 'Israel', 'Gabriel', 'Wil', 'Daniel', 'Folguista'];
-        let loucaAtivos = [...NOMES_LOUCA];
-        let currentLoucaTab = 'sorteio';
-        let isSpinningLouca = false;
+        syncEquipeArrays();
 
         function loadTodayLoucaData() {
             try {
@@ -6812,7 +7191,7 @@
                         ${hist.slice().reverse().map((item, idx) => `
                             <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #FAF8F5; border: 1px solid var(--border); border-radius: 12px;">
                                 <div>
-                                    <div style="font-weight: 800; font-size: 15px; color: var(--text);">${item.sorteado}</div>
+                                    <div style="font-weight: 800; font-size: 15px; color: var(--text);">${item.sorteadoLabel || item.sorteado}</div>
                                     <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Data: ${item.data} às ${item.horario}</div>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -6839,7 +7218,7 @@
                         <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
                             Responsável da Louça de Hoje:
                         </div>
-                        <div class="louca-winner-name">${todayData.sorteado}</div>
+                        <div class="louca-winner-name">${todayData.sorteadoLabel || getDisplayLoucaLabel(todayData.sorteado)}</div>
                         <div class="louca-locked-info">
                             📅 Data: <strong>${todayData.data}</strong> às <strong>${todayData.horario}</strong>
                         </div>
@@ -6931,13 +7310,14 @@
                             ${NOMES_LOUCA.map(nome => {
                                 const jaLavou = effectiveCiclo.includes(nome);
                                 const active = loucaAtivos.includes(nome);
+                                const displayChip = getDisplayLoucaLabel(nome);
 
                                 if (jaLavou) {
                                     return `
-                                        <div class="louca-chip ja-lavou" onclick="toggleLoucaParticipant('${nome}')" title="${nome} já lavou nesta rodada">
+                                        <div class="louca-chip ja-lavou" onclick="toggleLoucaParticipant('${nome}')" title="${displayChip} já lavou nesta rodada">
                                             <div style="display: flex; align-items: center; gap: 4px;">
                                                 <span>🧼</span>
-                                                <span>${nome}</span>
+                                                <span>${displayChip}</span>
                                             </div>
                                             <span class="louca-chip-badge-lavou">JÁ LAVOU</span>
                                         </div>
@@ -6948,7 +7328,7 @@
                                     <div class="louca-chip ${active ? 'active' : ''}" onclick="toggleLoucaParticipant('${nome}')">
                                         <div style="display: flex; align-items: center; gap: 4px;">
                                             <span>${active ? '🎯' : '💤'}</span>
-                                            <span>${nome}</span>
+                                            <span>${displayChip}</span>
                                         </div>
                                         ${active ? '<span class="louca-chip-badge-concorrendo">NO SORTEIO</span>' : '<span class="louca-chip-badge-folga">FOLGA</span>'}
                                     </div>
@@ -7023,7 +7403,7 @@
                 count++;
                 const candidate = pool[count % pool.length];
                 if (reel) {
-                    reel.textContent = candidate;
+                    reel.textContent = getDisplayLoucaLabel(candidate);
                     reel.classList.remove('highlight');
                 }
                 playCoinSound();
@@ -7036,7 +7416,7 @@
                 } else {
                     // Parou no ganhador definitivo!
                     if (reel) {
-                        reel.textContent = winner;
+                        reel.textContent = getDisplayLoucaLabel(winner);
                         reel.classList.add('highlight');
                     }
                     playVictorySound();
@@ -7053,6 +7433,7 @@
                         data: today(),
                         horario: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
                         sorteado: winner,
+                        sorteadoLabel: getDisplayLoucaLabel(winner),
                         participantes: [...loucaAtivos],
                         candidatos: [...candidatos],
                         cicloSorteados: [...ciclo],
