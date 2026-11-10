@@ -2831,21 +2831,24 @@
                 }
                 if (data.sorteio_louca !== undefined) {
                     localStorage.setItem('mb_sorteio_louca', JSON.stringify(data.sorteio_louca || {}));
-                    if (document.getElementById('louca-overlay')?.classList.contains('open')) {
-                        renderSorteioLoucaUI();
-                    }
+                } else {
+                    localStorage.removeItem('mb_sorteio_louca');
                 }
                 if (data.sorteio_louca_hist !== undefined) {
                     localStorage.setItem('mb_sorteio_louca_hist', JSON.stringify(data.sorteio_louca_hist || []));
-                    if (document.getElementById('louca-overlay')?.classList.contains('open') && typeof currentLoucaTab !== 'undefined' && currentLoucaTab === 'historico') {
-                        renderSorteioLoucaUI();
-                    }
+                } else {
+                    localStorage.setItem('mb_sorteio_louca_hist', '[]');
                 }
                 if (data.sorteio_louca_ciclo !== undefined) {
-                    localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(data.sorteio_louca_ciclo || []));
-                    if (document.getElementById('louca-overlay')?.classList.contains('open')) {
-                        renderSorteioLoucaUI();
-                    }
+                    const rawCiclo = Array.isArray(data.sorteio_louca_ciclo)
+                        ? data.sorteio_louca_ciclo.filter(n => n !== '__RESET__')
+                        : [];
+                    localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(rawCiclo));
+                } else {
+                    localStorage.setItem('mb_sorteio_louca_ciclo', '[]');
+                }
+                if (document.getElementById('louca-overlay')?.classList.contains('open')) {
+                    renderSorteioLoucaUI();
                 }
                 setSyncUI('online');
             }, err => {
@@ -6670,30 +6673,36 @@
                 const raw = localStorage.getItem('mb_sorteio_louca_ciclo');
                 if (raw !== null) {
                     const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) return parsed;
+                    if (Array.isArray(parsed)) {
+                        return parsed.filter(n => NOMES_LOUCA.includes(n));
+                    }
                 }
             } catch (e) {}
-
-            // Dedução automática a partir do histórico recente caso ainda não haja ciclo salvo
-            const hist = loadLoucaHistory();
-            if (!hist || hist.length === 0) return [];
-
-            const cicloDeduzido = [];
-            for (let i = hist.length - 1; i >= 0; i--) {
-                const nome = hist[i].sorteado;
-                if (!nome || !NOMES_LOUCA.includes(nome)) continue;
-                if (cicloDeduzido.includes(nome)) {
-                    // Encontrou repetição, este ponto marcava o início da rodada atual
-                    break;
-                }
-                cicloDeduzido.unshift(nome);
-            }
-            return cicloDeduzido;
+            return [];
         }
 
         function saveLoucaCiclo(ciclo) {
-            localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(ciclo));
-            db.ref('sorteio_louca_ciclo').set(ciclo).catch(() => {});
+            const clean = Array.isArray(ciclo) ? ciclo.filter(n => NOMES_LOUCA.includes(n)) : [];
+            localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(clean));
+            // No Firebase RTDB, salvar [] apaga o nó; usamos ['__RESET__'] quando vazio para sincronizar o reset em todos os aparelhos
+            db.ref('sorteio_louca_ciclo').set(clean.length > 0 ? clean : ['__RESET__']).catch(() => {});
+        }
+
+        function shuffleArrayLouca(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                let rand;
+                if (window.crypto && window.crypto.getRandomValues) {
+                    const buf = new Uint32Array(1);
+                    window.crypto.getRandomValues(buf);
+                    rand = buf[0] / (0xFFFFFFFF + 1);
+                } else {
+                    rand = Math.random();
+                }
+                const j = Math.floor(rand * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
         }
 
         function getEffectiveLoucaCiclo() {
@@ -6772,7 +6781,8 @@
             if (!body) return;
 
             const todayData = loadTodayLoucaData();
-            const ciclo = loadLoucaCiclo();
+            const candidatos = todayData ? [] : getLoucaCandidatos();
+            const ciclo = todayData ? loadLoucaCiclo() : getEffectiveLoucaCiclo();
             const jaLavaram = ciclo.filter(n => NOMES_LOUCA.includes(n));
             const faltamLavar = NOMES_LOUCA.filter(n => !ciclo.includes(n));
             const progressoPct = Math.round((jaLavaram.length / NOMES_LOUCA.length) * 100);
@@ -6887,8 +6897,7 @@
                 `;
             } else {
                 // AINDA NÃO SORTEOU HOJE - EXIBE CICLO, ROLETA E SELETOR DE PRESENTES
-                const candidatos = getLoucaCandidatos();
-                const effectiveCiclo = getEffectiveLoucaCiclo();
+                const effectiveCiclo = ciclo;
 
                 body.innerHTML = `
                     <!-- Card de Progresso da Rodada -->
@@ -6951,7 +6960,7 @@
                     <div class="louca-wheel-card">
                         <div class="louca-wheel-pointer">▼</div>
                         <div class="louca-wheel-reel" id="louca-wheel-reel">
-                            ${candidatos.length > 0 ? candidatos[0] : '---'}
+                            ${candidatos.length > 0 ? '🎲 PRONTO' : '---'}
                         </div>
                         <div style="font-size: 11px; color: var(--secondary-light); margin-top: 8px; font-weight: 700;">
                             ${candidatos.length > 0 ? `🎯 Concorrendo hoje: ${candidatos.join(', ')}` : '⚠️ Nenhum participante disponível hoje'}
@@ -6987,9 +6996,23 @@
             const btn = document.getElementById('btn-girar-louca');
             if (btn) btn.disabled = true;
 
-            // Embaralhar para decidir o ganhador APENAS entre os candidatos elegíveis (sem repetição)
-            const pool = [...candidatos];
-            const winner = pool[Math.floor(Math.random() * pool.length)];
+            // Embaralha os candidatos com aleatoriedade criptográfica (Fisher-Yates)
+            const cicloAtual = getEffectiveLoucaCiclo();
+            let elegiveisSorteio = [...candidatos];
+
+            // Quando inicia uma nova rodada do zero (ciclo vazio), evita repetir de imediato
+            // a última pessoa que lavou no fechamento da rodada anterior (se houver mais candidatos)
+            if (cicloAtual.length === 0 && elegiveisSorteio.length > 1) {
+                const hist = loadLoucaHistory();
+                const ultimoSorteado = hist.length > 0 ? hist[hist.length - 1]?.sorteado : null;
+                if (ultimoSorteado && elegiveisSorteio.includes(ultimoSorteado)) {
+                    elegiveisSorteio = elegiveisSorteio.filter(n => n !== ultimoSorteado);
+                }
+            }
+
+            const shuffledWinnerPool = shuffleArrayLouca(elegiveisSorteio);
+            const winner = shuffledWinnerPool[0];
+            const pool = shuffleArrayLouca(candidatos);
 
             // Ciclo de rotação animada passando pelos candidatos
             let speed = 60; // ms
