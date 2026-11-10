@@ -2286,6 +2286,71 @@
         </div>
     </div>
 
+    <!-- Modal Câmera Ao Vivo Obrigatória (Sem Galeria) -->
+    <div class="louca-overlay" id="camera-overlay" style="z-index: 350;">
+        <div class="louca-modal" style="max-width: 420px;">
+            <div class="louca-header">
+                <div>
+                    <div class="louca-title">📸 Foto Obrigatória</div>
+                    <div class="louca-sub" id="camera-task-label">Aponte a câmera para comprovar</div>
+                </div>
+                <button class="louca-close" onclick="closeLiveCameraModal()" title="Cancelar">×</button>
+            </div>
+            <div class="louca-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;">
+                    <span>🔴 CÂMERA AO VIVO (Sem Galeria)</span>
+                    <span id="camera-user-badge"></span>
+                </div>
+
+                <div style="position:relative;width:100%;background:#111;border-radius:14px;overflow:hidden;min-height:260px;display:flex;align-items:center;justify-content:center;border:2px solid var(--secondary);">
+                    <video id="camera-video" autoplay playsinline muted style="width:100%;max-height:340px;object-fit:cover;display:block;"></video>
+                    <img id="camera-preview-img" alt="Prévia da foto" style="width:100%;max-height:340px;object-fit:contain;display:none;" />
+                    <canvas id="camera-canvas" style="display:none;"></canvas>
+                </div>
+
+                <div id="camera-error-msg" style="display:none;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;padding:10px;border-radius:10px;font-size:12px;font-weight:700;text-align:center;"></div>
+
+                <div id="camera-live-actions" style="display:flex;flex-direction:column;gap:8px;">
+                    <button class="btn-girar-louca" id="btn-capture-photo" onclick="captureLivePhoto()" style="padding:14px;font-size:15px;">
+                        <span>📸</span> CAPTURAR FOTO AGORA
+                    </button>
+                    <button onclick="closeLiveCameraModal()" style="width:100%;padding:11px;background:none;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;">
+                        Cancelar (Não concluir tarefa)
+                    </button>
+                </div>
+
+                <div id="camera-review-actions" style="display:none;flex-direction:column;gap:8px;">
+                    <button class="btn-girar-louca" onclick="confirmCapturedPhoto()" style="padding:14px;font-size:15px;background:linear-gradient(135deg, #10B981, #059669);box-shadow:0 6px 20px rgba(16,185,129,0.3);">
+                        <span>✅</span> CONFIRMAR FOTO E CONCLUIR
+                    </button>
+                    <button onclick="retakeLivePhoto()" style="width:100%;padding:11px;background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:12px;font-size:13px;font-weight:800;color:#92400E;cursor:pointer;">
+                        🔄 Tirar Outra Foto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Visualizar Foto Comprovante -->
+    <div class="louca-overlay" id="photo-view-overlay" onclick="if(event.target===this)closePhotoViewer()" style="z-index: 360;">
+        <div class="louca-modal" style="max-width: 440px;">
+            <div class="louca-header">
+                <div>
+                    <div class="louca-title">📷 Foto de Comprovação</div>
+                    <div class="louca-sub" id="photo-view-sub">Registro verificado</div>
+                </div>
+                <button class="louca-close" onclick="closePhotoViewer()" title="Fechar">×</button>
+            </div>
+            <div class="louca-body" style="display:flex;flex-direction:column;gap:12px;align-items:center;">
+                <img id="photo-view-img" alt="Comprovante" style="width:100%;border-radius:14px;border:2px solid var(--border);box-shadow:var(--shadow-md);" />
+                <div id="photo-view-meta" style="width:100%;background:#FAF8F5;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--text);"></div>
+                <button onclick="closePhotoViewer()" style="width:100%;padding:12px;background:var(--primary);color:#FFF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Modal confirmação de conclusão por setor -->
     <div class="confirm-overlay" id="confirm-overlay">
@@ -2492,13 +2557,13 @@
                         { text: 'Desligar máquina de gelo', skippable: true, pts: 1, direct: true },
                         { text: 'Desligar mesa aquecida', pts: 1, direct: true },
                         { text: 'Desligar conservador de proteína', skippable: true, pts: 1, direct: true },
-                        { text: 'Desligar disjuntor da fritadeira menor', skippable: true, pts: 1, direct: true, days: SAB_DOM, includeHolidays: true, important: true },
+                        { text: 'Desligar disjuntor da fritadeira menor', skippable: true, pts: 1, direct: true, days: SAB_DOM, includeHolidays: true, important: true, requirePhoto: true },
                         { text: 'Desligar fritadeira menor', pts: 1, direct: true, days: SAB_DOM, includeHolidays: true },
                         { text: 'Desligar o forno', skippable: true, pts: 1, direct: true },
                         { text: 'Desligar o microondas', pts: 1, direct: true },
                         { text: 'Desligar o registro da chapa', pts: 1, direct: true },
-                        { text: 'Desligar o registro geral do gás da loja', pts: 1, direct: true, important: true },
-                        { text: 'Desligar o registro geral do gás do QG', pts: 1, direct: true, important: true },
+                        { text: 'Desligar o registro geral do gás da loja', pts: 1, direct: true, important: true, requirePhoto: true },
+                        { text: 'Desligar o registro geral do gás do QG', pts: 1, direct: true, important: true, requirePhoto: true },
                         { text: 'Desligar a toaster', pts: 1, direct: true },
                         { text: 'Guardar os insumos corretamente', pts: 40, multi: true },
                         { text: 'Pesar a carne que sobrou e conferir a reserva', hasInput: true, inputUnit: 'kg', hasSelect: true, pts: 5, direct: true },
@@ -2876,6 +2941,12 @@
                     const selectedMonth = document.getElementById('rank-month-select')?.value || getYearMonth();
                     openRanking(selectedMonth);
                 }
+                if (data.fotos_tarefas !== undefined) {
+                    const cleanedFotos = cleanupExpiredTaskPhotos(data.fotos_tarefas || {});
+                    localStorage.setItem('mb_fotos_tarefas', JSON.stringify(cleanedFotos));
+                } else {
+                    localStorage.setItem('mb_fotos_tarefas', '{}');
+                }
                 if (data.equipe_config !== undefined && Array.isArray(data.equipe_config)) {
                     localStorage.setItem('mb_equipe_config', JSON.stringify(data.equipe_config));
                     syncEquipeArrays();
@@ -3014,7 +3085,8 @@
                 'mb_sorteio_louca_hist',
                 'mb_sorteio_louca_ciclo',
                 'mb_estoque_itens',
-                'mb_estoque_contagens'
+                'mb_estoque_contagens',
+                'mb_fotos_tarefas'
             ]);
             const entries = {};
 
@@ -3107,7 +3179,8 @@
                                                 addEntry(date, userName, sectorId, {
                                                     text: text + (typeof item === 'object' && val.value && item.hasInput ? ' [' + val.value + (item.inputUnit || '') + ']' : '') + (typeof item === 'object' && val.selectValue && item.hasSelect ? ' [Reserva: ' + val.selectValue + ']' : ''),
                                                     isoDate: itemDate,
-                                                    time: `${userName} · ${time}`
+                                                    time: `${userName} · ${time}`,
+                                                    photoKey: val.photoKey || null
                                                 });
                                             }
                                         } else {
@@ -3197,6 +3270,7 @@
                     return;
                 }
 
+                const photosMap = loadTaskPhotos();
                 const html = userNames.map(user => {
                     const sectors = users[user];
                     const sectorsHtml = Object.keys(sectors).map(sectorId => {
@@ -3205,9 +3279,11 @@
                         if (!list) return '';
                         const itemsHtml = items.map(it => {
                             const isSkipped = it.text.startsWith('🚫');
+                            const hasPhoto = it.photoKey && photosMap[it.photoKey];
+                            const photoBtn = hasPhoto ? `<button onclick="openPhotoViewer('${it.photoKey}')" style="margin-right:6px;padding:2px 7px;background:#FFFBEB;border:1px solid #F59E0B;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;color:#92400E;white-space:nowrap">📷 Ver Foto</button>` : '';
                             return `<div class="hist-item">
                         <span class="hist-item-text">${isSkipped ? '' : '✅ '}${it.text}</span>
-                        <span class="hist-item-time">${it.time}</span>
+                        <span class="hist-item-time" style="display:flex;align-items:center">${photoBtn}<span>${it.time}</span></span>
                     </div>`;
                         }).join('');
                         const done = items.length;
@@ -4270,7 +4346,9 @@
                         const isIniciado = status === 'iniciado';
                         const isConcluido = status === 'concluido';
                         const isActive = isIniciado || isConcluido || isSkipped;
-                        const text = getItemText(item);
+                        const rawText = getItemText(item);
+                        const requiresPhoto = typeof item === 'object' && item.requirePhoto;
+                        const text = requiresPhoto ? `📸 ${rawText}` : rawText;
                         const dayTag = itemDayTag(item);
                         const pts = typeof item === 'object' && item.pts ? item.pts : 1;
                         const editBtn = isActive && isAdmin()
@@ -4281,6 +4359,11 @@
                             itemClass += ' important';
                         }
                         let meta = getCheckedMeta(id, si, ii);
+                        const photoKeyForView = meta && meta.photoKey ? meta.photoKey : (requiresPhoto && isConcluido ? `${storageKey(id)}_${si}_${ii}` : null);
+                        const hasStoredPhoto = photoKeyForView && loadTaskPhotos()[photoKeyForView];
+                        const photoViewBtn = hasStoredPhoto
+                            ? `<button onclick="event.stopPropagation();event.preventDefault();openPhotoViewer('${photoKeyForView}')" style="margin-left:6px;padding:3px 8px;background:#FFFBEB;border:1px solid #F59E0B;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;color:#92400E;white-space:nowrap">📷 Ver Foto</button>`
+                            : '';
 
                         const inputKey = `${id}_${si}_${ii}`;
                         const typedVal = localItemInputs[inputKey] !== undefined ? localItemInputs[inputKey] : (meta && meta.value ? meta.value : '');
@@ -4342,6 +4425,7 @@
                         ${timeHtml}
                     </label>
                     ${inputHtml}
+                    ${photoViewBtn}
                     ${editBtn}
                 </div>`;
                     }).join('');
@@ -4418,6 +4502,8 @@
                     if (cb) cb.checked = true;
                     return;
                 }
+                const oldMeta = getCheckedMeta(setorId, si, ii);
+                deleteTaskPhoto(setorId, si, ii, oldMeta?.photoKey);
                 setChecked(setorId, si, ii, false);
                 delete localItemInputs[`${setorId}_${si}_${ii}`];
                 delete localItemSelects[`${setorId}_${si}_${ii}`];
@@ -4426,6 +4512,7 @@
                 const timeEl = el.querySelector('.item-time');
                 if (timeEl) timeEl.remove();
                 updateProgress(setorId);
+                renderPanels();
             }
             // Trigger redeployment of the checklist app
         }
@@ -4444,6 +4531,11 @@
             const list = CHECKLISTS[setorId];
             const item = list.sections[si].items[ii];
             const text = typeof item === 'object' ? item.text : item;
+
+            if (typeof item === 'object' && item.requirePhoto) {
+                openLiveCameraForTask(setorId, si, ii, name);
+                return;
+            }
 
             if (typeof item === 'object' && item.multi) {
                 const meta = getCheckedMeta(setorId, si, ii);
@@ -4776,7 +4868,11 @@
             if (oldMeta && oldMeta.user) removeItemScore(oldMeta.user, pts, itemText);
             addItemScore(name, pts, itemText);
 
-            setChecked(setorId, si, ii, { user: name, date: new Date().toISOString() });
+            setChecked(setorId, si, ii, {
+                ...(oldMeta && typeof oldMeta === 'object' ? oldMeta : {}),
+                user: name,
+                date: new Date().toISOString()
+            });
             const el = document.getElementById(`item-${setorId}-${si}-${ii}`);
             const t = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             const timeEl = el.querySelector('.item-time');
@@ -4807,6 +4903,7 @@
             const oldMeta = getCheckedMeta(setorId, si, ii);
             if (oldMeta && oldMeta.user) removeItemScore(oldMeta.user, pts, itemText);
 
+            deleteTaskPhoto(setorId, si, ii, oldMeta?.photoKey);
             setChecked(setorId, si, ii, false);
             delete localItemInputs[`${setorId}_${si}_${ii}`];
             delete localItemSelects[`${setorId}_${si}_${ii}`];
@@ -4817,6 +4914,272 @@
             const timeEl = el.querySelector('.item-time');
             if (timeEl) timeEl.remove();
             updateProgress(setorId);
+            renderPanels();
+        }
+
+        // ─── CÂMERA AO VIVO OBRIGATÓRIA (SEM GALERIA) E FOTOS LEVES COM AUTO-LIMPEZA (72h) ───
+        const PHOTO_RETENTION_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias (72h)
+        let activeCameraStream = null;
+        let pendingCameraTask = null;
+        let capturedPhotoDataUrl = null;
+
+        function loadTaskPhotos() {
+            try {
+                return JSON.parse(localStorage.getItem('mb_fotos_tarefas') || '{}') || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function cleanupExpiredTaskPhotos(photosObj) {
+            if (!photosObj || typeof photosObj !== 'object') return {};
+            const now = Date.now();
+            const cleaned = {};
+            let removedAny = false;
+            Object.entries(photosObj).forEach(([k, v]) => {
+                if (v && typeof v === 'object' && v.dataUrl) {
+                    const ts = v.timestamp || (v.date ? new Date(v.date).getTime() : now);
+                    if (now - ts <= PHOTO_RETENTION_MS) {
+                        cleaned[k] = v;
+                    } else {
+                        removedAny = true;
+                    }
+                }
+            });
+            if (removedAny && db) {
+                db.ref('fotos_tarefas').set(cleaned).catch(() => {});
+            }
+            return cleaned;
+        }
+
+        function saveTaskPhoto(photoKey, record) {
+            const all = cleanupExpiredTaskPhotos(loadTaskPhotos());
+            all[photoKey] = record;
+            try {
+                localStorage.setItem('mb_fotos_tarefas', JSON.stringify(all));
+            } catch (e) {
+                // Caso localStorage esteja cheio, mantém apenas as últimas 10 fotos
+                const keys = Object.keys(all).sort((a, b) => (all[b].timestamp || 0) - (all[a].timestamp || 0)).slice(0, 10);
+                const slim = {};
+                keys.forEach(k => slim[k] = all[k]);
+                slim[photoKey] = record;
+                try { localStorage.setItem('mb_fotos_tarefas', JSON.stringify(slim)); } catch (_) {}
+            }
+            if (db) {
+                db.ref('fotos_tarefas/' + photoKey).set(record).catch(e => console.error('Erro ao salvar foto:', e));
+            }
+        }
+
+        function deleteTaskPhoto(setorId, si, ii, explicitKey) {
+            const key = explicitKey || `${storageKey(setorId)}_${si}_${ii}`;
+            const all = loadTaskPhotos();
+            if (all[key]) {
+                delete all[key];
+                try { localStorage.setItem('mb_fotos_tarefas', JSON.stringify(all)); } catch (_) {}
+            }
+            if (db) {
+                db.ref('fotos_tarefas/' + key).remove().catch(() => {});
+            }
+        }
+
+        function stopLiveCameraStream() {
+            if (activeCameraStream) {
+                try {
+                    activeCameraStream.getTracks().forEach(t => t.stop());
+                } catch (_) {}
+                activeCameraStream = null;
+            }
+            const video = document.getElementById('camera-video');
+            if (video) video.srcObject = null;
+        }
+
+        async function openLiveCameraForTask(setorId, si, ii, userName) {
+            const list = CHECKLISTS[setorId];
+            const item = list.sections[si].items[ii];
+            const text = typeof item === 'object' ? item.text : item;
+
+            pendingCameraTask = { setorId, si, ii, userName, text };
+            capturedPhotoDataUrl = null;
+
+            document.getElementById('camera-task-label').textContent = text;
+            document.getElementById('camera-user-badge').textContent = `👤 ${userName}`;
+            document.getElementById('camera-error-msg').style.display = 'none';
+            document.getElementById('camera-video').style.display = 'block';
+            document.getElementById('camera-preview-img').style.display = 'none';
+            document.getElementById('camera-live-actions').style.display = 'flex';
+            document.getElementById('camera-review-actions').style.display = 'none';
+            document.getElementById('btn-capture-photo').disabled = false;
+            document.getElementById('camera-overlay').classList.add('open');
+
+            stopLiveCameraStream();
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const errEl = document.getElementById('camera-error-msg');
+                errEl.textContent = '⚠️ Seu navegador não suporta acesso direto à câmera ao vivo ou não está em conexão segura (HTTPS).';
+                errEl.style.display = 'block';
+                document.getElementById('btn-capture-photo').disabled = true;
+                return;
+            }
+
+            try {
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
+                        audio: false
+                    });
+                } catch (_) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                }
+                activeCameraStream = stream;
+                const video = document.getElementById('camera-video');
+                video.srcObject = stream;
+                await video.play().catch(() => {});
+            } catch (err) {
+                console.error('Erro ao acessar câmera:', err);
+                const errEl = document.getElementById('camera-error-msg');
+                errEl.textContent = '🚫 Permissão de câmera negada ou indisponível! Para concluir esta tarefa obrigatória, autorize o uso da câmera no navegador.';
+                errEl.style.display = 'block';
+                document.getElementById('btn-capture-photo').disabled = true;
+            }
+        }
+
+        function closeLiveCameraModal() {
+            stopLiveCameraStream();
+            pendingCameraTask = null;
+            pendingItemMeta = null;
+            pendingUserForItem = null;
+            capturedPhotoDataUrl = null;
+            document.getElementById('camera-overlay').classList.remove('open');
+        }
+
+        function captureLivePhoto() {
+            if (!pendingCameraTask) return;
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas');
+            if (!video || !video.videoWidth || !video.videoHeight) {
+                alert('Aguarde a imagem da câmera carregar antes de capturar.');
+                return;
+            }
+
+            // Redimensiona para no máx 560px de largura (mantém super leve ~25-35KB)
+            const maxW = 560;
+            const ratio = Math.min(1, maxW / video.videoWidth);
+            const w = Math.round(video.videoWidth * ratio);
+            const h = Math.round(video.videoHeight * ratio);
+
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, w, h);
+
+            // Carimbo anti-fraude gravado na própria imagem (Data/Hora exata + Funcionário + Tarefa)
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR');
+            const barH = 58;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+            ctx.fillRect(0, h - barH, w, barH);
+
+            ctx.fillStyle = '#F59E0B';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(`📸 AO VIVO · ${pendingCameraTask.userName} · ${dateStr}`, 10, h - 34);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 11px sans-serif';
+            const taskLabel = pendingCameraTask.text.length > 52 ? pendingCameraTask.text.slice(0, 52) + '...' : pendingCameraTask.text;
+            ctx.fillText(taskLabel, 10, h - 14);
+
+            capturedPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.62);
+
+            stopLiveCameraStream();
+
+            const preview = document.getElementById('camera-preview-img');
+            preview.src = capturedPhotoDataUrl;
+            preview.style.display = 'block';
+            video.style.display = 'none';
+            document.getElementById('camera-live-actions').style.display = 'none';
+            document.getElementById('camera-review-actions').style.display = 'flex';
+        }
+
+        function retakeLivePhoto() {
+            if (!pendingCameraTask) return;
+            const { setorId, si, ii, userName } = pendingCameraTask;
+            openLiveCameraForTask(setorId, si, ii, userName);
+        }
+
+        async function confirmCapturedPhoto() {
+            if (!pendingCameraTask || !capturedPhotoDataUrl) return;
+            const { setorId, si, ii, userName, text } = pendingCameraTask;
+            const photoData = capturedPhotoDataUrl;
+
+            stopLiveCameraStream();
+            document.getElementById('camera-overlay').classList.remove('open');
+            pendingCameraTask = null;
+            pendingItemMeta = null;
+            pendingUserForItem = null;
+            capturedPhotoDataUrl = null;
+
+            await refreshStateFromFirebase();
+            const current = getItemStatus(setorId, si, ii);
+            if (current) {
+                const meta = getCheckedMeta(setorId, si, ii);
+                const who = meta ? meta.user : 'outro funcionário';
+                alert(`Este item já foi concluído por ${who}.`);
+                buildApp();
+                return;
+            }
+
+            const nowIso = new Date().toISOString();
+            const photoKey = `${storageKey(setorId)}_${si}_${ii}`;
+
+            saveTaskPhoto(photoKey, {
+                dataUrl: photoData,
+                user: userName,
+                task: text,
+                sector: CHECKLISTS[setorId]?.label || setorId,
+                date: nowIso,
+                timestamp: Date.now()
+            });
+
+            setChecked(setorId, si, ii, {
+                user: userName,
+                date: nowIso,
+                status: 'concluido',
+                photoKey: photoKey
+            });
+
+            const itemDCI = CHECKLISTS[setorId].sections[si].items[ii];
+            const pts = typeof itemDCI === 'object' && itemDCI.pts ? itemDCI.pts : 1;
+            addItemScore(userName, pts, text);
+            showPtsToast(userName, pts);
+            playCoinSound();
+            updateProgress(setorId);
+            renderPanels();
+        }
+
+        function openPhotoViewer(photoKey) {
+            const all = loadTaskPhotos();
+            const rec = all[photoKey];
+            if (!rec || !rec.dataUrl) {
+                alert('Esta foto já expirou (limpeza automática após 3 dias) ou não foi encontrada.');
+                return;
+            }
+            document.getElementById('photo-view-img').src = rec.dataUrl;
+            const dt = rec.date ? new Date(rec.date) : null;
+            const dtStr = dt && !isNaN(dt) ? (dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR')) : '';
+            document.getElementById('photo-view-sub').textContent = rec.sector || 'Checklist';
+            document.getElementById('photo-view-meta').innerHTML = `
+                <div style="font-weight:800;color:var(--primary);margin-bottom:4px;">📌 ${rec.task || ''}</div>
+                <div>👤 <strong>Feito por:</strong> ${rec.user || ''}</div>
+                <div>🕒 <strong>Data/Hora:</strong> ${dtStr}</div>
+                <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">🗑️ Limpeza automática em 3 dias para não pesar o app</div>
+            `;
+            document.getElementById('photo-view-overlay').classList.add('open');
+        }
+
+        function closePhotoViewer() {
+            document.getElementById('photo-view-overlay').classList.remove('open');
+            document.getElementById('photo-view-img').src = '';
         }
 
         function cancelEditItem() {
