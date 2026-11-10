@@ -2735,6 +2735,9 @@
                     resetToken = data.resetToken || '';
                     localStorage.setItem('mb_reset_token', resetToken);
                 }
+                if (data.equipe_removidos !== undefined && Array.isArray(data.equipe_removidos)) {
+                    localStorage.setItem('mb_equipe_removidos', JSON.stringify(data.equipe_removidos));
+                }
                 // Always recompute scores from data.scores once the system is initialised.
                 if (data.resetToken !== undefined) {
                     const allScores = {};
@@ -2743,11 +2746,13 @@
                             if (/^\d{4}-\d{2}$/.test(key)) {
                                 allScores[key] = {};
                                 Object.entries(val || {}).forEach(([user, entry]) => {
+                                    if (isRemovedEmployeeName(user)) return;
                                     if (entry && entry.token === resetToken) {
                                         allScores[key][user] = entry.pts;
                                     }
                                 });
                             } else {
+                                if (isRemovedEmployeeName(key)) return;
                                 const currentYM = getYearMonth();
                                 if (!allScores[currentYM]) allScores[currentYM] = {};
                                 if (val && val.token === resetToken) {
@@ -2760,13 +2765,15 @@
                 }
                 if (data.last_reset_at !== undefined) localStorage.setItem('mb_last_reset_at', data.last_reset_at || '');
                 if (data.score_log !== undefined) {
-                    // Filtra entradas anteriores ao último reset ao carregar do Firebase
+                    // Filtra entradas anteriores ao último reset e funcionários desligados ao carregar do Firebase
                     try {
                         const rawLog = JSON.parse(data.score_log || '[]');
                         const lastReset = localStorage.getItem('mb_last_reset_at') || '';
-                        const filteredLog = lastReset
-                            ? rawLog.filter(e => !e.isoDate || e.isoDate >= lastReset)
-                            : rawLog;
+                        const filteredLog = rawLog.filter(e => {
+                            if (e && e.user && isRemovedEmployeeName(e.user)) return false;
+                            if (lastReset && e.isoDate && e.isoDate < lastReset) return false;
+                            return true;
+                        });
                         localStorage.setItem('mb_score_log', JSON.stringify(filteredLog));
                     } catch(e) {
                         localStorage.setItem('mb_score_log', '[]');
@@ -2994,6 +3001,7 @@
                 'mb_reset_token', 
                 'mb_last_reset_at',
                 'mb_equipe_config',
+                'mb_equipe_removidos',
                 'mb_folguistas_dia',
                 'mb_sorteio_louca',
                 'mb_sorteio_louca_hist',
@@ -3705,12 +3713,15 @@
             }
 
             const scores = localScores[selectedMonth] || {};
-            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            const sorted = Object.entries(scores)
+                .filter(([name]) => !isRemovedEmployeeName(name))
+                .sort((a, b) => b[1] - a[1]);
             const medals = ['🥇', '🥈', '🥉'];
             
-            // Filter log by selectedMonth
+            // Filter log by selectedMonth and exclude removed employees
             const log = getScoreLog();
             const filteredLog = log.filter(e => {
+                if (e && e.user && isRemovedEmployeeName(e.user)) return false;
                 const d = new Date(e.isoDate);
                 const entryYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                 return entryYM === selectedMonth;
@@ -6721,14 +6732,88 @@
         // ==========================================
         // SISTEMA: GERENCIAR EQUIPE & FOLGUISTAS DO DIA
         // ==========================================
+        const DEFAULT_EQUIPE_REMOVIDOS = ['Ketilen', 'Ketylen'];
+
+        function normalizeEmpName(str) {
+            return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        }
+
+        function loadEquipeRemovidos() {
+            const set = new Set(DEFAULT_EQUIPE_REMOVIDOS);
+            try {
+                const raw = localStorage.getItem('mb_equipe_removidos');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(n => { if (n && n.trim()) set.add(n.trim()); });
+                    }
+                }
+            } catch (e) {}
+            return Array.from(set);
+        }
+
+        function saveEquipeRemovidos(list) {
+            const clean = Array.from(new Set([...DEFAULT_EQUIPE_REMOVIDOS, ...(list || []).map(n => n.trim()).filter(Boolean)]));
+            localStorage.setItem('mb_equipe_removidos', JSON.stringify(clean));
+            db.ref('equipe_removidos').set(clean).catch(() => {});
+        }
+
+        function isRemovedEmployeeName(name) {
+            if (!name) return false;
+            const norm = normalizeEmpName(name);
+            if (norm === 'mike') return true;
+            const removidos = loadEquipeRemovidos();
+            return removidos.some(r => normalizeEmpName(r) === norm);
+        }
+
+        function purgeEmployeeFromDatabase(name) {
+            if (!name) return;
+            const variants = new Set([name, name.trim()]);
+            if (normalizeEmpName(name) === 'ketilen' || normalizeEmpName(name) === 'ketylen') {
+                variants.add('Ketilen');
+                variants.add('Ketylen');
+                variants.add('ketilen');
+                variants.add('ketylen');
+            }
+            const currentYM = getYearMonth();
+            variants.forEach(v => {
+                // Remove de scores no Firebase e localScores
+                Object.keys(localScores || {}).forEach(ym => {
+                    if (localScores[ym] && localScores[ym][v] !== undefined) {
+                        delete localScores[ym][v];
+                    }
+                    db.ref(`scores/${ym}/${v}`).remove().catch(() => {});
+                });
+                db.ref(`scores/${ currentYM }/${v}`).remove().catch(() => {});
+                db.ref(`scores/${v}`).remove().catch(() => {});
+                // Remove de rascunho do estoque
+                if (localEstoqueNomes && localEstoqueNomes[v]) {
+                    delete localEstoqueNomes[v];
+                }
+                db.ref(`estoque/rascunho/nomes/${v}`).remove().catch(() => {});
+            });
+
+            // Limpa do score_log
+            try {
+                const log = getScoreLog().filter(e => !e || !isRemovedEmployeeName(e.user) && !variants.has(e.user));
+                saveScoreLog(log);
+            } catch (e) {}
+
+            // Limpa do ciclo da louça
+            try {
+                const ciclo = loadLoucaCiclo().filter(n => !isRemovedEmployeeName(n) && !variants.has(n));
+                saveLoucaCiclo(ciclo);
+            } catch (e) {}
+        }
+
         function loadEquipeConfig() {
             try {
                 const raw = localStorage.getItem('mb_equipe_config');
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        // Nunca permite "Mike" na lista operacional de tarefas/louça
-                        return parsed.filter(m => m && m.nome && m.nome.toLowerCase() !== 'mike');
+                        // Nunca permite "Mike" nem desligados na lista operacional de tarefas/louça
+                        return parsed.filter(m => m && m.nome && !isRemovedEmployeeName(m.nome));
                     }
                 }
             } catch (e) {}
@@ -6736,7 +6821,7 @@
         }
 
         function saveEquipeConfig(config) {
-            const clean = (config || []).filter(m => m && m.nome && m.nome.trim() && m.nome.trim().toLowerCase() !== 'mike');
+            const clean = (config || []).filter(m => m && m.nome && m.nome.trim() && !isRemovedEmployeeName(m.nome));
             localStorage.setItem('mb_equipe_config', JSON.stringify(clean));
             db.ref('equipe_config').set(clean).catch(() => {});
             syncEquipeArrays();
@@ -6913,8 +6998,45 @@
             saveEquipeConfig(cfg);
         }
 
+        function moveEquipeMember(idx, dir) {
+            const cfg = loadEquipeConfig();
+            const targetIdx = idx + dir;
+            if (targetIdx < 0 || targetIdx >= cfg.length) return;
+            [cfg[idx], cfg[targetIdx]] = [cfg[targetIdx], cfg[idx]];
+            saveEquipeConfig(cfg);
+        }
+
+        function renameEquipeMember(idx) {
+            const cfg = loadEquipeConfig();
+            const item = cfg[idx];
+            if (!item) return;
+            const novo = prompt(`✏️ Novo nome para "${item.nome}":`, item.nome);
+            if (!novo || !novo.trim() || novo.trim() === item.nome) return;
+            const cleanNovo = novo.trim();
+            if (cleanNovo.toLowerCase() === 'mike') {
+                alert('O perfil Mike é exclusivo de Administrador (cadeado 🔐).');
+                return;
+            }
+            if (cfg.some((m, i) => i !== idx && normalizeEmpName(m.nome) === normalizeEmpName(cleanNovo))) {
+                alert('Já existe um integrante com esse nome.');
+                return;
+            }
+            const nomeAntigo = item.nome;
+            item.nome = cleanNovo;
+
+            // Atualiza também na rodada da louça se já tiver lavado
+            const ciclo = loadLoucaCiclo();
+            const cIdx = ciclo.indexOf(nomeAntigo);
+            if (cIdx !== -1) {
+                ciclo[cIdx] = cleanNovo;
+                saveLoucaCiclo(ciclo);
+            }
+            saveEquipeConfig(cfg);
+        }
+
         function addEquipeMember() {
             const input = document.getElementById('novo-membro-equipe-input');
+            const tipoSelect = document.getElementById('novo-membro-equipe-tipo');
             if (!input) return;
             const nome = input.value.trim();
             if (!nome) {
@@ -6925,12 +7047,17 @@
                 alert('O perfil Mike é exclusivo de Administrador (cadeado 🔐) e não pode ser adicionado nas tarefas.');
                 return;
             }
+            // Se estava na lista de removidos/desligados, tira de lá ao readmitir
+            const removidos = loadEquipeRemovidos().filter(r => normalizeEmpName(r) !== normalizeEmpName(nome));
+            localStorage.setItem('mb_equipe_removidos', JSON.stringify(removidos));
+            db.ref('equipe_removidos').set(removidos).catch(() => {});
+
             const cfg = loadEquipeConfig();
-            if (cfg.some(m => m.nome.toLowerCase() === nome.toLowerCase())) {
+            if (cfg.some(m => normalizeEmpName(m.nome) === normalizeEmpName(nome))) {
                 alert('Esse nome já está na lista da equipe.');
                 return;
             }
-            const isFolg = nome.toLowerCase().startsWith('folguista');
+            const isFolg = tipoSelect ? (tipoSelect.value === 'folguista') : nome.toLowerCase().startsWith('folguista');
             cfg.push({ nome, ativo: true, louca: true, isFolguista: isFolg });
             input.value = '';
             saveEquipeConfig(cfg);
@@ -6940,8 +7067,29 @@
             const cfg = loadEquipeConfig();
             const item = cfg[idx];
             if (!item) return;
-            if (!confirm(`Remover "${item.nome}" da equipe?`)) return;
+            if (!confirm(`Desligar e remover "${item.nome}" do aplicativo?\n\nIsso removerá o nome dos checklists, estoque, roleta da louça e ranking.`)) return;
+            const nomeRemovido = item.nome;
             cfg.splice(idx, 1);
+
+            const removidos = loadEquipeRemovidos();
+            if (!removidos.some(r => normalizeEmpName(r) === normalizeEmpName(nomeRemovido))) {
+                removidos.push(nomeRemovido);
+            }
+            saveEquipeRemovidos(removidos);
+            purgeEmployeeFromDatabase(nomeRemovido);
+            saveEquipeConfig(cfg);
+        }
+
+        function restoreRemovedMember(nome) {
+            if (!confirm(`Readmitir "${nome}" de volta para a equipe?`)) return;
+            const removidos = loadEquipeRemovidos().filter(r => normalizeEmpName(r) !== normalizeEmpName(nome));
+            localStorage.setItem('mb_equipe_removidos', JSON.stringify(removidos));
+            db.ref('equipe_removidos').set(removidos).catch(() => {});
+
+            const cfg = loadEquipeConfig();
+            if (!cfg.some(m => normalizeEmpName(m.nome) === normalizeEmpName(nome))) {
+                cfg.push({ nome, ativo: true, louca: true, isFolguista: nome.toLowerCase().startsWith('folguista') });
+            }
             saveEquipeConfig(cfg);
         }
 
@@ -6950,6 +7098,14 @@
             if (!body) return;
             const cfg = loadEquipeConfig();
             const folgSlots = cfg.filter(m => m.isFolguista);
+            // Mostra nomes desligados (sem duplicar Ketilen/Ketylen visualmente)
+            const removidosUnicos = [];
+            loadEquipeRemovidos().forEach(r => {
+                if (normalizeEmpName(r) === 'ketylen') return;
+                if (!removidosUnicos.some(u => normalizeEmpName(u) === normalizeEmpName(r))) {
+                    removidosUnicos.push(r);
+                }
+            });
 
             body.innerHTML = `
                 <!-- Folguistas do Dia -->
@@ -6980,39 +7136,75 @@
                     </div>
                 </div>
 
-                <!-- Adicionar Novo Nome -->
-                <div style="display:flex;gap:8px;margin-bottom:16px;">
-                    <input id="novo-membro-equipe-input" type="text" placeholder="Novo nome (ex: Lucas ou Folguista 3)" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;">
-                    <button onclick="addEquipeMember()" style="background:var(--primary);color:#FFF;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">
-                        + Adicionar
-                    </button>
+                <!-- Adicionar Novo Integrante -->
+                <div style="background:#FAF8F5;border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:16px;">
+                    <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+                        ➕ Cadastrar Novo Nome na Equipe
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <input id="novo-membro-equipe-input" type="text" placeholder="Digite o nome (ex: Pedro ou Folguista 3)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;background:#FFF;">
+                        <div style="display:flex;gap:8px;">
+                            <select id="novo-membro-equipe-tipo" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-weight:700;background:#FFF;color:var(--text);outline:none;">
+                                <option value="fixo">👨‍🍳 Funcionário Fixo (1 clique direto)</option>
+                                <option value="folguista">👤 Vaga Folguista (pede nome 1x no dia)</option>
+                            </select>
+                            <button onclick="addEquipeMember()" style="background:var(--primary);color:#FFF;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">
+                                + Cadastrar
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Lista da Equipe -->
-                <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
-                    Integrantes (Tarefas & Roleta da Louça)
+                <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <span>👥 Equipe Ativa (${cfg.length} cadastrados)</span>
+                    <span style="font-size:10px;font-weight:600;">Toque nos botões para ativar/desativar</span>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
                     ${cfg.map((m, idx) => `
-                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#FAF8F5;border:1px solid var(--border);border-radius:12px;gap:8px;">
-                            <div style="font-weight:800;font-size:14px;color:var(--text);flex:1;">
-                                ${m.nome}
-                                ${m.isFolguista ? '<span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:6px;margin-left:4px;">Pede nome 1x/dia</span>' : ''}
+                        <div style="display:flex;flex-direction:column;padding:12px;background:#FAF8F5;border:1px solid var(--border);border-radius:12px;gap:8px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                                <div style="font-weight:800;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                                    <span>${m.nome}</span>
+                                    <span onclick="toggleEquipeMemberField(${idx}, 'isFolguista')" title="Clique para alternar entre Fixo e Folguista" style="font-size:10px;background:${m.isFolguista ? '#FEF3C7' : '#E0E7FF'};color:${m.isFolguista ? '#92400E' : '#3730A3'};padding:2px 7px;border-radius:6px;cursor:pointer;font-weight:800;">
+                                        ${m.isFolguista ? '👤 Pede nome 1x/dia' : '👨‍🍳 Nome Fixo'}
+                                    </span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <button onclick="moveEquipeMember(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Subir na lista" style="background:#FFF;border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:11px;opacity:${idx === 0 ? '0.35' : '1'};">⬆️</button>
+                                    <button onclick="moveEquipeMember(${idx}, 1)" ${idx === cfg.length - 1 ? 'disabled' : ''} title="Descer na lista" style="background:#FFF;border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:11px;opacity:${idx === cfg.length - 1 ? '0.35' : '1'};">⬇️</button>
+                                    <button onclick="renameEquipeMember(${idx})" title="Renomear integrante" style="background:#FFF;border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:11px;">✏️</button>
+                                    <button onclick="removeEquipeMember(${idx})" title="Desligar / Remover do App" style="background:#FFF;border:1px solid #FECACA;border-radius:6px;width:26px;height:26px;cursor:pointer;color:#EF4444;font-size:12px;">🗑️</button>
+                                </div>
                             </div>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <button onclick="toggleEquipeMemberField(${idx}, 'ativo')" title="Mostrar nas tarefas e estoque" style="padding:5px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid ${m.ativo ? '#10B981' : '#D1D5DB'};background:${m.ativo ? '#ECFDF5' : '#F3F4F6'};color:${m.ativo ? '#065F46' : '#6B7280'};">
-                                    📋 ${m.ativo ? 'Tarefas: SIM' : 'Tarefas: NÃO'}
+                            <div style="display:flex;gap:8px;">
+                                <button onclick="toggleEquipeMemberField(${idx}, 'ativo')" style="flex:1;padding:7px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1.5px solid ${m.ativo ? '#10B981' : '#D1D5DB'};background:${m.ativo ? '#ECFDF5' : '#F3F4F6'};color:${m.ativo ? '#065F46' : '#6B7280'};">
+                                    📋 Tarefas & Estoque: ${m.ativo ? 'SIM' : 'NÃO'}
                                 </button>
-                                <button onclick="toggleEquipeMemberField(${idx}, 'louca')" title="Participar da Roleta da Louça" style="padding:5px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid ${m.louca ? 'var(--primary)' : '#D1D5DB'};background:${m.louca ? '#FFF1F2' : '#F3F4F6'};color:${m.louca ? 'var(--primary)' : '#6B7280'};">
-                                    🍽️ ${m.louca ? 'Louça: SIM' : 'Louça: NÃO'}
-                                </button>
-                                <button onclick="removeEquipeMember(${idx})" title="Remover da equipe" style="background:#FFF;border:1px solid #FECACA;border-radius:8px;width:28px;height:28px;cursor:pointer;color:#EF4444;font-size:12px;display:flex;align-items:center;justify-content:center;">
-                                    🗑️
+                                <button onclick="toggleEquipeMemberField(${idx}, 'louca')" style="flex:1;padding:7px 8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;border:1.5px solid ${m.louca ? 'var(--primary)' : '#D1D5DB'};background:${m.louca ? '#FFF1F2' : '#F3F4F6'};color:${m.louca ? 'var(--primary)' : '#6B7280'};">
+                                    🍽️ Roleta da Louça: ${m.louca ? 'SIM' : 'NÃO'}
                                 </button>
                             </div>
                         </div>
                     `).join('')}
                 </div>
+
+                <!-- Desligados / Removidos -->
+                ${removidosUnicos.length > 0 ? `
+                    <div style="border-top:1px dashed var(--border);padding-top:12px;">
+                        <div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+                            🚫 Desligados / Removidos do App
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            ${removidosUnicos.map(nome => `
+                                <div style="display:inline-flex;align-items:center;gap:6px;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;">
+                                    <span>🚫 ${nome}</span>
+                                    <button onclick="purgeEmployeeFromDatabase('${nome}'); alert('Registros de ${nome} limpos com sucesso!');" title="Limpar pontos/registros antigos" style="background:none;border:none;color:#DC2626;font-size:11px;cursor:pointer;font-weight:800;">🧹</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
             `;
         }
 
@@ -7020,6 +7212,7 @@
         // SISTEMA: SORTEIO DA LOUÇA (RODÍZIO SEM REPETIÇÃO)
         // ==========================================
         syncEquipeArrays();
+        purgeEmployeeFromDatabase('Ketilen');
 
         function loadTodayLoucaData() {
             try {
