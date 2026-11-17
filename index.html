@@ -7350,16 +7350,22 @@
                 db.ref(`estoque/rascunho/nomes/${v}`).remove().catch(() => {});
             });
 
-            // Limpa do score_log
+            // Limpa do score_log apenas se encontrar registros do funcionário removido
             try {
-                const log = getScoreLog().filter(e => !e || !isRemovedEmployeeName(e.user) && !variants.has(e.user));
-                saveScoreLog(log);
+                const beforeLog = getScoreLog();
+                const log = beforeLog.filter(e => !e || (!isRemovedEmployeeName(e.user) && !variants.has(e.user)));
+                if (log.length !== beforeLog.length) {
+                    saveScoreLog(log);
+                }
             } catch (e) {}
 
-            // Limpa do ciclo da louça
+            // Limpa do ciclo da louça apenas se o funcionário constar nele
             try {
-                const ciclo = loadLoucaCiclo().filter(n => !isRemovedEmployeeName(n) && !variants.has(n));
-                saveLoucaCiclo(ciclo);
+                const beforeCiclo = loadLoucaCiclo();
+                const ciclo = beforeCiclo.filter(n => !isRemovedEmployeeName(n) && !variants.has(n));
+                if (ciclo.length !== beforeCiclo.length) {
+                    saveLoucaCiclo(ciclo);
+                }
             } catch (e) {}
         }
 
@@ -7769,7 +7775,28 @@
         // SISTEMA: SORTEIO DA LOUÇA (RODÍZIO SEM REPETIÇÃO)
         // ==========================================
         syncEquipeArrays();
-        purgeEmployeeFromDatabase('Ketilen');
+
+        async function syncLoucaFromFirebase() {
+            if (!db) return;
+            try {
+                const [cicloSnap, hojeSnap, histSnap] = await Promise.all([
+                    db.ref('sorteio_louca_ciclo').get(),
+                    db.ref('sorteio_louca').get(),
+                    db.ref('sorteio_louca_hist').get()
+                ]);
+                if (cicloSnap.exists()) {
+                    const val = cicloSnap.val();
+                    const rawCiclo = Array.isArray(val) ? val.filter(n => n !== '__RESET__') : [];
+                    localStorage.setItem('mb_sorteio_louca_ciclo', JSON.stringify(rawCiclo));
+                }
+                if (hojeSnap.exists()) {
+                    localStorage.setItem('mb_sorteio_louca', JSON.stringify(hojeSnap.val() || {}));
+                }
+                if (histSnap.exists()) {
+                    localStorage.setItem('mb_sorteio_louca_hist', JSON.stringify(histSnap.val() || []));
+                }
+            } catch (e) {}
+        }
 
         function loadTodayLoucaData() {
             try {
@@ -7836,32 +7863,31 @@
 
         function getEffectiveLoucaCiclo() {
             let ciclo = loadLoucaCiclo();
-            // Se não houver sorteio hoje e todos já tiverem completado o ciclo anterior, reinicia nova rodada
-            if (!loadTodayLoucaData() && ciclo.length >= NOMES_LOUCA.length) {
-                ciclo = [];
-                saveLoucaCiclo([]);
+            // Se não houver sorteio hoje e TODOS os integrantes da roleta já tiverem lavado, retorna vazio (nova rodada)
+            if (!loadTodayLoucaData() && NOMES_LOUCA.length > 0 && NOMES_LOUCA.every(n => ciclo.includes(n))) {
+                return [];
             }
             return ciclo;
         }
 
         function getLoucaCandidatos() {
-            let ciclo = getEffectiveLoucaCiclo();
+            const ciclo = getEffectiveLoucaCiclo();
             // Candidatos = funcionários presentes que AINDA NÃO lavaram nesta rodada
             let candidatos = loucaAtivos.filter(nome => !ciclo.includes(nome));
 
-            // Se todos os presentes hoje já tiverem lavado nesta rodada,
-            // reinicia a rodada para não travar o sorteio do dia
+            // Se todos os presentes hoje já tiverem lavado nesta rodada, mostra os presentes como candidatos da nova rodada
+            // (mas NÃO apaga o ciclo no banco durante a simples visualização de tela!)
             if (candidatos.length === 0 && loucaAtivos.length > 0) {
-                ciclo = [];
-                saveLoucaCiclo([]);
                 candidatos = [...loucaAtivos];
             }
             return candidatos;
         }
 
-        function openSorteioLouca() {
+        async function openSorteioLouca() {
             currentLoucaTab = 'sorteio';
             document.getElementById('louca-overlay')?.classList.add('open');
+            renderSorteioLoucaUI();
+            await syncLoucaFromFirebase();
             renderSorteioLoucaUI();
         }
 
@@ -8104,13 +8130,12 @@
             }
         }
 
-        function girarRoletaLouca() {
+        async function girarRoletaLouca() {
             if (isSpinningLouca) return;
-            const candidatos = getLoucaCandidatos();
-            if (candidatos.length === 0) {
-                alert('Selecione pelo menos um funcionário que ainda não lavou nesta rodada.');
-                return;
-            }
+            unlockAudio();
+
+            // Sincroniza o estado mais recente do Firebase antes de sortear para impedir que celulares desatualizados repitam nomes
+            await syncLoucaFromFirebase();
 
             const todayData = loadTodayLoucaData();
             if (todayData && today() !== '09/10/2026') {
@@ -8119,15 +8144,28 @@
                 return;
             }
 
+            let cicloAtual = getEffectiveLoucaCiclo();
+            let candidatos = loucaAtivos.filter(nome => !cicloAtual.includes(nome));
+
+            // Somente na hora de GIRAR: se todos os presentes hoje já tiverem lavado nesta rodada, inicia nova rodada
+            if (candidatos.length === 0 && loucaAtivos.length > 0) {
+                cicloAtual = [];
+                saveLoucaCiclo([]);
+                candidatos = [...loucaAtivos];
+            }
+
+            if (candidatos.length === 0) {
+                alert('Selecione pelo menos um funcionário que ainda não lavou nesta rodada.');
+                return;
+            }
+
             isSpinningLouca = true;
-            unlockAudio();
 
             const reel = document.getElementById('louca-wheel-reel');
             const btn = document.getElementById('btn-girar-louca');
             if (btn) btn.disabled = true;
 
             // Embaralha os candidatos com aleatoriedade criptográfica (Fisher-Yates)
-            const cicloAtual = getEffectiveLoucaCiclo();
             let elegiveisSorteio = [...candidatos];
 
             // Quando inicia uma nova rodada do zero (ciclo vazio), evita repetir de imediato
@@ -8173,7 +8211,7 @@
                     triggerConfetti();
 
                     // Registra o ganhador na rodada (ciclo sem repetição)
-                    const ciclo = getEffectiveLoucaCiclo();
+                    const ciclo = [...cicloAtual];
                     if (!ciclo.includes(winner)) {
                         ciclo.push(winner);
                     }
