@@ -6531,6 +6531,8 @@
                     unidade: item.unidade,
                     precoUnitario: 0,
                     estoqueMinimo: item.estoqueMinimo,
+                    estoqueMaximo: item.estoqueMaximo || 0,
+                    qtdPorCaixa: item.qtdPorCaixa || 1,
                     valorTotalItem: 0,
                     grupo: item.grupo || 'cmv',
                     ...(statusUso ? { statusUso } : {})
@@ -6547,6 +6549,7 @@
                 data: new Date(dateStr + 'T12:00:00').toISOString(),
                 usuario: user,
                 valorTotalGeral: 0,
+                versaoModelo: 2,
                 itens: countItens
             };
 
@@ -6564,11 +6567,66 @@
             switchEstoqueTab('historico');
         }
 
-        function calcularAvaliacaoEstoqueItem(it, liveItem, useCommaDecimal) {
+        const LEGACY_PRE_NOV18_PARAMS = {
+            'Pote 250ml Quadrado Bolo Pote': { max: 1, packSize: 1 },
+            'Pote 250ml Redondo Bolo Pote': { max: 1, packSize: 1 },
+            'Papel Higiênico': { max: 1, packSize: 1 },
+            'Colorau': { max: 2, packSize: 1 },
+            'Absorvente com abas': { max: 2, packSize: 1 },
+            'Aljet Polidor 5L': { max: 2, packSize: 1 },
+            'Neopan 1L': { max: 2, packSize: 1 },
+            'Caixa Grampo': { max: 2, packSize: 1 },
+            'Adesivos': { max: 3, packSize: 1 },
+            'Fermento': { max: 1, packSize: 1 },
+            'Coentro': { max: 4, packSize: 1 },
+            'Frango': { max: 20, packSize: 1 }
+        };
+
+        function isLegacyContagem(dateKey, countObj) {
+            if (countObj && countObj.versaoModelo >= 2) return false;
+            return !dateKey || dateKey <= '2026-11-17';
+        }
+
+        function calcularAvaliacaoEstoqueItem(it, liveItem, useCommaDecimal, isLegacy) {
             const qty = parseFloat(String(it.quantidade).replace(',', '.')) || 0;
-            const max = liveItem ? (parseFloat(liveItem.estoqueMaximo) || 0) : 0;
-            const packSize = liveItem ? (parseFloat(liveItem.qtdPorCaixa) || 1) : 1;
+            const legacyOverride = isLegacy ? LEGACY_PRE_NOV18_PARAMS[(it.nome || '').trim()] : null;
+            const max = legacyOverride
+                ? legacyOverride.max
+                : (it.estoqueMaximo !== undefined ? (parseFloat(it.estoqueMaximo) || 0) : (liveItem ? (parseFloat(liveItem.estoqueMaximo) || 0) : 0));
+            const packSize = legacyOverride
+                ? legacyOverride.packSize
+                : (it.qtdPorCaixa !== undefined ? (parseFloat(it.qtdPorCaixa) || 1) : (liveItem ? (parseFloat(liveItem.qtdPorCaixa) || 1) : 1));
             const nomeNorm = (it.nome || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+            // Contagens antigas (dia 16/11 e anteriores): preserva 100% como era antes das mudanças
+            if (isLegacy) {
+                let isLow = false;
+                if (isProducaoDiaria(it.estoqueMinimo)) {
+                    isLow = qty <= 0;
+                } else {
+                    const min = parseFloat(String(it.estoqueMinimo).replace(',', '.')) || 0;
+                    isLow = qty <= min;
+                }
+                if (max > 0 && qty < max) {
+                    const isFardo = isFardoItem(it.nome, it.unidade);
+                    const isBox = packSize > 1;
+                    const tipoCompra = isBox ? (isFardo ? 'Fardo Fechado' : 'Caixa Fechada') : 'Unidade';
+                    const missing = max - qty;
+                    let sugestao = '';
+                    if (isBox) {
+                        const boxes = Math.ceil(missing / packSize);
+                        const unitLabel = isFardo ? (boxes > 1 ? 'fardos' : 'fardo') : (boxes > 1 ? 'caixas' : 'caixa');
+                        sugestao = `${boxes} ${unitLabel} (com ${packSize} un)`;
+                    } else {
+                        const formattedMissing = useCommaDecimal
+                            ? missing.toFixed(1).replace('.', ',').replace(',0', '')
+                            : missing.toFixed(1).replace('.0', '');
+                        sugestao = `${formattedMissing} ${it.unidade || ''}`;
+                    }
+                    return { isLow, needsPurchase: true, tipoCompra, sugestao, isBox, max, packSize };
+                }
+                return { isLow, needsPurchase: false, tipoCompra: '-', sugestao: '-', isBox: packSize > 1, max, packSize };
+            }
 
             if (isProducaoDiaria(it.estoqueMinimo)) {
                 return { isLow: false, needsPurchase: false, tipoCompra: '-', sugestao: '-', isBox: false, max, packSize };
@@ -6728,6 +6786,8 @@
                 escritorio: '📝 Material de Escritório'
             };
 
+            const isLegacy = isLegacyContagem(dateKey, count);
+
             let html = '';
             Object.entries(gruposMap).forEach(([grpKey, items]) => {
                 if (items.length === 0) return;
@@ -6741,7 +6801,7 @@
 
                 html += items.map(it => {
                     let liveItem = Object.values(localEstoqueItens).find(x => x.nome === it.nome);
-                    const aval = calcularAvaliacaoEstoqueItem(it, liveItem, false);
+                    const aval = calcularAvaliacaoEstoqueItem(it, liveItem, false, isLegacy);
                     const isLow = aval.isLow;
                     const rowClass = isLow ? 'estoque-item-row low-stock' : 'estoque-item-row above-min';
                     const alarmTag = isLow ? '<span style="font-size:10px; background:#EF4444; color:#fff; border-radius:4px; padding:2px 6px; margin-left:8px; font-weight:700;">BAIXO</span>' : '';
@@ -6751,11 +6811,11 @@
                     const packSize = aval.packSize;
                     const maxLabel = max ? ` | Máx: ${max} ${it.unidade || ''}` : '';
                     const isFardo = isFardoItem(it.nome, it.unidade);
-                    const isBoloPote = (it.nome || '').toLowerCase().includes('bolo pote');
+                    const isBoloPote = !isLegacy && (it.nome || '').toLowerCase().includes('bolo pote');
                     const cxUnit = isBoloPote ? 'pacotes' : 'un';
                     const cxLabel = packSize > 1 ? ` | ${isFardo ? 'Fardo' : 'Caixa'} c/ ${packSize} ${cxUnit}` : '';
 
-                    const isZ1 = liveItem && !isMensalEstoqueItem(liveItem) && isZeroToOneEstoqueItem(liveItem);
+                    const isZ1 = !isLegacy && liveItem && !isMensalEstoqueItem(liveItem) && isZeroToOneEstoqueItem(liveItem);
                     let qtyDisplay = `${it.quantidade} ${it.unidade || ''}`;
                     if (isZ1) {
                         if (it.statusUso === 'fechado' || (!it.statusUso && parseFloat(it.quantidade) > 0)) {
@@ -6791,8 +6851,8 @@
                     liveItem = Object.values(localEstoqueItens).find(x => x.nome === it.nome);
                 }
 
-                if (liveItem) {
-                    const aval = calcularAvaliacaoEstoqueItem(it, liveItem, false);
+                if (liveItem || isLegacy) {
+                    const aval = calcularAvaliacaoEstoqueItem(it, liveItem, false, isLegacy);
                     if (aval.needsPurchase) {
                         suggestions.push({
                             nome: it.nome,
@@ -6943,12 +7003,13 @@
                 return val;
             }
 
+            const isLegacy = isLegacyContagem(select.value, count);
             const abaixoItens = [];
             const normaisItens = [];
 
             sortedItens.forEach(it => {
                 let liveItem = Object.values(localEstoqueItens).find(x => x.nome === it.nome);
-                const aval = calcularAvaliacaoEstoqueItem(it, liveItem, true);
+                const aval = calcularAvaliacaoEstoqueItem(it, liveItem, true, isLegacy);
                 const isLow = aval.isLow;
                 const max = aval.max;
                 const packSize = aval.packSize;
